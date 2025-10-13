@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>શબ્દ શોધો: બાળકો માટેની ગેમ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f8ff;
+            color: #333;
+            text-align: center;
+        }
+        h1 {
+            color: #4682b4;
+        }
+        #word-display {
+            font-size: 4em;
+            margin-bottom: 20px;
+            letter-spacing: 5px;
+            font-weight: bold;
+        }
+        #letters-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .letter-button {
+            padding: 20px 25px;
+            font-size: 2em;
+            cursor: pointer;
+            border: 2px solid #add8e6;
+            border-radius: 10px;
+            background-color: #e6f7ff;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .letter-button:hover {
+            background-color: #cceeff;
+            transform: scale(1.1);
+        }
+        .correct {
+            background-color: #90ee90;
+            border-color: #32cd32;
+        }
+        .wrong {
+            background-color: #ffb6c1;
+            border-color: #dc143c;
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        #message {
+            font-size: 1.5em;
+            font-weight: bold;
+            height: 30px;
+        }
+        #play-again-btn {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background-color: #4682b4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
+        #play-again-btn:hover {
+            background-color: #5a9bd4;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>શબ્દ શોધો</h1>
+    <p>By rajesh barochia</p>
+    <p>આપેલ અક્ષરોનો ઉપયોગ કરીને શબ્દ પૂરો કરો.</p>
+
+    <div id="word-display"></div>
+    <div id="letters-container"></div>
+    <div id="message"></div>
+
+    <button id="play-again-btn">ફરીથી રમો!</button>
+
+    <script>
+        const words = ['ગામ', 'નામ', 'દાસ', 'સાદ', 'જામ', 'ગાલ', 'મજા ', 'રામ', 'રજા','રાજ', 'સજા', 'જાત'];
+        let currentWord = '';
+        let currentLetters = [];
+
+        const wordDisplay = document.getElementById('word-display');
+        const lettersContainer = document.getElementById('letters-container');
+        const message = document.getElementById('message');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startGame() {
+            message.textContent = '';
+            playAgainBtn.style.display = 'none';
+
+            // Select a random word
+            const randomIndex = Math.floor(Math.random() * words.length);
+            currentWord = words[randomIndex];
+            currentLetters = [];
+            
+            // Display empty spaces for the word
+            wordDisplay.textContent = '_ '.repeat(currentWord.length);
+
+            // Create shuffled letter buttons
+            lettersContainer.innerHTML = '';
+            const allLetters = currentWord.split('');
+            const shuffledLetters = shuffleArray(allLetters);
+            
+            shuffledLetters.forEach(letter => {
+                const button = document.createElement('button');
+                button.textContent = letter;
+                button.classList.add('letter-button');
+                button.addEventListener('click', () => handleGuess(letter, button));
+                lettersContainer.appendChild(button);
+            });
+        }
+
+        function handleGuess(letter, button) {
+            if (currentLetters.length < currentWord.length) {
+                const nextIndex = currentLetters.length;
+                if (letter === currentWord[nextIndex]) {
+                    currentLetters.push(letter);
+                    wordDisplay.textContent = currentLetters.join('') + '_ '.repeat(currentWord.length - currentLetters.length);
+                    message.textContent = 'સાચું! 🎉';
+                    button.classList.add('correct');
+                    setTimeout(() => message.textContent = '', 500); // Clear message
+                    
+                    if (currentLetters.length === currentWord.length) {
+                        message.textContent = `શબ્દ પૂરો થયો: ${currentWord}! 😄`;
+                        playAgainBtn.style.display = 'block';
+                    }
+                } else {
+                    message.textContent = 'ખોટું! ફરી પ્રયાસ કરો. 😟';
+                    button.classList.add('wrong');
+                    setTimeout(() => {
+                        button.classList.remove('wrong');
+                        message.textContent = '';
+                    }, 500);
+                }
+            }
+        }
+
+        playAgainBtn.addEventListener('click', startGame);
+
+        // Start the game for the first time
+        startGame();
+
+    </script>
+</body>
+</html>

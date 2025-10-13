@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગુજરાતી શબ્દ પઝલ</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .game-container {
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #1a202c;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        p.instructions {
+            color: #4a5568;
+            font-size: 1.1em;
+            margin-bottom: 25px;
+        }
+        .puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .box {
+            background-color: #e0f2fe;
+            border: 2px solid #00a8e8;
+            color: #000;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5px;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .box-number {
+            font-size: 0.8em;
+            color: #0077b6;
+            margin-bottom: 2px;
+        }
+        .box-char {
+            font-size: 1.5em;
+            color: #d6336c;
+        }
+        .word-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .word-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .number-sequence {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: #2b6cb0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .word-input {
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 1.2em;
+            width: 200px;
+            text-align: center;
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            transition: all 0.3s ease;
+        }
+        .word-input:focus {
+            outline: none;
+            border-color: #4c51bf;
+        }
+        
+        /* સાચા જવાબ માટે લીલો સ્ટાઇલ */
+        .word-input.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        
+        /* ખોટા જવાબ માટે લાલ સ્ટાઇલ */
+        .word-input.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        
+        /* સાચા જવાબ માટે બોક્સ લીલો */
+        .box.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+        }
+        .box.correct .box-char {
+            color: #155724;
+        }
+        
+        /* ખોટા જવાબ માટે બોક્સ લાલ */
+        .box.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+        }
+        .box.incorrect .box-char {
+            color: #721c24;
+        }
+
+        .message {
+            margin-top: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+        .correct-message {
+            color: #28a745;
+        }
+        .incorrect-message {
+            color: #dc3545;
+        }
+        .submit-button {
+            background-color: #4c51bf;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+        }
+        .submit-button:hover {
+            background-color: #3b3f8e;
+            transform: translateY(-2px);
+        }
+        .all-solved-message {
+            color: #1a7e48;
+            font-size: 1.8em;
+            font-weight: bold;
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .hint-button {
+            background-color: #ffc107;
+            color: #212529;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-left: 10px;
+            transition: background-color 0.3s;
+        }
+        .hint-button:hover {
+            background-color: #e0a800;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1>ગુજરાતી શબ્દ પઝલ</h1>
+    <p class="instructions">આપેલ અંકો અને અક્ષરોનો ઉપયોગ કરીને સાચા શબ્દો બનાવો.</p>
+
+    <div class="puzzle-grid">
+        <div class="box" id="box1"><span class="box-number">૧</span><span class="box-char">ક</span></div>
+        <div class="box" id="box2"><span class="box-number">૨</span><span class="box-char">ત</span></div>
+        <div class="box" id="box3"><span class="box-number">૩</span><span class="box-char">ટ</span></div>
+        <div class="box" id="box4"><span class="box-number">૪</span><span class="box-char">દ</span></div>
+        <div class="box" id="box5"><span class="box-number">૫</span><span class="box-char">ર</span></div>
+        <div class="box" id="box6"><span class="box-number">૬</span><span class="box-char">સ</span></div>
+        <div class="box" id="box7"><span class="box-number">૭</span><span class="box-char">વા</span></div>
+        <div class="box" id="box8"><span class="box-number">૮</span><span class="box-char">બા</span></div>
+        <div class="box" id="box9"><span class="box-number">૯</span><span class="box-char">યા</span></div>
+        <div class="box" id="box10"><span class="box-number">૧૦</span><span class="box-char">રાં</span></div>
+        <div class="box" id="box11"><span class="box-number">૧૧</span><span class="box-char">વાં</span></div>
+        <div class="box" id="box12"><span class="box-number">૧૨</span><span class="box-char">છો</span></div>
+        <div class="box" id="box13"><span class="box-number">૧૩</span><span class="box-char">જો</span></div>
+        <div class="box" id="box14"><span class="box-number">૧૪</span><span class="box-char">પિ</span></div>
+        <div class="box" id="box15"><span class="box-number">૧૫</span><span class="box-char">ળી</span></div>
+        <div class="box" id="box16"><span class="box-number">૧૬</span><span class="box-char">ઉં</span></div>
+        <div class="box" id="box17"><span class="box-number">૧૭</span><span class="box-char">જૂ</span></div>
+        <div class="box" id="box18"><span class="box-number">૧૮</span><span class="box-char">બૂ</span></div>
+        <div class="box" id="box19"><span class="box-number">૧૯</span><span class="box-char">રૂ</span></div>
+        <div class="box" id="box20"><span class="box-number">૨૦</span><span class="box-char">સ્કૂ</span></div>
+    </div>
+
+    <div class="word-section">
+        <div class="word-row">
+            <span class="number-sequence">૭. ૧૭</span>
+            <input type="text" id="word1" class="word-input" placeholder="શબ્દ દાખલ કરો">
+        </div>
+        <div class="word-row">
+            <span class="number-sequence">૧. ૮. ૩</span>
+            <input type="text" id="word2" class="word-input" placeholder="શબ્દ દાખલ કરો">
+        </div>
+        <div class="word-row">
+            <span class="number-sequence">૧૧. ૬. ૧૫</span>
+            <input type="text" id="word3" class="word-input" placeholder="શબ્દ દાખલ કરો">
+        </div>
+        <div class="word-row">
+            <span class="number-sequence">૧૨. ૧. ૧૦</span>
+            <input type="text" id="word4" class="word-input" placeholder="શબ્દ દાખલ કરો">
+        </div>
+        <div class="word-row">
+            <span class="number-sequence">૨૦. ૩. ૫</span>
+            <input type="text" id="word5" class="word-input" placeholder="શબ્દ દાખલ કરો">
+        </div>
+        <div class="word-row">
+            <span class="number-sequence">૧૬. ૪. ૫</span>
+            <input type="text" id="word6" class="word-input" placeholder="શબ્દ દાખલ કરો">
+        </div>
+        <div class="word-row">
+            <span class="number-sequence">૧૯. ૧૪. ૯</span>
+            <input type="text" id="word7" class="word-input" placeholder="શબ્દ દાખલ કરો">
+        </div>
+        <div class="word-row">
+            <span class="number-sequence">૧૩. ૧. ૫</span>
+            <input type="text" id="word8" class="word-input" placeholder="શબ્દ દાખલ કરો">
+        </div>
+        <div class="word-row">
+            <span class="number-sequence">૧. ૧૮. ૨. ૫</span>
+            <input type="text" id="word9" class="word-input" placeholder="શબ્દ દાખલ કરો">
+        </div>
+    </div>
+
+    <button class="submit-button" onclick="checkAnswers()">જવાબ ચકાસો</button>
+
+    <div id="message" class="message"></div>
+</div>
+
+<script>
+    // અક્ષરોનો સંદર્ભ
+    const letters = {
+        1: 'ક',
+        2: 'ત',
+        3: 'ટ',
+        4: 'દ',
+        5: 'ર',
+        6: 'સ',
+        7: 'વા',
+        8: 'બા',
+        9: 'યા',
+        10: 'રાં',
+        11: 'વાં',
+        12: 'છો',
+        13: 'જો',
+        14: 'પિ',
+        15: 'ળી',
+        16: 'ઉં',
+        17: 'જૂ',
+        18: 'બૂ',
+        19: 'રૂ',
+        20: 'સ્કૂ'
+    };
+
+    // સાચા જવાબો
+    const answers = {
+        word1: 'વાજૂ', // 7 + 17
+        word2: 'કબાટ', // 1 + 8 + 3
+        word3: 'વાંસળી', // 11 + 6 + 15
+        word4: 'છોકરાં', // 12 + 1 + 10
+        word5: 'સ્કૂટર', // 20 + 3 + 5
+        word6: 'ઉંદર', // 16 + 4 + 5
+        word7: 'રૂપિયા', // 19 + 14 + 9
+        word8: 'જોકર', // 13 + 1 + 5
+        word9: 'કબૂતર' // 1 + 18 + 2 + 5
+    };
+
+    // શબ્દ અને બોક્સની મેપિંગ
+    const wordToBoxes = {
+        word1: [7, 17],
+        word2: [1, 8, 3],
+        word3: [11, 6, 15],
+        word4: [12, 1, 10],
+        word5: [20, 3, 5],
+        word6: [16, 4, 5],
+        word7: [19, 14, 9],
+        word8: [13, 1, 5],
+        word9: [1, 18, 2, 5]
+    };
+
+    function checkAnswers() {
+        const inputs = {
+            word1: document.getElementById('word1').value.trim(),
+            word2: document.getElementById('word2').value.trim(),
+            word3: document.getElementById('word3').value.trim(),
+            word4: document.getElementById('word4').value.trim(),
+            word5: document.getElementById('word5').value.trim(),
+            word6: document.getElementById('word6').value.trim(),
+            word7: document.getElementById('word7').value.trim(),
+            word8: document.getElementById('word8').value.trim(),
+            word9: document.getElementById('word9').value.trim()
+        };
+
+        let allCorrect = true;
+        let messageElement = document.getElementById('message');
+        messageElement.innerHTML = '';
+
+        // પહેલા બધા બોક્સ અને ઇનપુટને રીસેટ કરો
+        resetColors();
+
+        // દરેક શબ્દને ચકાસો
+        for (const key in answers) {
+            const inputElement = document.getElementById(key);
+            if (inputElement) {
+                if (inputs[key] === answers[key]) {
+                    // સાચો જવાબ - લીલો કલર
+                    inputElement.classList.add('correct');
+                    inputElement.classList.remove('incorrect');
+                    
+                    // સંબંધિત બોક્સને લીલો કરો
+                    const boxes = wordToBoxes[key];
+                    boxes.forEach(boxNumber => {
+                        const boxElement = document.getElementById('box' + boxNumber);
+                        if (boxElement) {
+                            boxElement.classList.add('correct');
+                            boxElement.classList.remove('incorrect');
+                        }
+                    });
+                } else {
+                    // ખોટો જવાબ - લાલ કલર
+                    inputElement.classList.add('incorrect');
+                    inputElement.classList.remove('correct');
+                    allCorrect = false;
+                    
+                    // સંબંધિત બોક્સને લાલ કરો
+                    const boxes = wordToBoxes[key];
+                    boxes.forEach(boxNumber => {
+                        const boxElement = document.getElementById('box' + boxNumber);
+                        if (boxElement) {
+                            boxElement.classList.add('incorrect');
+                            boxElement.classList.remove('correct');
+                        }
+                    });
+                    
+                    // ખોટા જવાબ માટે સૂચના દર્શાવો
+                    if (inputs[key] !== '') {
+                        const wordNumber = key.replace('word', '');
+                        const expectedWord = answers[key];
+                        const userWord = inputs[key];
+                        
+                        let hint = `શબ્દ ${wordNumber}: `;
+                        for (let i = 0; i < Math.max(expectedWord.length, userWord.length); i++) {
+                            if (i < userWord.length && i < expectedWord.length && userWord[i] === expectedWord[i]) {
+                                hint += `<span style="color:green">${userWord[i]}</span>`;
+                            } else if (i < userWord.length) {
+                                hint += `<span style="color:red">${userWord[i]}</span>`;
+                            } else {
+                                hint += `<span style="color:gray">${expectedWord[i]}</span>`;
+                            }
+                        }
+                        
+                        const hintElement = document.createElement('div');
+                        hintElement.innerHTML = hint;
+                        hintElement.style.fontSize = '0.9em';
+                        hintElement.style.marginTop = '5px';
+                        messageElement.appendChild(hintElement);
+                    }
+                }
+            }
+        }
+
+        if (allCorrect) {
+            messageElement.innerHTML = 'અભિનંદન! તમે બધા શબ્દો સાચા બનાવ્યા છે!';
+            messageElement.className = 'message correct-message all-solved-message';
+        } else {
+            if (messageElement.innerHTML === '') {
+                messageElement.innerHTML = 'કેટલાક જવાબો ખોટા છે. ફરીથી પ્રયાસ કરો.';
+            }
+            messageElement.className = 'message incorrect-message';
+        }
+    }
+
+    // બધા કલર રીસેટ કરવા
+    function resetColors() {
+        // બધા ઇનપુટ ફીલ્ડ્સ
+        document.querySelectorAll('.word-input').forEach(input => {
+            input.classList.remove('correct', 'incorrect');
+        });
+        
+        // બધા બોક્સ
+        document.querySelectorAll('.box').forEach(box => {
+            box.classList.remove('correct', 'incorrect');
+        });
+    }
+
+    // ઉપયોગકર્તાને મદદ કરવા માટે હિન્ટ ફંક્શન
+    function showHint(wordNumber) {
+        const answer = answers['word' + wordNumber];
+        const numberSequence = document.querySelectorAll('.number-sequence')[wordNumber-1].textContent;
+        
+        alert(`શબ્દ ${wordNumber} (${numberSequence}) માટે હિન્ટ:\nઆ શબ્દ "${answer}" છે.`);
+    }
+
+    // ઇનપુટ ફીલ્ડમાં એન્ટર દબાવવાથી પણ જવાબ ચકાસો
+    document.querySelectorAll('.word-input').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkAnswers();
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

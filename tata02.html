@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="gu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>બાળકો માટે સ્પિન વ્હીલ (કસ્ટમાઈઝેબલ)</title>
+<style>
+  :root{
+    --bg:#f6f9fc; --card:#fff; --accent:#2b6cb0; --muted:#666;
+  }
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,Segoe UI,Arial; margin:0; background:var(--bg); color:#111; padding:20px;}
+  .wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start}
+  header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  header h1{font-size:18px;margin:0}
+  .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(20,20,40,.06)}
+  #wheelCanvas{width:100%;height:auto;border-radius:8px;display:block;background:linear-gradient(180deg,#fff,#f3f6fb)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  button{background:var(--accent);color:#fff;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
+  button.ghost{background:transparent;color:var(--accent);border:1px solid #d0d8e6}
+  .small{font-size:13px;padding:6px 8px}
+  .right-col{position:sticky;top:18px}
+  label{display:block;font-size:13px;color:var(--muted);margin-top:10px}
+  input[type="text"], textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fbfcff}
+  .items{max-height:360px;overflow:auto;margin-top:8px}
+  .item{display:flex;gap:8px;align-items:center;padding:6px;border-radius:8px;border:1px dashed transparent}
+  .item:hover{background:#fbfdff}
+  .color-swatch{width:28px;height:28px;border-radius:6px;border:1px solid #dfe7f5}
+  .item-text{flex:1;min-width:0}
+  .footer{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;margin-top:12px}
+  .result{margin-top:10px;padding:8px;border-radius:8px;background:#f0fff4;color:#064e3b;border:1px solid #dcfce7}
+  @media (max-width:920px){
+    .wrap{grid-template-columns:1fr; padding-bottom:40px}
+    .right-col{position:static}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>બાળકો માટે સ્પિન વ્હીલ — કસ્ટમાઇઝ કરો અને રમો 🎡</h1>
+      <div style="font-size:13px;color:var(--muted)">સંસ્કરણ: બેસિક • ડાઉનલોડ: કોઈ જરૂર નથી</div>
+    </header>
+
+    <!-- LEFT: Wheel -->
+    <div class="card">
+      <canvas id="wheelCanvas" width="800" height="800" role="img" aria-label="સ્પિન વ્હીલ"></canvas>
+
+      <div class="controls">
+        <button id="spinBtn" class="small">SPIN</button>
+        <button id="quickSpin" class="small ghost">Quick</button>
+        <button id="stopBtn" class="small ghost">STOP</button>
+        <button id="saveBtn" class="small">Save</button>
+        <button id="loadBtn" class="small ghost">Load</button>
+        <button id="resetBtn" class="small ghost">Reset</button>
+      </div>
+
+      <div id="resultBox" class="result" style="display:none" aria-live="polite"></div>
+    </div>
+
+    <!-- RIGHT: Editor -->
+    <aside class="card right-col">
+      <label>નામો / વસ્તુઓ (પ્રતિ લીને એક)</label>
+      <textarea id="itemsInput" rows="5" placeholder="ટાઈપ કરો — દરેક એક નવી રીતે... (જેમ: Apple, Ball, Cat)"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="loadFromText" class="small">Apply List</button>
+        <button id="importWheelOfNames" class="small ghost" title="Comma separated">Import from wheelofnames-style list</button>
+      </div>
+
+      <label>Auto-generate colors?</label>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="autoColor" checked> Yes</label>
+      </div>
+
+      <label style="margin-top:12px">Items (આગે નચે ફેરફાર કરો)</label>
+      <div class="items" id="itemsList" aria-live="polite"></div>
+
+      <label style="margin-top:8px">Share / Export</label>
+      <div style="display:flex;gap:8px">
+        <button id="exportJson" class="small">Export JSON</button>
+        <button id="importJson" class="small ghost">Import JSON</button>
+        <button id="shareLink" class="small ghost">Copy Share Link</button>
+      </div>
+
+      <label style="margin-top:10px">Options</label>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <label style="font-size:13px;color:var(--muted)">
+          <input type="checkbox" id="soundOn" checked> Sound
+        </label>
+        <label style="font-size:13px;color:var(--muted)">
+          <input type="checkbox" id="confettiOn" checked> Confetti
+        </label>
+      </div>
+
+      <small style="display:block;margin-top:10px;color:var(--muted)">
+        ટિપ: તમે wheelofnames.com માંથી comma-separated list copy કરીને "Apply List" કરો.
+      </small>
+    </aside>
+
+    <div class="footer card" style="text-align:left;">
+      <strong>હવે રમી જુઓ:</strong> નીચે આઇટમ દાખલ કરીને "Apply List" ક્લિક કરો, પછી SPIN. કોડ સરળ રીતે સંપાદિત કરી શકાય છે — ટ્યુન કરવા માટે સચોટ કોમ્મેન્ટ્સ જોઈશું.
+    </div>
+  </div>
+
+<script>
+/* ---------- Data model ---------- */
+const defaultItems = ["Apple","Ball","Cat","Dog","Elephant","Fish"];
+let items = [];
+let colors = [];
+const STORAGE_KEY = "kids_spin_wheel_v1";
+
+/* ---------- Utils ---------- */
+function randInt(n){return Math.floor(Math.random()*n)}
+function genColor(i,n){
+  // generate distinct pastel colors
+  const hue = Math.round((i*360/n) % 360);
+  return `hsl(${hue} 70% 70%)`;
+}
+
+/* ---------- Canvas wheel ---------- */
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+let cw = canvas.width, ch = canvas.height;
+let cx = cw/2, cy = ch/2, radius = Math.min(cw,ch)*0.42;
+let isSpinning = false, angularVelocity = 0, angle = 0;
+let animationId = null;
+
+/* draw wheel */
+function drawWheel(){
+  ctx.clearRect(0,0,cw,ch);
+  const n = items.length || 1;
+  const seg = 2*Math.PI / n;
+  
+  // Draw wheel segments with borders
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(angle);
+  for(let i=0;i<n;i++){
+    const start = i*seg;
+    // slice background
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,radius,start,start+seg);
+    ctx.closePath();
+    ctx.fillStyle = colors[i] || genColor(i,n);
+    ctx.fill();
+    
+    // Add thin white borders between segments
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(Math.cos(start)*radius, Math.sin(start)*radius);
+    ctx.stroke();
+  }
+  
+  // Draw outer border
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0,0,radius,0,2*Math.PI);
+  ctx.stroke();
+  
+  ctx.restore();
+
+  // Draw text ALWAYS HORIZONTAL (never rotated with wheel)
+  ctx.save();
+  for(let i=0;i<n;i++){
+    const start = i*seg + angle; // Add current rotation angle
+    const textAngle = start + seg/2;
+    const textRadius = radius * 0.7;
+    const textX = cx + Math.cos(textAngle) * textRadius;
+    const textY = cy + Math.sin(textAngle) * textRadius;
+    
+    ctx.fillStyle = "#08203a";
+    ctx.font = `${Math.max(14, Math.floor(radius/10))}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    
+    // Truncate text if too long
+    let text = items[i] || "—";
+    const maxWidth = seg * radius * 0.8;
+    let metrics = ctx.measureText(text);
+    
+    if (metrics.width > maxWidth) {
+      while (metrics.width > maxWidth && text.length > 2) {
+        text = text.substring(0, text.length - 1);
+        metrics = ctx.measureText(text + '...');
+      }
+      text = text + '...';
+    }
+    
+    ctx.fillText(text, textX, textY);
+  }
+  ctx.restore();
+
+  // pointer
+  ctx.beginPath();
+  ctx.moveTo(cx + radius + 12, cy);
+  ctx.lineTo(cx + radius + 46, cy - 18);
+  ctx.lineTo(cx + radius + 46, cy + 18);
+  ctx.closePath();
+  ctx.fillStyle = "#ff3b30";
+  ctx.fill();
+}
+
+/* animation loop */
+function animate(){
+  if(!isSpinning){
+    cancelAnimationFrame(animationId);
+    animationId = null;
+    return;
+  }
+  // physics: simple friction
+  angle += angularVelocity;
+  angularVelocity *= 0.995; // friction
+  if(Math.abs(angularVelocity) < 0.0005){
+    isSpinning = false;
+    // determine winner
+    finishSpin();
+  } else {
+    animationId = requestAnimationFrame(animate);
+  }
+  drawWheel();
+}
+
+/* start spin */
+function startSpin(forceFast){
+  if(isSpinning) return;
+  if(items.length === 0) return;
+  isSpinning = true;
+  // initial velocity random
+  angularVelocity = (Math.PI/30) * (forceFast ? (6 + Math.random()*6) : (3 + Math.random()*4));
+  // randomize direction occasionally
+  if(Math.random() < 0.5) angularVelocity = -angularVelocity;
+  animate();
+  playSoundTicking();
+}
+
+/* stop immediately (brake) */
+function stopSpin(){
+  angularVelocity = 0.0001; // let it settle to finish
+}
+
+/* determine result when stopped */
+function finishSpin(){
+  // normalize angle so pointer at 0 rad corresponds to rightmost pointer
+  const n = items.length;
+  const seg = 2*Math.PI / n;
+  // pointer angle relative to wheel rotation: pointer at angle 0 (right of center)
+  // The wheel is rotated by 'angle', so the segment at pointer is index = floor(( -angle ) / seg) mod n
+  let raw = (-angle) / seg;
+  let idx = Math.floor(raw) % n;
+  if(idx < 0) idx += n;
+  const winner = items[idx] || "—";
+  showResult(winner);
+}
+
+/* result display */
+const resultBox = document.getElementById('resultBox');
+function showResult(text){
+  resultBox.style.display = "block";
+  resultBox.textContent = `🎉 Result: ${text}`;
+  // confetti
+  if(document.getElementById('confettiOn').checked){
+    try{ window.confetti && window.confetti({particleCount:80, spread:70}); }catch(e){}
+  }
+  if(document.getElementById('soundOn').checked){
+    playSoundWin();
+  }
+}
+
+/* ---------- UI helpers ---------- */
+function syncFromTextarea(){
+  const raw = document.getElementById('itemsInput').value.trim();
+  const arr = raw ? raw.split(/\r?\n|,/) .map(s=>s.trim()).filter(Boolean) : [];
+  if(arr.length) items = arr.slice(0, 40); // limit 40 for usability
+  ensureColors();
+  renderItemsEditor();
+  drawWheel();
+}
+
+function ensureColors(){
+  colors = colors || [];
+  for(let i=0;i<items.length;i++){
+    if(!colors[i]) colors[i] = genColor(i, items.length);
+  }
+  colors.length = items.length;
+}
+
+function renderItemsEditor(){
+  const list = document.getElementById('itemsList');
+  list.innerHTML = '';
+  items.forEach((it,i)=>{
+    const row = document.createElement('div');
+    row.className = 'item';
+    const sw = document.createElement('input');
+    sw.type = 'color';
+    // convert HSL to hex approx by using canvas
+    sw.value = hslToHex(colors[i] || genColor(i,items.length));
+    sw.className = 'color-swatch';
+    sw.title = 'Change color';
+    sw.addEventListener('input', e=>{
+      colors[i] = e.target.value;
+      drawWheel();
+    });
+
+    const txt = document.createElement('input');
+    txt.type = 'text';
+    txt.value = it;
+    txt.className = 'item-text';
+    txt.addEventListener('change', e=>{
+      items[i] = e.target.value || `Item ${i+1}`;
+      document.getElementById('itemsInput').value = items.join(", ");
+      drawWheel();
+    });
+
+    const del = document.createElement('button');
+    del.className = 'small ghost';
+    del.textContent = 'Remove';
+    del.addEventListener('click', ()=>{
+      items.splice(i,1);
+      colors.splice(i,1);
+      document.getElementById('itemsInput').value = items.join(", ");
+      renderItemsEditor();
+      drawWheel();
+    });
+
+    row.appendChild(sw);
+    row.appendChild(txt);
+    row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+
+/* color helpers */
+function hslToHex(hslOrHex){
+  // if already hex, return
+  if(/^#/.test(hslOrHex)) return hslOrHex;
+  // parse hsl(...) like: hsl(120 70% 70%)
+  const m = /hsl\((\d+)\s+(\d+)%\s+(\d+)%\)/.exec(hslOrHex);
+  if(!m) return "#cccccc";
+  const h = +m[1]/360, s = +m[2]/100, l = +m[3]/100;
+  // HSL to RGB
+  let r,g,b;
+  if(s===0){ r=g=b = l; } else {
+    const q = l < .5 ? l*(1+s) : l+s - l*s;
+    const p = 2*l - q;
+    const hue2rgb = (p,q,t) => {
+      if(t<0) t+=1; if(t>1) t-=1;
+      if(t<1/6) return p + (q-p)*6*t;
+      if(t<1/2) return q;
+      if(t<2/3) return p + (q-p)*(2/3 - t)*6;
+      return p;
+    };
+    r = hue2rgb(p,q,h + 1/3);
+    g = hue2rgb(p,q,h);
+    b = hue2rgb(p,q,h - 1/3);
+  }
+  const toHex = v => ("0"+Math.round(v*255).toString(16)).slice(-2);
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/* ---------- Persistence / share / import ---------- */
+function saveToLocal(){
+  const payload = {items,colors,ts:Date.now()};
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  alert('Saved locally');
+}
+function loadFromLocal(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw){ alert('Nothing saved locally'); return; }
+  try{
+    const data = JSON.parse(raw);
+    items = data.items || [];
+    colors = data.colors || [];
+    document.getElementById('itemsInput').value = items.join(", ");
+    renderItemsEditor();
+    drawWheel();
+  }catch(e){ alert('Load failed'); }
+}
+function exportJson(){
+  const data = {items, colors};
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'wheel.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+function importJson(){
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/json';
+  inp.onchange = e=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    const r = new FileReader();
+    r.onload = ev=>{
+      try{
+        const obj = JSON.parse(ev.target.result);
+        items = obj.items || [];
+        colors = obj.colors || [];
+        document.getElementById('itemsInput').value = items.join(", ");
+        renderItemsEditor();
+        drawWheel();
+      }catch(err){ alert('Invalid JSON'); }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+function copyShareLink(){
+  // encode items as base64 JSON in URL fragment
+  const data = {items,colors};
+  const encoded = encodeURIComponent(btoa(JSON.stringify(data)));
+  const link = location.origin + location.pathname + '#wheel=' + encoded;
+  navigator.clipboard.writeText(link).then(()=> alert('Link copied to clipboard'));
+}
+function loadFromShareIfAny(){
+  if(location.hash && location.hash.includes('wheel=')){
+    try{
+      const enc = location.hash.split('wheel=')[1];
+      const json = atob(decodeURIComponent(enc));
+      const obj = JSON.parse(json);
+      items = obj.items || [];
+      colors = obj.colors || [];
+      document.getElementById('itemsInput').value = items.join(", ");
+      renderItemsEditor();
+      drawWheel();
+    }catch(e){}
+  }
+}
+
+/* ---------- Sound (simple) ---------- */
+function playSoundTicking(){
+  if(!document.getElementById('soundOn').checked) return;
+  // tiny beep sequence using oscillator (no external file)
+  try{
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = "sine";
+    o.frequency.value = 800;
+    g.gain.value = 0.05;
+    o.connect(g); g.connect(ac.destination);
+    o.start();
+    setTimeout(()=>{ o.stop(); ac.close(); }, 220);
+  }catch(e){}
+}
+function playSoundWin(){
+  try{
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ac.currentTime;
+    const g = ac.createGain(); g.gain.value = 0.08;
+    const o1 = ac.createOscillator(); o1.type="sine"; o1.frequency.value = 450;
+    const o2 = ac.createOscillator(); o2.type="sine"; o2.frequency.value = 660;
+    o1.connect(g); o2.connect(g); g.connect(ac.destination);
+    o1.start(now); o2.start(now);
+    o1.stop(now+0.3); o2.stop(now+0.3);
+    setTimeout(()=>ac.close(),400);
+  }catch(e){}
+}
+
+/* ---------- Events ---------- */
+document.getElementById('spinBtn').addEventListener('click', ()=>startSpin(false));
+document.getElementById('quickSpin').addEventListener('click', ()=>startSpin(true));
+document.getElementById('stopBtn').addEventListener('click', stopSpin);
+document.getElementById('saveBtn').addEventListener('click', saveToLocal);
+document.getElementById('loadBtn').addEventListener('click', loadFromLocal);
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Reset to default items?')){ items = defaultItems.slice(); colors = []; ensureColors(); document.getElementById('itemsInput').value = items.join(", "); renderItemsEditor(); drawWheel(); }
+});
+
+document.getElementById('loadFromText').addEventListener('click', ()=>{
+  syncFromTextarea();
+});
+
+document.getElementById('importWheelOfNames').addEventListener('click', ()=>{
+  // wheelofnames uses comma separated list; we accept both newline and comma
+  syncFromTextarea();
+  alert('Applied — you can edit items on the right.');
+});
+
+document.getElementById('exportJson').addEventListener('click', exportJson);
+document.getElementById('importJson').addEventListener('click', importJson);
+document.getElementById('shareLink').addEventListener('click', copyShareLink);
+
+/* keyboard accessibility */
+document.addEventListener('keydown', e=>{
+  if(e.key === ' ' || e.key === 'Enter'){
+    // don't capture when typing in inputs
+    const active = document.activeElement;
+    if(active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+    e.preventDefault();
+    startSpin(false);
+  }
+});
+
+/* handle window resize to keep canvas crisp */
+function resizeCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(rect.width * ratio);
+  canvas.height = Math.floor(rect.width * ratio); // square
+  cw = canvas.width; ch = canvas.height; cx = cw/2; cy = ch/2; radius = Math.min(cw,ch)*0.42;
+  drawWheel();
+}
+window.addEventListener('resize', resizeCanvas);
+
+/* load confetti lib (CDN) for fun */
+(function loadConfetti(){
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
+  s.onload = ()=> console.log('confetti loaded');
+  document.head.appendChild(s);
+})();
+
+/* startup */
+function init(){
+  // initial items
+  items = defaultItems.slice();
+  colors = [];
+  ensureColors();
+  document.getElementById('itemsInput').value = items.join(", ");
+  renderItemsEditor();
+  resizeCanvas();
+  loadFromShareIfAny();
+}
+init();
+
+</script>
+</body>
+</html>

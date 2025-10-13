@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="gu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>અક્ષર સ્પર્શ ગેમ</title>
+  <style>
+    :root {
+      font-family: 'Noto Sans Gujarati', sans-serif;
+      --primary: #4CAF50;
+      --secondary: #3b82f6;
+      --accent: #ff9800;
+      --light: #f9f9ff;
+      --dark: #333;
+      --correct: #4CAF50;
+      --wrong: #f44336;
+    }
+    
+    body {
+      max-width: 900px;
+      margin: 18px auto;
+      padding: 18px;
+      background: var(--light);
+      color: var(--dark);
+    }
+    
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      text-align: center;
+      color: var(--dark);
+    }
+    
+    .instructions {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #666;
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .progress-container {
+      margin: 20px 0;
+      background: #e0e0e0;
+      border-radius: 10px;
+      height: 10px;
+      overflow: hidden;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: var(--primary);
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+    
+    .game-container {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    
+    .current-word {
+      text-align: center;
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #666;
+    }
+    
+    .word-number {
+      font-weight: bold;
+      color: var(--secondary);
+    }
+    
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin: 12px 0;
+      padding: 15px;
+      border-radius: 10px;
+      background: #fff;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .row:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .row.completed {
+      background: #f0f8f0;
+      border-color: var(--correct);
+    }
+    
+    .pic {
+      width: 84px;
+      height: 84px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      background: #eee;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .letters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex: 1;
+    }
+    
+    .letter-btn {
+      min-width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 2px solid #ccc;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #fff;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+    
+    .letter-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .letter-btn.correct {
+      background: var(--correct);
+      color: white;
+      border-color: var(--correct);
+    }
+    
+    .letter-btn.wrong {
+      animation: shake .3s;
+      border-color: var(--wrong);
+      background: #ffe6e6;
+    }
+    
+    .letter-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    
+    .target-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      min-width: 160px;
+    }
+    
+    .target {
+      width: 100%;
+      height: 40px;
+      border-radius: 8px;
+      border: 2px dashed #bbb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      background: #f9f9f9;
+    }
+    
+    .target.done {
+      color: var(--correct);
+      border-color: var(--correct);
+      background: #f0f8f0;
+      animation: pulse 1s;
+    }
+    
+    .completion-message {
+      text-align: center;
+      padding: 20px;
+      margin: 20px 0;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: none;
+    }
+    
+    .completion-message.show {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    .celebration {
+      font-size: 40px;
+      margin-bottom: 10px;
+    }
+    
+    .countdown {
+      font-size: 18px;
+      margin-top: 10px;
+      color: #666;
+    }
+    
+    @keyframes shake {
+      0% { transform: translateX(0) }
+      25% { transform: translateX(-5px) }
+      75% { transform: translateX(5px) }
+      100% { transform: translateX(0) }
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1) }
+      50% { transform: scale(1.05) }
+      100% { transform: scale(1) }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px) }
+      to { opacity: 1; transform: translateY(0) }
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .row {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+      }
+      
+      .target-container {
+        width: 100%;
+      }
+      
+      .letters {
+        justify-content: center;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      
+      .pic {
+        width: 70px;
+        height: 70px;
+        font-size: 32px;
+      }
+      
+      .letter-btn {
+        min-width: 35px;
+        height: 35px;
+        font-size: 16px;
+      }
+      
+      .target {
+        height: 35px;
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>અક્ષર સ્પર્શ ગેમ</h1>
+  
+  <div class="progress-container">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+  
+  <p class="instructions">ચિત્ર મુજબ યોગ્ય અક્ષરો પસંદ કરીને શબ્દ બનાવો.</p>
+  
+  <div class="game-container">
+    <div class="current-word">શબ્દ: <span class="word-number" id="current-word-number">1</span>/<span id="total-words">6</span></div>
+    <div id="game"></div>
+  </div>
+  
+  <div class="completion-message" id="completion-message">
+    <div class="celebration">🎉</div>
+    <h2>અભિનંદન!</h2>
+    <p>તમે બધા શબ્દો સફળતાપૂર્વક પૂર્ણ કર્યા!</p>
+    <div class="countdown" id="countdown">ગેમ 5 સેકંડમાં ફરી શરૂ થશે...</div>
+  </div>
+  
+  <script>
+    /* ચિત્રમાં આપેલા શબ્દો અને તેના અક્ષરો મુજબ સુધારેલો ડેટા */
+    const items = [
+      {emoji:'🗡️', correctWord:'તલવાર', allLetters:['ત','ની','લ','વા','ર'], requiredLetters:['ત','લ','વા','ર']},
+      {emoji:'🌰', correctWord:'બદામ', allLetters:['ર','બ','દા','કા','મ'], requiredLetters:['બ','દા','મ']},
+      {emoji:'👂', correctWord:'કાન', allLetters:['મી','ન','કા','ર','ન'], requiredLetters:['કા','ન']},
+      {emoji:'🐍', correctWord:'નાગ', allLetters:['બે','ડા','ના','ગ','સા','મે'], requiredLetters:['ના', 'ગ']},
+      {emoji:'🏠', correctWord:'મકાન', allLetters:['તૈ','મ','કા','ની','રી','ન'], requiredLetters:['મ','કા','ન']},
+      {emoji:'🐒', correctWord:'વાંદરો', allLetters:['વા','ખે','છ','દે','ન','ર'], requiredLetters:['વા','ન','ર']}
+      // નવા શબ્દો અહીં ઉમેરો
+    ];
+    
+    const gameEl = document.getElementById('game');
+    const progressBar = document.getElementById('progress-bar');
+    const completionMessage = document.getElementById('completion-message');
+    const countdownEl = document.getElementById('countdown');
+    const currentWordNumber = document.getElementById('current-word-number');
+    const totalWordsEl = document.getElementById('total-words');
+    
+    let currentItemIndex = 0;
+    let completedItems = 0;
+    const totalItems = items.length;
+    let resetTimer;
+    
+    totalWordsEl.textContent = totalItems;
+    updateProgress();
+    renderCurrentItem();
+    
+    // પ્રગતિ અપડેટ કરવાનું ફંક્શન
+    function updateProgress() {
+      const progress = (completedItems / totalItems) * 100;
+      progressBar.style.width = `${progress}%`;
+    }
+    
+    // વર્તમાન આઇટમ રેન્ડર કરવાનું ફંક્શન
+    function renderCurrentItem() {
+      gameEl.innerHTML = '';
+      currentWordNumber.textContent = currentItemIndex + 1;
+      
+      const it = items[currentItemIndex];
+      const row = document.createElement('div');
+      row.className = 'row';
+      
+      const pic = document.createElement('div');
+      pic.className = 'pic';
+      pic.textContent = it.emoji;
+      row.appendChild(pic);
+
+      const center = document.createElement('div');
+      center.style.flex = '1';
+      
+      const lettersWrap = document.createElement('div');
+      lettersWrap.className = 'letters';
+
+      // requiredLetters ને સેટની જેમ વાપરીએ છીએ જેથી સરળતાથી ચેક કરી શકાય
+      const requiredLettersSet = new Set(it.requiredLetters);
+      const selectedLetters = [];
+
+      // ચિત્રમાં આપેલા બધા અક્ષરોને બટન તરીકે ઉમેરો
+      it.allLetters.forEach(ch => {
+        const btn = document.createElement('button');
+        btn.className = 'letter-btn';
+        btn.textContent = ch;
+        btn.dataset.letter = ch;
+        
+        btn.addEventListener('click', () => {
+          if (row.dataset.done === 'true') return;
+          
+          const letter = btn.dataset.letter;
+          
+          // જો અક્ષર જરૂરી હોય અને હજી સુધી પસંદ ન થયો હોય
+          if (requiredLettersSet.has(letter)) {
+            if (!selectedLetters.includes(letter)) {
+              // સાચો અક્ષર
+              selectedLetters.push(letter);
+              btn.classList.add('correct');
+              btn.disabled = true;
+              
+              // ચેક કરો કે શું શબ્દ પૂર્ણ થયો છે
+              if (checkComplete()) {
+                // પૂર્ણ થયેલ આઇટમ્સ અપડેટ કરો
+                completedItems++;
+                updateProgress();
+                
+                // જો બધા શબ્દો પૂર્ણ થયા હોય
+                if (completedItems === totalItems) {
+                  setTimeout(() => {
+                    completionMessage.classList.add('show');
+                    resetTimer = startResetTimer();
+                  }, 1000);
+                } else {
+                  // આગલો શબ્દ દર્શાવો
+                  setTimeout(() => {
+                    currentItemIndex++;
+                    renderCurrentItem();
+                  }, 1500);
+                }
+              }
+            } else {
+              // પહેલેથી પસંદ કરેલ અક્ષર
+              btn.classList.add('wrong');
+              setTimeout(() => btn.classList.remove('wrong'), 300);
+            }
+          } else {
+            // ખોટો અક્ષર
+            btn.classList.add('wrong');
+            setTimeout(() => btn.classList.remove('wrong'), 300);
+          }
+        });
+        
+        lettersWrap.appendChild(btn);
+      });
+      
+      center.appendChild(lettersWrap);
+
+      const right = document.createElement('div');
+      right.className = 'target-container';
+      
+      const target = document.createElement('div');
+      target.className = 'target';
+      right.appendChild(target);
+
+      function checkComplete() {
+        // જ્યારે બધા જરૂરી અક્ષરો પસંદ થઈ જાય ત્યારે સાચો શબ્દ દેખાડો
+        if (selectedLetters.length === it.requiredLetters.length) {
+          target.textContent = it.correctWord;
+          target.classList.add('done');
+          row.dataset.done = 'true';
+          row.classList.add('completed');
+          
+          // અન્ય બટનોને પણ નિષ્ક્રિય કરો
+          lettersWrap.querySelectorAll('button').forEach(b => {
+            b.disabled = true;
+          });
+          return true;
+        }
+        return false;
+      }
+
+      row.appendChild(center);
+      row.appendChild(right);
+      gameEl.appendChild(row);
+    }
+    
+    // ગેમ રીસેટ કરવાનું ફંક્શન
+    function resetGame() {
+      currentItemIndex = 0;
+      completedItems = 0;
+      updateProgress();
+      completionMessage.classList.remove('show');
+      clearTimeout(resetTimer);
+      renderCurrentItem();
+    }
+    
+    // ઓટોમેટિક રીસેટ ટાઈમર
+    function startResetTimer() {
+      let seconds = 5;
+      countdownEl.textContent = `ગેમ ${seconds} સેકંડમાં ફરી શરૂ થશે...`;
+      
+      const timer = setInterval(() => {
+        seconds--;
+        countdownEl.textContent = `ગેમ ${seconds} સેકંડમાં ફરી શરૂ થશે...`;
+        
+        if (seconds <= 0) {
+          clearInterval(timer);
+          resetGame();
+        }
+      }, 1000);
+      
+      return timer;
+    }
+  </script>
+</body>
+</html>
