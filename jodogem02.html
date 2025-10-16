@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગુજરાતી અંક જોડની રમત - રેન્ડમ સ્થાન</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+            overflow: hidden;
+        }
+        
+        .container {
+            background: white;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: #2e86de;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            flex-shrink: 0;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 1rem;
+            line-height: 1.4;
+            color: #343a40;
+            flex-shrink: 0;
+        }
+        
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            overflow: hidden;
+            padding: 10px;
+        }
+        
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            flex-grow: 1;
+            border: 3px solid #2e86de;
+            border-radius: 10px;
+            background: #f8f9fa;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        #lines-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .number-dot {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ff9f43;
+            border: 3px solid #ff7f00;
+            text-align: center;
+            line-height: 44px;
+            cursor: pointer;
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #2d3436;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .number-dot:hover {
+            transform: scale(1.1);
+            background: #ffaf60;
+        }
+        
+        .number-dot.connected {
+            background: #10ac84;
+            border-color: #0a7b5c;
+        }
+        
+        #message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2e86de;
+            background: #d6eaf8;
+            border-radius: 10px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #10ac84, #2e86de);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            background: #2e86de;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        button:hover {
+            background: #1c6bc2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .hint {
+            background: #ff9f43;
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.6rem;
+            }
+            
+            .instructions {
+                font-size: 0.9rem;
+                padding: 8px 10px;
+            }
+            
+            .number-dot {
+                width: 40px;
+                height: 40px;
+                line-height: 34px;
+                font-size: 1.3rem;
+            }
+            
+            button {
+                padding: 10px 16px;
+                font-size: 0.9rem;
+            }
+            
+            #message {
+                font-size: 1rem;
+                padding: 8px 12px;
+                min-height: 40px;
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .instructions {
+                font-size: 1.2rem;
+                padding: 15px 20px;
+            }
+            
+            .number-dot {
+                width: 60px;
+                height: 60px;
+                line-height: 54px;
+                font-size: 2rem;
+            }
+            
+            button {
+                padding: 15px 25px;
+                font-size: 1.2rem;
+            }
+            
+            #message {
+                font-size: 1.5rem;
+                padding: 15px 20px;
+                min-height: 60px;
+            }
+            
+            .progress {
+                height: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>૦ થી ૧૦ ગુજરાતી અંકો ક્રમમાં જોડો!</h1>
+            <p>Rajesh barochia</p>
+        </header>
+        
+        <div class="instructions">
+            <p>રમતની સૂચનાઓ: ૦ થી શરૂઆત કરીને ક્રમમાં અંકો પર ક્લિક કરો. દરેક સાચા અંક પર તેનો ઉચ્ચાર સંભળાશે. દરેક નવી રમત સાથે અંકોની સ્થિતિ બદલાશે!</p>
+        </div>
+        
+        <div class="game-area">
+            <div id="canvas-container">
+                <canvas id="lines-canvas"></canvas>
+                <!-- Number dots will be generated here by JavaScript -->
+            </div>
+            
+            <div id="message">૦ થી શરૂઆત કરો...</div>
+            
+            <div class="progress">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            
+            <div class="controls">
+                <button id="hint-btn" class="hint">સૂચન</button>
+                <button id="reset-btn">નવી રમત શરૂ કરો</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const gujaratiNumbers = ["૦", "૧", "૨", "૩", "૪", "૫", "૬", "૭", "૮", "૯", "૧૦"];
+            const gujaratiSpeech = ["શૂન્ય", "એક", "બે", "ત્રણ", "ચાર", "પાંચ", "છ", "સાત", "આઠ", "નવ", "દસ"];
+            
+            const container = document.getElementById('canvas-container');
+            const messageEl = document.getElementById('message');
+            const progressBar = document.getElementById('progress-bar');
+            const hintBtn = document.getElementById('hint-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const canvas = document.getElementById('lines-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            let dots = [];
+            let positions = [];
+            let order = [];
+            let lastConnected = -1;
+            let audioPlayer;
+
+            // Set canvas size based on container
+            function setCanvasSize() {
+                canvas.width = container.offsetWidth;
+                canvas.height = container.offsetHeight;
+            }
+
+            // Generate random positions for dots
+            function generateRandomPositions() {
+                positions = [];
+                const containerWidth = container.offsetWidth - 50; // Account for dot size
+                const containerHeight = container.offsetHeight - 50;
+                
+                for (let i = 0; i < 11; i++) {
+                    let validPosition = false;
+                    let x, y;
+                    
+                    // Keep generating positions until we find one that doesn't overlap
+                    while (!validPosition) {
+                        x = Math.floor(Math.random() * containerWidth);
+                        y = Math.floor(Math.random() * containerHeight);
+                        
+                        // Ensure the position is not too close to the edges
+                        if (x < 20 || x > containerWidth - 20 || y < 20 || y > containerHeight - 20) {
+                            continue;
+                        }
+                        
+                        // Check if this position is too close to any existing position
+                        validPosition = true;
+                        for (let j = 0; j < positions.length; j++) {
+                            const existingPos = positions[j];
+                            const distance = Math.sqrt(Math.pow(x - existingPos[0], 2) + Math.pow(y - existingPos[1], 2));
+                            
+                            if (distance < 70) { // Minimum distance between dots
+                                validPosition = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    positions.push([x, y]);
+                }
+            }
+            
+            // Initialize the game
+            function initGame() {
+                // Clear previous state
+                container.querySelectorAll('.number-dot').forEach(dot => dot.remove());
+                dots = [];
+                order = [];
+                lastConnected = -1;
+                
+                // Set canvas size
+                setCanvasSize();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                messageEl.textContent = '૦ થી શરૂઆત કરો...';
+                progressBar.style.width = '0%';
+                
+                // Generate new random positions
+                generateRandomPositions();
+                
+                // Create number dots
+                for (let i = 0; i < 11; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'number-dot';
+                    dot.style.left = positions[i][0] + 'px';
+                    dot.style.top = positions[i][1] + 'px';
+                    dot.textContent = gujaratiNumbers[i];
+                    dot.dataset.index = i;
+                    
+                    dot.addEventListener('click', function() {
+                        handleClick(i, dot);
+                    });
+                    
+                    container.appendChild(dot);
+                    dots.push(dot);
+                }
+            }
+            
+            // Handle dot click
+            function handleClick(i, dot) {
+                // If it's the first dot (0) or the next in sequence
+                if (order.length === 0 && i === 0) {
+                    connectDot(i, dot);
+                } else if (order.length > 0 && i === order[order.length - 1] + 1) {
+                    drawLine(lastConnected, i);
+                    connectDot(i, dot);
+                } else if (order.includes(i)) {
+                    // Already connected, do nothing
+                    return;
+                } else {
+                    // Wrong order
+                    messageEl.textContent = 'ખોટો ક્રમ! ' + gujaratiNumbers[order.length] + ' જોડવાનું છે.';
+                    speakGujarati(order.length);
+                    dot.style.animation = 'shake 0.5s';
+                    setTimeout(() => {
+                        dot.style.animation = '';
+                    }, 500);
+                    return;
+                }
+                
+                // Update progress
+                const progress = (order.length / 11) * 100;
+                progressBar.style.width = progress + '%';
+                
+                // Check if game is completed
+                if (order.length === 11) {
+                    messageEl.textContent = 'અભિનંદન! તમે બધા અંકો સાચા ક્રમમાં જોડ્યા!';
+                    confettiEffect();
+                }
+            }
+            
+            // Connect a dot
+            function connectDot(i, dot) {
+                order.push(i);
+                dot.classList.add('connected');
+                lastConnected = i;
+                messageEl.textContent = 'સરસ! ' + gujaratiNumbers[i] + ' જોડ્યો. હવે ' + gujaratiNumbers[i+1] + ' જોડો.';
+                speakGujarati(i);
+            }
+            
+            // Draw line between dots
+            function drawLine(fromIndex, toIndex) {
+                const from = positions[fromIndex];
+                const to = positions[toIndex];
+                
+                ctx.beginPath();
+                ctx.moveTo(from[0] + 25, from[1] + 25);
+                ctx.lineTo(to[0] + 25, to[1] + 25);
+                ctx.strokeStyle = '#2e86de';
+                ctx.lineWidth = 5;
+                ctx.stroke();
+            }
+            
+            // Speak the number in Gujarati
+            function speakGujarati(i) {
+                if (audioPlayer) {
+                    audioPlayer.pause();
+                    audioPlayer.currentTime = 0;
+                }
+                const textToSpeak = gujaratiSpeech[i];
+                audioPlayer = new Audio();
+                audioPlayer.src = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(textToSpeak)}&tl=gu&client=tw-ob`;
+                audioPlayer.play().catch(e => {
+                    console.error("Audio playback failed:", e);
+                    // Fallback to browser's built-in TTS if external API fails
+                    if ('speechSynthesis' in window) {
+                        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                        utterance.lang = 'gu-IN';
+                        window.speechSynthesis.speak(utterance);
+                    }
+                });
+            }
+            
+            // Provide hint to user
+            function provideHint() {
+                const nextNumber = order.length;
+                if(nextNumber < gujaratiNumbers.length) {
+                    messageEl.textContent = 'આગળ જોડવાનો અંક: ' + gujaratiNumbers[nextNumber];
+                    speakGujarati(nextNumber);
+                    
+                    // Highlight the next dot
+                    if (dots[nextNumber]) {
+                        dots[nextNumber].style.boxShadow = '0 0 0 5px #ff9f43';
+                        setTimeout(() => {
+                            dots[nextNumber].style.boxShadow = '';
+                        }, 1000);
+                    }
+                }
+            }
+            
+            // Simple confetti effect
+            function confettiEffect() {
+                const confettiCount = 150;
+                const containerRect = container.getBoundingClientRect();
+                
+                for (let i = 0; i < confettiCount; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'absolute';
+                    confetti.style.width = '10px';
+                    confetti.style.height = '10px';
+                    confetti.style.backgroundColor = [
+                        '#ff9f43', '#2e86de', '#10ac84', '#ee5253', '#341f97'
+                    ][i % 5];
+                    confetti.style.left = Math.random() * containerRect.width + 'px';
+                    confetti.style.top = '-20px';
+                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    confetti.style.zIndex = '100';
+                    container.appendChild(confetti);
+                    
+                    const animation = confetti.animate([
+                        { top: '-20px', transform: 'rotate(0deg)' },
+                        { top: containerRect.height + 'px', transform: 'rotate(720deg)' }
+                    ], {
+                        duration: 2000 + Math.random() * 3000,
+                        easing: 'cubic-bezier(0.1, 0.8, 0.9, 0.1)'
+                    });
+                    
+                    animation.onfinish = () => {
+                        confetti.remove();
+                    };
+                }
+            }
+            
+            // Event listeners
+            hintBtn.addEventListener('click', provideHint);
+            resetBtn.addEventListener('click', initGame);
+            
+            // Handle window resize
+            window.addEventListener('resize', initGame);
+            
+            // Initialize the game
+            initGame();
+            
+            // Add shake animation for wrong clicks
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    20%, 60% { transform: translateX(-5px); }
+                    40%, 80% { transform: translateX(5px); }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>
