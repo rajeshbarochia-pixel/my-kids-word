@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="gu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>સ્પિન વ્હીલ</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,Segoe UI,Arial;background:#f0f8ff;color:#111;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;}
+  .container{max-width:600px;width:100%;text-align:center;}
+  header{margin-bottom:20px;}
+  h1{color:#2b6cb0;font-size:24px;margin-bottom:8px;}
+  .subtitle{color:#666;font-size:14px;}
+  .wheel-container{position:relative;margin:0 auto 20px;width:100%;max-width:400px;}
+  #wheelCanvas{width:100%;height:auto;border-radius:50%;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,0.1);}
+  .controls{display:flex;gap:12px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;}
+  button{background:#2b6cb0;color:#fff;border:0;padding:12px 24px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:bold;transition:all 0.3s;min-width:100px;}
+  button:hover{background:#1e4e8c;transform:translateY(-2px);}
+  button:active{transform:translateY(0);}
+  #stopBtn{background:#e53e3e;}
+  #stopBtn:hover{background:#c53030;}
+  #stopBtn:disabled{background:#ccc;cursor:not-allowed;transform:none;}
+  #soundBtn{background:#38a169;}
+  #soundBtn:hover{background:#2f855a;}
+  #soundBtn.muted{background:#718096;}
+  .dropdown-container{margin-bottom:20px;}
+  select{width:100%;max-width:300px;padding:12px;border-radius:8px;border:2px solid #2b6cb0;font-size:16px;background:#fff;cursor:pointer;}
+  .result{background:#c6f6d5;color:#22543d;padding:12px;border-radius:8px;margin:20px auto;max-width:400px;font-size:18px;font-weight:bold;border:2px solid #38a169;display:none;}
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  @media (max-width:600px){
+    .controls{flex-direction:column;align-items:center;}
+    button{width:200px;}
+    .wheel-container{max-width:350px;}
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>સ્પિન વ્હીલ</h1>
+      <div class="subtitle">સંખ્યા પસંદ કરો અને SPIN બટન દબાવો! (By: rajesh barochia)</div>
+    </header>
+
+    <div class="dropdown-container">
+      <select id="numberRange">
+        <option value="1-10">1 થી 10</option>
+        <option value="11-20" selected>11 થી 20</option>
+        <option value="21-30">21 થી 30</option>
+        <option value="31-40">31 થી 40</option>
+        <option value="41-50">41 થી 50</option>
+      </select>
+    </div>
+
+    <div class="wheel-container">
+      <canvas id="wheelCanvas" width="400" height="400"></canvas>
+    </div>
+
+    <div class="controls">
+      <button id="spinBtn">SPIN</button>
+      <button id="stopBtn" disabled>STOP</button>
+      <button id="soundBtn">🔊 અવાજ ચાલુ</button>
+    </div>
+
+    <div id="resultBox" class="result" aria-live="polite"></div>
+  </div>
+
+<script>
+/* ---------- Data model ---------- */
+const allNumbers = {
+  "1-10": ["૧ ", "૨ ", "૩ ", "૪ ", "૫ ", "૬ ", "૭ ", "૮ ", "૯ ", "૧૦ "],
+  "11-20": ["૧૧ ", "૧૨ ", "૧૩ ", "૧૪ ", "૧૫ ", "૧૬ ", "૧૭ ", "૧૮ ", "૧૯ ", "૨૦ "],
+  "21-30": ["૨૧ ", "૨૨ ", "૨૩ ", "૨૪ ", "૨૫ ", "૨૬ ", "૨૭ ", "૨૮ ", "૨૯ ", "૩૦ "],
+  "31-40": ["૩૧ ", "૩૨ ", "૩૩ ", "૩૪ ", "૩૫ ", "૩૬ ", "૩૭ ", "૩૮ ", "૩૯ ", "૪૦ "],
+  "41-50": ["૪૧ ", "૪૨ ", "૪૩ ", "૪૪ ", "૪૫ ", "૪૬ ", "૪૭ ", "૪૮ ", "૪૯ ", "૫૦ "]
+};
+
+const colors = ["#FF9E80", "#80DEEA", "#CE93D8", "#A5D6A7", "#FFF59D", "#90CAF9", "#EF9A9A", "#B39DDB", "#81C784", "#F48FB1"];
+
+let currentItems = allNumbers["11-20"]; // Default selection
+
+/* ---------- Canvas wheel ---------- */
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+let cw = canvas.width, ch = canvas.height;
+let cx = cw/2, cy = ch/2, radius = Math.min(cw,ch)*0.45;
+let isSpinning = false, angularVelocity = 0, angle = 0;
+let animationId = null;
+let stopRequested = false;
+let soundEnabled = true; // Sound is enabled by default
+
+/* Update items based on dropdown selection */
+function updateItems() {
+  const selectedRange = document.getElementById('numberRange').value;
+  currentItems = allNumbers[selectedRange];
+  drawWheel();
+}
+
+/* draw wheel */
+function drawWheel(){
+  ctx.clearRect(0,0,cw,ch);
+  const n = currentItems.length;
+  const seg = 2*Math.PI / n;
+  
+  // Draw wheel segments
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(angle);
+  for(let i=0;i<n;i++){
+    const start = i*seg;
+    // slice background
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,radius,start,start+seg);
+    ctx.closePath();
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    
+    // Add very small white dots between segments
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(Math.cos(start)*radius, Math.sin(start)*radius);
+    ctx.stroke();
+  }
+  
+  // Draw outer border
+  ctx.strokeStyle = "#2b6cb0";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(0,0,radius,0,2*Math.PI);
+  ctx.stroke();
+  
+  // Draw center circle with credit text
+  ctx.beginPath();
+  ctx.arc(0,0,radius*0.25,0,2*Math.PI);
+  ctx.fillStyle = "#2b6cb0";
+  ctx.fill();
+  
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0,0,radius*0.25,0,2*Math.PI);
+  ctx.stroke();
+  
+  ctx.restore();
+
+  // Draw text
+  ctx.save();
+  for(let i=0;i<n;i++){
+    const start = i*seg + angle;
+    const textAngle = start + seg/2;
+    const textRadius = radius * 0.75;
+    const textX = cx + Math.cos(textAngle) * textRadius;
+    const textY = cy + Math.sin(textAngle) * textRadius;
+    
+    ctx.fillStyle = "#1a365d";
+    ctx.font = `bold ${Math.max(14, Math.floor(radius/12))}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    
+    ctx.fillText(currentItems[i], textX, textY);
+  }
+  ctx.restore();
+
+  // Draw credit text in the center blue circle
+  ctx.save();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `bold ${Math.max(8, Math.floor(radius/25))}px Arial`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  
+  // Split text into two lines
+  const creditLine1 = "Created by:";
+  const creditLine2 = "Rajesh Barochiya";
+  
+  ctx.fillText(creditLine1, cx, cy - 5);
+  ctx.fillText(creditLine2, cx, cy + 5);
+  ctx.restore();
+
+  // Draw pointer
+  ctx.beginPath();
+  ctx.moveTo(cx + radius + 8, cy);
+  ctx.lineTo(cx + radius + 25, cy - 12);
+  ctx.lineTo(cx + radius + 25, cy + 12);
+  ctx.closePath();
+  ctx.fillStyle = "#e53e3e";
+  ctx.fill();
+  
+  // Add pointer border
+  ctx.strokeStyle = "#7f1d1d";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+/* animation loop */
+function animate(){
+  if(!isSpinning){
+    cancelAnimationFrame(animationId);
+    animationId = null;
+    return;
+  }
+  
+  // Apply immediate stop when stop requested
+  if(stopRequested){
+    angularVelocity = 0;
+    isSpinning = false;
+    stopRequested = false;
+    document.getElementById('stopBtn').disabled = true;
+    finishSpin();
+    drawWheel();
+    return;
+  }
+  
+  angle += angularVelocity;
+  angularVelocity *= 0.995;
+  
+  if(Math.abs(angularVelocity) < 0.0005){
+    isSpinning = false;
+    document.getElementById('stopBtn').disabled = true;
+    finishSpin();
+  }
+  
+  drawWheel();
+  
+  if(isSpinning){
+    animationId = requestAnimationFrame(animate);
+  }
+}
+
+/* start spin */
+function startSpin(){
+  if(isSpinning) return;
+  
+  isSpinning = true;
+  stopRequested = false;
+  angularVelocity = (Math.PI/30) * (3 + Math.random()*4);
+  
+  // Randomize direction
+  if(Math.random() < 0.5) angularVelocity = -angularVelocity;
+  
+  // Enable stop button
+  document.getElementById('stopBtn').disabled = false;
+  
+  // Hide previous result
+  document.getElementById('resultBox').style.display = 'none';
+  
+  animate();
+}
+
+/* stop spin - IMMEDIATE STOP */
+function stopSpin(){
+  if(isSpinning && !stopRequested){
+    stopRequested = true;
+    document.getElementById('stopBtn').disabled = true;
+  }
+}
+
+/* determine result when stopped */
+function finishSpin(){
+  const n = currentItems.length;
+  const seg = 2*Math.PI / n;
+  let raw = (-angle) / seg;
+  let idx = Math.floor(raw) % n;
+  if(idx < 0) idx += n;
+  
+  const winner = currentItems[idx];
+  showResult(winner);
+}
+
+/* result display with speech */
+function showResult(text){
+  const resultBox = document.getElementById('resultBox');
+  resultBox.style.display = "block";
+  resultBox.textContent = `${text}`;
+  
+  // Add celebration effect
+  resultBox.style.animation = 'none';
+  setTimeout(() => {
+    resultBox.style.animation = 'pulse 0.5s';
+  }, 10);
+  
+  // Speak the result in Gujarati only if sound is enabled
+  if (soundEnabled) {
+    speakGujarati(text);
+  }
+}
+
+/* Gujarati Speech Function */
+function speakGujarati(text) {
+  if ('speechSynthesis' in window) {
+    // Extract the Gujarati pronunciation from the text
+    // Format is "૧ (એક)" so we extract the part in parentheses
+    const pronunciation = text.match(/\((.*?)\)/);
+    const textToSpeak = pronunciation ? pronunciation[1] : text;
+    
+    const utterance = new SpeechSynthesisUtterance();
+    utterance.text = textToSpeak;
+    utterance.lang = 'gu-IN';
+    utterance.rate = 0.8;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    
+    const voices = speechSynthesis.getVoices();
+    const gujaratiVoice = voices.find(voice => 
+      voice.lang === 'gu-IN' || voice.lang.startsWith('gu')
+    );
+    
+    if (gujaratiVoice) {
+      utterance.voice = gujaratiVoice;
+    }
+    
+    setTimeout(() => {
+      speechSynthesis.speak(utterance);
+    }, 300);
+  }
+}
+
+/* Toggle sound on/off */
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const soundBtn = document.getElementById('soundBtn');
+  
+  if (soundEnabled) {
+    soundBtn.textContent = '🔊 અવાજ ચાલુ';
+    soundBtn.classList.remove('muted');
+  } else {
+    soundBtn.textContent = '🔇 અવાજ બંધ';
+    soundBtn.classList.add('muted');
+  }
+}
+
+/* ---------- Events ---------- */
+document.getElementById('spinBtn').addEventListener('click', startSpin);
+document.getElementById('stopBtn').addEventListener('click', stopSpin);
+document.getElementById('soundBtn').addEventListener('click', toggleSound);
+document.getElementById('numberRange').addEventListener('change', updateItems);
+
+/* keyboard accessibility */
+document.addEventListener('keydown', e=>{
+  if(e.key === ' ' || e.key === 'Enter'){
+    e.preventDefault();
+    startSpin();
+  }
+  if(e.key === 's' || e.key === 'S'){
+    e.preventDefault();
+    stopSpin();
+  }
+  if(e.key === 'm' || e.key === 'M'){
+    e.preventDefault();
+    toggleSound();
+  }
+});
+
+/* handle window resize */
+function resizeCanvas(){
+  const container = document.querySelector('.wheel-container');
+  const size = Math.min(container.offsetWidth, 400);
+  canvas.width = size;
+  canvas.height = size;
+  cw = canvas.width; 
+  ch = canvas.height; 
+  cx = cw/2; 
+  cy = ch/2; 
+  radius = Math.min(cw,ch)*0.45;
+  drawWheel();
+}
+
+/* startup */
+function init(){
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  
+  // Initial draw
+  drawWheel();
+}
+
+// Load voices when available
+speechSynthesis.onvoiceschanged = function() {
+  console.log('Voices loaded');
+};
+
+init();
+</script>
+</body>
+</html>
