@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>સ્થાન કિંમત</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .game-container {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+        .place-value-box {
+            display: flex;
+            justify-content: center;
+            margin-top: 1.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap; /* For mobile view */
+        }
+        .digit-cell {
+            color: white;
+            padding: 0.5rem 0.5rem; /* Adjusted padding for fewer digits */
+            font-size: 3rem; /* Increased font size */
+            font-weight: 800;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 60px; /* Base width for mobile */
+            flex-grow: 1;
+            margin-right: 4px; /* Increased margin */
+            border-radius: 0.5rem;
+            transition: transform 0.1s ease-in-out;
+        }
+        /* Highlight specific digit - CSS rule kept but no longer applied by JS */
+        .highlight {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255, 255, 0, 0.8);
+            border: 3px solid yellow;
+        }
+        /* Color mapping adjusted for 4 digits */
+        .color-0 { background-color: #ef4444; } /* Red - હજાર */
+        .color-1 { background-color: #3b82f6; } /* Blue - સો */
+        .color-2 { background-color: #10b981; } /* Green - દસક */
+        .color-3 { background-color: #8b5cf6; } /* Purple - એકમ */
+        
+        .input-group {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1 class="text-3xl font-extrabold text-yellow-600 mb-4 bg-yellow-100 p-2 rounded-lg shadow-md inline-block">સ્થાન કિંમત</h1>
+        
+        <p id="instruction" class="text-xl font-semibold text-gray-700 mb-6">
+            નવી રમત શરૂ કરવા માટે "નવી રમત" બટન દબાવો.
+        </p>
+
+        <!-- Dynamic Number Display Area -->
+        <div id="numberDisplay" class="place-value-box">
+            <!-- Digits will be injected here -->
+        </div>
+
+        <!-- Question and Input Area -->
+        <div id="gameArea" class="hidden">
+            <p id="questionText" class="text-2xl font-bold text-indigo-700 my-6"></p>
+
+            <div class="input-group">
+                <input type="number" id="answerInput" min="0" max="9" maxlength="1" 
+                       class="w-20 p-3 text-center border-2 border-indigo-300 rounded-xl 
+                              focus:ring-indigo-500 focus:border-indigo-500 text-2xl font-bold 
+                              transition shadow-inner" placeholder="અંક">
+            </div>
+        </div>
+
+        <!-- Result/Feedback Area -->
+        <div id="result" class="mt-8 text-xl font-bold min-h-[50px]"></div>
+        
+        <!-- Controls -->
+        <button id="newGameButton" onclick="startGame()" class="mt-4 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-8 rounded-xl shadow-xl transition transform hover:scale-105 active:scale-95">
+            નવી રમત
+        </button>
+        
+        <!-- Creator Name Added Here -->
+        <p class="mt-4 text-xs text-gray-500">
+            Created by:Rajesh Barochia
+        </p>
+        
+    </div>
+
+    <script>
+        // Global variables
+        let currentNumber;
+        let correctDigit;
+        let correctPlaceValue;
+        let gameActive = false; // To prevent checking before game starts
+
+        // Place Value names in Gujarati (Updated for 4 digits: Thousand, Hundred, Ten, Unit)
+        const PLACE_VALUES = [
+            'હજાર',   // Index 0 (4th digit)
+            'સો',     // Index 1
+            'દસક',     // Index 2
+            'એકમ'    // Index 3 (1st digit)
+        ];
+        
+        // Element references
+        const numberDisplay = document.getElementById('numberDisplay');
+        const instruction = document.getElementById('instruction');
+        const gameArea = document.getElementById('gameArea');
+        const questionText = document.getElementById('questionText');
+        const answerInput = document.getElementById('answerInput');
+        const resultDiv = document.getElementById('result');
+
+        // Helper function to generate a random integer within a range
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Function to start a new game
+        function startGame() {
+            // 1. Generate a random 4-digit number (1000 to 9999)
+            const number = getRandomInt(1000, 9999);
+            currentNumber = number.toString();
+
+            // 2. Select a random position (index 0 to 3)
+            const positionIndex = getRandomInt(0, 3);
+            
+            // Set correct answer
+            correctDigit = currentNumber[positionIndex];
+            correctPlaceValue = PLACE_VALUES[positionIndex];
+
+            // Reset UI
+            resultDiv.innerHTML = '';
+            answerInput.value = '';
+            answerInput.disabled = false;
+            gameArea.classList.remove('hidden');
+            answerInput.focus();
+            gameActive = true; // Game is now active
+            
+            // 3. Update the display and question
+            displayNumber();
+            updateQuestion(positionIndex); // Call updateQuestion to set up the question
+            
+            // Update instruction text
+            instruction.textContent = 'ધ્યાનથી સંખ્યા જુઓ અને જવાબનો અંક દાખલ કરો:';
+        }
+
+        // Function to display the number with styling
+        function displayNumber() {
+            numberDisplay.innerHTML = '';
+            let html = '';
+            
+            // Split the number into individual digits
+            const digits = currentNumber.split('');
+            
+            digits.forEach((digit, index) => {
+                const colorClass = `color-${index}`;
+                
+                html += `
+                    <div id="digit-${index}" class="digit-cell ${colorClass}" data-index="${index}">
+                        ${digit}
+                    </div>
+                `;
+            });
+
+            numberDisplay.innerHTML = html;
+        }
+
+        // Function to update the question text and REMOVE the position highlighting
+        function updateQuestion(positionIndex) {
+            // Un-highlight ALL previous digits (Ensuring no prior game highlight remains)
+            document.querySelectorAll('.digit-cell').forEach(cell => {
+                cell.classList.remove('highlight');
+            });
+            
+            // Function to format number with standard comma style (x,xxx) for 4 digits
+            function formatNumber(numStr) {
+                return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+
+            const formattedNumber = formatNumber(currentNumber);
+
+            // Update the question text in Gujarati
+            questionText.innerHTML = `સંખ્યા ${formattedNumber} માં, <span class="text-yellow-500">${correctPlaceValue}</span> ના સ્થાને કયો અંક છે?`;
+        }
+
+        // Function to check the user's answer (now triggered automatically on input)
+        function checkAnswer() {
+            if (!gameActive) return; // Only check if a game is in progress
+
+            const userAnswer = answerInput.value.trim();
+
+            // Clear previous result if input is empty
+            if (!userAnswer) {
+                resultDiv.innerHTML = '';
+                return;
+            }
+
+            // Since we expect only a single digit answer
+            if (userAnswer.length > 1) {
+                // Keep only the last typed digit in case multiple digits are pasted or typed quickly
+                answerInput.value = userAnswer.slice(-1); 
+                return;
+            }
+
+            // Check if the single digit entered is correct
+            if (userAnswer === correctDigit) {
+                resultDiv.innerHTML = '<span class="text-green-600 text-3xl">🎉 સાચું! બહુ સરસ!</span>';
+                answerInput.disabled = true; // Disable input after correct answer
+                gameActive = false; // End the current game
+            } else {
+                resultDiv.innerHTML = `<span class="text-red-600 text-3xl">❌ ખોટું.</span><br>
+                                       <span class="text-gray-700 text-xl mt-2">ફરીથી પ્રયાસ કરો.</span>`;
+            }
+        }
+        
+        // Add event listener for auto-checking on input change
+        answerInput.addEventListener('input', checkAnswer);
+
+        // Initialize display on load (showing the placeholders/initial message)
+        window.onload = function() {
+            // Display an initial example number
+            currentNumber = '4762'; 
+            displayNumber(); 
+            answerInput.disabled = true; // Disable input until game starts
+        };
+
+    </script>
+</body>
+</html>
