@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>50 સુધીના ખૂટતા અંકોની રમત</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        .game-input {
+            width: 100%;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: 3px solid #6366f1; /* Indigo border */
+            border-radius: 0.5rem;
+            padding: 0.75rem 0.5rem;
+            transition: all 0.5s ease; /* Increased transition time for better animation */
+        }
+        /* Correct Answer Styles (Green) */
+        .correct {
+            background-color: #10b981 !important; /* Emerald 500 (Green) */
+            color: white !important;
+            border-color: #059669 !important;
+            animation: bounceIn 0.5s; /* Apply bounce animation */
+        }
+        /* Incorrect Answer Styles (Red) */
+        .incorrect {
+            background-color: #ef4444 !important; /* Red 500 */
+            color: white !important;
+            border-color: #dc2626 !important;
+        }
+        .static-box {
+            background-color: #ffffff; /* White background for static numbers */
+            border: 3px solid #9ca3af; /* Gray border */
+            color: #1f2937; /* Dark text */
+        }
+        .box-shadow-hover:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+        /* Simple animation for correct answer */
+        @keyframes bounceIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .timer-critical {
+            color: #b91c1c; /* Darker red for critical time */
+        }
+    </style>
+</head>
+<body class="p-4 flex items-center justify-center min-h-screen">
+
+    <div id="app" class="w-full max-w-lg bg-white p-6 md:p-10 rounded-xl shadow-2xl border border-indigo-200">
+        
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-extrabold text-indigo-700 mb-2">50 સુધીના ખૂટતા અંકો</h1>
+            <p class="text-lg text-gray-600">ખાલી બોક્સમાં સાચો અંક દાખલ કરો</p>
+        </header>
+        
+        <!-- Timer Display -->
+        <div id="timer-display" class="h-8 text-center text-2xl font-bold text-red-600 mb-4 opacity-0 transition-opacity duration-300">
+            <!-- Timer countdown appears here -->
+        </div>
+
+        <!-- Game Box -->
+        <div id="game-container" class="flex justify-center items-center space-x-2 md:space-x-4 mb-4">
+            <!-- Boxes will be generated here by JavaScript -->
+        </div>
+
+        <!-- New Game Button -->
+        <button id="new-game-button" onclick="generateNewProblem()" 
+                class="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-xl font-semibold py-3 rounded-xl transition duration-300 shadow-lg shadow-emerald-500/50 mb-6 focus:outline-none focus:ring-4 focus:ring-emerald-500 focus:ring-opacity-50">
+            નવી રમત
+        </button>
+
+        <!-- Message Box -->
+        <div id="message-box" class="h-10 text-center text-xl font-bold transition-opacity duration-500 opacity-0">
+            <!-- Feedback messages appear here -->
+        </div>
+
+        <!-- Footer / Creator -->
+        <footer class="text-center mt-6 pt-4 border-t border-gray-200">
+            <p class="text-sm text-gray-500">બનાવનાર: <span class="font-bold text-indigo-500">Rajesh barochia</span></p>
+        </footer>
+    </div>
+
+    <script>
+        // Global variables to store the current problem's state
+        let correctAnswer = 0;
+        let timerInterval = null; // Timer ID for setInterval
+        const TIMER_DURATION = 15; // Updated to 15 seconds for sufficient time
+        let timerExpired = false; // Flag to check if time is up
+
+        const GAME_CONTAINER = document.getElementById('game-container');
+        const MESSAGE_BOX = document.getElementById('message-box');
+        const TIMER_DISPLAY = document.getElementById('timer-display'); 
+
+
+        /**
+         * Clears the message box and hides it.
+         */
+        function clearMessage() {
+            MESSAGE_BOX.textContent = '';
+            MESSAGE_BOX.classList.add('opacity-0');
+            MESSAGE_BOX.classList.remove('text-red-600', 'text-green-600');
+        }
+
+        /**
+         * Shows a feedback message.
+         * @param {string} message - The message in Gujarati.
+         * @param {boolean} isCorrect - True for correct (green), false for incorrect (red).
+         */
+        function showMessage(message, isCorrect) {
+            MESSAGE_BOX.textContent = message;
+            MESSAGE_BOX.classList.remove('opacity-0');
+            MESSAGE_BOX.classList.add(isCorrect ? 'text-green-600' : 'text-red-600');
+        }
+
+        /**
+         * Stops the countdown timer.
+         */
+        function stopTimer() {
+            if (timerInterval !== null) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                TIMER_DISPLAY.classList.add('opacity-0');
+            }
+        }
+
+        /**
+         * Starts the countdown timer.
+         */
+        function startTimer() {
+            stopTimer(); // Ensure any existing timer is cleared
+            timerExpired = false;
+            
+            let timeLeft = TIMER_DURATION;
+            TIMER_DISPLAY.textContent = `${timeLeft} સેકન્ડ બાકી`;
+
+            // Ensure the timer is visible when starting
+            TIMER_DISPLAY.classList.remove('opacity-0'); 
+            TIMER_DISPLAY.classList.remove('timer-critical'); 
+
+            const inputElement = document.getElementById('answer-input');
+
+            timerInterval = setInterval(() => {
+                timeLeft -= 1;
+                TIMER_DISPLAY.textContent = `${timeLeft} સેકન્ડ બાકી`;
+
+                // Change color when time is low (e.g., last 3 seconds)
+                if (timeLeft <= 3) { 
+                     TIMER_DISPLAY.classList.add('timer-critical'); 
+                }
+                
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    timerExpired = true;
+                    if (inputElement && !inputElement.disabled) {
+                        inputElement.disabled = true;
+                        // Show the correct answer and mark it as incorrect attempt due to timeout
+                        inputElement.placeholder = correctAnswer.toString(); 
+                        inputElement.classList.remove('focus:ring-indigo-300', 'focus:border-indigo-500'); 
+                        inputElement.classList.add('incorrect');
+                        showMessage(`સમય સમાપ્ત! સાચો જવાબ ${correctAnswer} છે.`, false);
+                    }
+                }
+            }, 1000); // Update every 1 second
+        }
+
+        /**
+         * Generates a new random missing number problem and updates the UI.
+         */
+        function generateNewProblem() {
+            clearMessage();
+            stopTimer(); // Always clear old timer
+            GAME_CONTAINER.innerHTML = ''; // Clear previous boxes
+
+            // 1. Randomly select the middle number (N) between 2 and 49 (to keep sequence within 1-50)
+            const N = Math.floor(Math.random() * (49 - 2 + 1)) + 2;
+            const numbers = [N - 1, N, N + 1];
+
+            // 2. Randomly select which position (0, 1, or 2) will be blank
+            const blankPosition = Math.floor(Math.random() * 3);
+            correctAnswer = numbers[blankPosition];
+
+            // 3. Generate the HTML for the three boxes
+            for (let i = 0; i < 3; i++) {
+                const box = document.createElement('div');
+                box.className = 'w-1/3 p-1';
+                
+                if (i === blankPosition) {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.id = 'answer-input';
+                    input.placeholder = '...';
+                    input.setAttribute('aria-label', 'ખૂટતો અંક દાખલ કરો');
+                    input.className = 'game-input box-shadow-hover focus:ring-4 focus:ring-indigo-300 focus:border-indigo-500';
+                    input.min = "1";
+                    input.max = "50";
+                    
+                    // Listener: Check immediately on 'input' event (as the user types)
+                    input.addEventListener('input', checkAnswerImmediate);
+                    
+                    // Optional: Blur on Enter key press to hide keyboard on mobile devices
+                    input.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault(); 
+                            e.target.blur();
+                        }
+                    });
+
+                    box.appendChild(input);
+                } else {
+                    const staticNum = document.createElement('div');
+                    staticNum.textContent = numbers[i];
+                    staticNum.className = 'game-input static-box border-dashed';
+                    box.appendChild(staticNum);
+                }
+                
+                GAME_CONTAINER.appendChild(box);
+            }
+            // Start timer and focus on input field
+            document.getElementById('answer-input')?.focus();
+            startTimer(); 
+        }
+
+        /**
+         * Checks the user's input immediately as they type (on the 'input' event).
+         */
+        function checkAnswerImmediate() {
+            const inputElement = document.getElementById('answer-input');
+            const inputValue = inputElement.value.trim();
+            
+            // Do not proceed if input is already locked OR if the timer has expired
+            if (inputElement.disabled || timerExpired) {
+                return;
+            }
+            
+            // Clear previous visual states 
+            inputElement.classList.remove('correct', 'incorrect');
+            clearMessage();
+            
+            if (inputValue === '') {
+                return;
+            }
+            
+            const userAnswer = parseInt(inputValue, 10);
+            
+            // 1. Basic validation
+            if (isNaN(userAnswer) || userAnswer < 1 || userAnswer > 50) {
+                 return; 
+            }
+
+            const correctStrLength = correctAnswer.toString().length;
+            const userStrLength = inputValue.length;
+
+            // 2. Check for FULL Correctness
+            if (userAnswer === correctAnswer) {
+                // CORRECT: Stop timer, Apply green immediately, animate, and lock
+                stopTimer(); 
+                inputElement.classList.add('correct');
+                inputElement.disabled = true; // Lock input
+                showMessage('સાચું! 🎉', true); // Correct!
+                return; 
+            } 
+            
+            // 3. Check for Correct PARTIAL Input (Wait for more digits)
+            // If the user's input length is less than the correct answer's length,
+            // AND the typed digits match the start of the correct answer, DO NOTHING (wait for next digit).
+            if (userStrLength < correctStrLength) {
+                 const partialCorrect = correctAnswer.toString().substring(0, userStrLength);
+                 if (inputValue === partialCorrect) {
+                     return; // Wait for the remaining digits
+                 }
+            }
+            
+            // 4. Check for Definitive Incorrectness (Wrong number of digits, or wrong full number)
+            
+            // INCORRECT: Apply red immediately, show message, and reset after a delay
+            inputElement.classList.add('incorrect');
+            showMessage('ખોટો અંક. ફરી પ્રયાસ કરો.', false); // Wrong number. Try again.
+
+            // Reset after a brief flash (600ms)
+            setTimeout(() => {
+                if (!inputElement.disabled) { 
+                    inputElement.value = ''; // Clear the incorrect input
+                    inputElement.classList.remove('incorrect');
+                    inputElement.focus();
+                    clearMessage();
+                }
+            }, 600); 
+        }
+
+        // Initialize the game when the window loads
+        window.onload = generateNewProblem;
+
+    </script>
+</body>
+</html>
