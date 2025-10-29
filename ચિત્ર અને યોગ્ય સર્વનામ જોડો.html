@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>સર્વનામ જોડી મેળવવાની રમત</title>
+    <!-- Tailwind CSS CDN લોડ કરો -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* કસ્ટમ ફોન્ટ અને બેકગ્રાઉન્ડ */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* હળવો વાદળી બેકગ્રાઉન્ડ */
+        }
+        /* કાર્ડ માટે સામાન્ય સ્ટાઇલ */
+        .card {
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none; /* ટેક્સ્ટ સિલેક્શન અટકાવો */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        /* સિલેક્ટ કરેલા કાર્ડની સ્ટાઇલ */
+        .selected {
+            border-color: #3b82f6; /* વાદળી કિનારી */
+            background-color: #bfdbfe; /* હળવો વાદળી બેકગ્રાઉન્ડ */
+            transform: scale(1.05);
+        }
+        /* સાચી જોડીવાળા કાર્ડની સ્ટાઇલ */
+        .matched {
+            cursor: default;
+            background-color: #4ade80; /* લીલો બેકગ્રાઉન્ડ */
+            border-color: #16a34a; /* ઘેરો લીલો કિનારી */
+            color: #1f2937; /* ઘેરો ટેક્સ્ટ */
+            box-shadow: none;
+            pointer-events: none; /* ક્લિક ઇવેન્ટ અટકાવો */
+            opacity: 0.7;
+        }
+        /* ગેમ કન્ટેનરને કેન્દ્રમાં રાખો */
+        #game-container {
+            min-height: calc(100vh - 8rem);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div id="app" class="max-w-4xl mx-auto">
+        <!-- શીર્ષક (Title) -->
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-center text-gray-800 mb-2">સર્વનામ જોડી બનાવો</h1>
+        <!-- બનાવનારનું નામ ઉમેર્યું -->
+        <p class="text-center text-sm text-gray-500 mb-1">બનાવનાર: Rajesh Barochia</p>
+        <p class="text-center text-sm text-gray-600 mb-6">ચિત્ર અને યોગ્ય સર્વનામ જોડો</p>
+
+        <!-- ગેમ કન્ટેનર -->
+        <div id="game-container" class="flex flex-col md:flex-row justify-center items-stretch gap-4 md:gap-8">
+            <!-- ડાબી બાજુ: ચિત્રો (Images) -->
+            <div class="flex-1 bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+                <h2 class="text-xl font-bold text-center mb-4 text-indigo-700">ચિત્ર</h2>
+                <div id="image-cards" class="space-y-3">
+                    <!-- ચિત્ર કાર્ડ્સ અહીં JavaScript દ્વારા જનરેટ થશે -->
+                </div>
+            </div>
+
+            <!-- જમણી બાજુ: સર્વનામો (Pronouns) -->
+            <div class="flex-1 bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+                <h2 class="text-xl font-bold text-center mb-4 text-indigo-700">સર્વનામ</h2>
+                <div id="pronoun-cards" class="space-y-3">
+                    <!-- સર્વનામ કાર્ડ્સ અહીં JavaScript દ્વારા જનરેટ થશે -->
+                </div>
+            </div>
+        </div>
+
+        <!-- નિયંત્રણો અને સંદેશ વિસ્તાર -->
+        <div class="mt-8 flex flex-col items-center">
+            <!-- સંદેશ (Feedback Message) -->
+            <div id="message" class="text-lg font-semibold text-center mb-4 min-h-[1.5em]"></div>
+            
+            <!-- નવી ગેમ શરૂ કરો બટન -->
+            <button id="new-game-btn" class="px-6 py-3 bg-indigo-600 text-white font-bold rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 transform hover:scale-105">
+                નવી ગેમ શરૂ કરો
+            </button>
+        </div>
+    </div>
+
+    <!-- વિજેતા સંદેશ માટે મોડલ (Modal for Win Message) -->
+    <div id="win-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center transform scale-0 transition-transform duration-500" id="modal-content">
+            <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <h3 class="text-2xl font-extrabold text-gray-800 mb-3">અભિનંદન!</h3>
+            <p class="text-gray-600 mb-6">તમે બધી જોડીઓ સફળતાપૂર્વક મેળવી છે.</p>
+            <button id="close-modal-btn" class="px-5 py-2 bg-green-600 text-white font-bold rounded-full hover:bg-green-700 transition duration-300">
+                બંધ કરો
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ગેમનો ડેટા (સર્વનામ, તેના વિઝ્યુઅલ અને મેચિંગ કી)
+        const GAME_DATA = [
+            { id: 'I', pronoun: 'I', visual: '🙋‍♀️', description_gu: 'પોતાને નિર્દેશ કરતી વ્યક્તિ' },
+            { id: 'You', pronoun: 'You', visual: '👉', description_gu: 'બીજાને નિર્દેશ કરતી વ્યક્તિ' },
+            { id: 'They', pronoun: 'They', visual: '👨‍👩‍👧‍👦', description_gu: 'ચાર લોકોનો સમૂહ' },
+            { id: 'We', pronoun: 'We', visual: '🧑‍🤝‍🧑', description_gu: 'આપણે બધા' },
+            { id: 'He', pronoun: 'He', visual: '👦', description_gu: 'એક છોકરો' },
+            { id: 'She', pronoun: 'She', visual: '👧', description_gu: 'એક છોકરી' },
+            { id: 'It', pronoun: 'It', visual: '🐔', description_gu: 'એક મરઘી/વસ્તુ' }
+        ];
+
+        // UI એલિમેન્ટ્સ
+        const imageCardsContainer = document.getElementById('image-cards');
+        const pronounCardsContainer = document.getElementById('pronoun-cards');
+        const messageDisplay = document.getElementById('message');
+        const newGameButton = document.getElementById('new-game-btn');
+        const winModal = document.getElementById('win-modal');
+        const modalContent = document.getElementById('modal-content');
+        const closeModalButton = document.getElementById('close-modal-btn');
+
+        // ગેમ સ્ટેટ
+        let currentSelection = {
+            imageCard: null,
+            pronounCard: null
+        };
+        let matchesFound = 0;
+
+        /**
+         * એરેને રેન્ડમલી શફલ કરે છે (Fisher-Yates (Knuth) shuffle algorithm).
+         * @param {Array} array શફલ કરવાનો એરે.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /**
+         * કાર્ડ એલિમેન્ટ બનાવે છે.
+         * @param {string} type કાર્ડનો પ્રકાર ('image' અથવા 'pronoun').
+         * @param {Object} data કાર્ડનો ડેટા.
+         * @returns {HTMLElement} બનાવેલું કાર્ડ એલિમેન્ટ.
+         */
+        function createCard(type, data) {
+            const card = document.createElement('div');
+            card.classList.add(
+                'card',
+                'p-4', 'rounded-xl', 'border-2', 'border-gray-300', 'bg-gray-50', 'text-center',
+                'hover:border-indigo-500', 'hover:shadow-md', 'transition', 'duration-200'
+            );
+            card.dataset.matchId = data.id; // મેચિંગ માટેની કી
+
+            if (type === 'image') {
+                // ચિત્ર કાર્ડ (emoji)
+                card.classList.add('flex', 'items-center', 'justify-start', 'space-x-4');
+                card.innerHTML = `
+                    <span class="text-4xl leading-none">${data.visual}</span>
+                    <span class="text-base text-gray-700 font-medium">${data.description_gu}</span>
+                `;
+                card.dataset.type = 'image';
+            } else {
+                // સર્વનામ કાર્ડ (text)
+                card.classList.add('flex', 'items-center', 'justify-center', 'h-full');
+                card.innerHTML = `<span class="text-3xl font-extrabold text-indigo-800">${data.pronoun}</span>`;
+                card.dataset.type = 'pronoun';
+            }
+
+            card.addEventListener('click', handleCardClick);
+            return card;
+        }
+
+        /**
+         * કાર્ડ ક્લિક હેન્ડલર
+         * @param {Event} event ક્લિક ઇવેન્ટ.
+         */
+        function handleCardClick(event) {
+            const clickedCard = event.currentTarget;
+
+            // જો કાર્ડ પહેલેથી જ મેચ થયેલું હોય, તો કશું ન કરો
+            if (clickedCard.classList.contains('matched')) {
+                return;
+            }
+
+            const cardType = clickedCard.dataset.type;
+
+            // વર્તમાન પસંદગીમાંથી કાર્ડ દૂર કરો
+            if (currentSelection[cardType + 'Card'] === clickedCard) {
+                clickedCard.classList.remove('selected');
+                currentSelection[cardType + 'Card'] = null;
+                messageDisplay.textContent = '';
+                return;
+            }
+
+            // જો તે જ પ્રકારનું બીજું કાર્ડ પસંદ થયેલું હોય, તો તેને અન-સિલેક્ટ કરો
+            if (currentSelection[cardType + 'Card']) {
+                currentSelection[cardType + 'Card'].classList.remove('selected');
+            }
+
+            // નવું કાર્ડ સિલેક્ટ કરો
+            clickedCard.classList.add('selected');
+            currentSelection[cardType + 'Card'] = clickedCard;
+            messageDisplay.textContent = 'બીજું કાર્ડ પસંદ કરો...';
+            messageDisplay.classList.remove('text-red-600', 'text-green-600');
+            messageDisplay.classList.add('text-gray-600');
+
+
+            // જો બંને બાજુથી કાર્ડ પસંદ થયા હોય, તો મેચ ચેક કરો
+            if (currentSelection.imageCard && currentSelection.pronounCard) {
+                checkForMatch();
+            }
+        }
+
+        /**
+         * મેચિંગ લોજિક
+         */
+        function checkForMatch() {
+            const imageCard = currentSelection.imageCard;
+            const pronounCard = currentSelection.pronounCard;
+
+            const imageId = imageCard.dataset.matchId;
+            const pronounId = pronounCard.dataset.matchId;
+
+            if (imageId === pronounId) {
+                // સાચી જોડી
+                matchesFound++;
+                messageDisplay.textContent = 'સાચી જોડી! 🎉';
+                messageDisplay.classList.remove('text-gray-600', 'text-red-600');
+                messageDisplay.classList.add('text-green-600');
+
+                // કાર્ડ્સને matched તરીકે માર્ક કરો
+                imageCard.classList.remove('selected', 'hover:border-indigo-500', 'hover:shadow-md', 'bg-gray-50', 'border-gray-300');
+                pronounCard.classList.remove('selected', 'hover:border-indigo-500', 'hover:shadow-md', 'bg-gray-50', 'border-gray-300');
+                imageCard.classList.add('matched');
+                pronounCard.classList.add('matched');
+
+                // સ્ટેટ રીસેટ કરો
+                currentSelection.imageCard = null;
+                currentSelection.pronounCard = null;
+
+                // ગેમ સમાપ્ત થઈ કે નહીં તે તપાસો
+                if (matchesFound === GAME_DATA.length) {
+                    setTimeout(showWinModal, 500);
+                }
+
+            } else {
+                // ખોટી જોડી
+                messageDisplay.textContent = 'ખોટી જોડી. ફરીથી પ્રયાસ કરો.';
+                messageDisplay.classList.remove('text-gray-600', 'text-green-600');
+                messageDisplay.classList.add('text-red-600');
+
+                // 0.5 સેકન્ડ પછી પસંદગી રીસેટ કરો
+                setTimeout(() => {
+                    imageCard.classList.remove('selected');
+                    pronounCard.classList.remove('selected');
+                    currentSelection.imageCard = null;
+                    currentSelection.pronounCard = null;
+                    messageDisplay.textContent = '';
+                }, 500);
+            }
+        }
+
+        /**
+         * ગેમ જીતવા પર મોડલ બતાવો
+         */
+        function showWinModal() {
+            winModal.classList.remove('hidden');
+            winModal.classList.add('flex');
+            // મોડલને એનિમેટ કરવા માટે
+            setTimeout(() => {
+                modalContent.classList.remove('scale-0');
+                modalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        /**
+         * ગેમ મોડલ બંધ કરો
+         */
+        function closeWinModal() {
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-0');
+            setTimeout(() => {
+                winModal.classList.add('hidden');
+                winModal.classList.remove('flex');
+            }, 500);
+        }
+
+        /**
+         * નવી ગેમ શરૂ કરો
+         */
+        function startGame() {
+            // સ્ટેટ રીસેટ કરો
+            currentSelection.imageCard = null;
+            currentSelection.pronounCard = null;
+            matchesFound = 0;
+            messageDisplay.textContent = '';
+            messageDisplay.classList.remove('text-red-600', 'text-green-600');
+            messageDisplay.classList.add('text-gray-600');
+
+            // કન્ટેનર ખાલી કરો
+            imageCardsContainer.innerHTML = '';
+            pronounCardsContainer.innerHTML = '';
+
+            // ડેટાને શફલ કરો
+            const shuffledImages = [...GAME_DATA];
+            const shuffledPronouns = [...GAME_DATA];
+            shuffleArray(shuffledImages);
+            shuffleArray(shuffledPronouns);
+
+            // કાર્ડ્સ બનાવો અને ઉમેરો
+            shuffledImages.forEach(data => {
+                imageCardsContainer.appendChild(createCard('image', data));
+            });
+
+            shuffledPronouns.forEach(data => {
+                pronounCardsContainer.appendChild(createCard('pronoun', data));
+            });
+
+            // મોડલ બંધ કરો જો ખુલ્લું હોય
+            closeWinModal();
+        }
+
+        // ઇવેન્ટ લિસનર્સ સેટ કરો
+        newGameButton.addEventListener('click', startGame);
+        closeModalButton.addEventListener('click', startGame);
+
+        // પેજ લોડ થવા પર ગેમ શરૂ કરો
+        window.onload = startGame;
+
+    </script>
+</body>
+</html>
