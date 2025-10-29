@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ઘડિયાળનો સમય ઓળખવાની રમત</title>
+    <!-- Tailwind CSS CDN લોડ કરો -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* કસ્ટમ ફોન્ટ અને બેકગ્રાઉન્ડ */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0f2f1; /* હળવો ટીલ બેકગ્રાઉન્ડ */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* કાર્ડ માટે કસ્ટમ સ્ટાઇલિંગ */
+        .game-card {
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        /* ઘડિયાળ કન્ટેનર */
+        .clock-container {
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1 / 1; /* ચોરસ આકાર */
+            margin: 0 auto;
+            position: relative;
+            background-color: #f7f7f7;
+            border: 12px solid #004d40; /* ઘેરો ટીલ બોર્ડર */
+            border-radius: 50%;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ઘડિયાળના કાંટા માટે સામાન્ય સ્ટાઇલ */
+        .hand {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            /* સુધારો: કાંટાને તેના કેન્દ્રિત તળિયેથી ફરવા માટે transform-origin 50% 100% પર સેટ કર્યું */
+            transform-origin: 50% 100%; /* કેન્દ્રબિંદુ: કાંટાના તળિયેનું કેન્દ્ર */
+            background-color: #212121;
+            border-radius: 5px;
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1); /* સ્મૂધ એનિમેશન */
+            /* મુખ્ય સુધારો: કાંટાને તેના તળિયેના બિંદુને 50% 50% પર લાવવા માટે
+               X-axis પર -50% (પહોળાઈનું અડધું) અને Y-axis પર -100% (ઊંચાઈનું સંપૂર્ણ) ટ્રાન્સલેશન. */
+            transform: translate(-50%, -100%) rotate(0deg); 
+        }
+
+        /* કલાકનો કાંટો */
+        #hour-hand {
+            width: 5px;
+            height: 30%;
+            background-color: #d32f2f; /* લાલ */
+            z-index: 10;
+        }
+
+        /* મિનિટનો કાંટો */
+        #minute-hand {
+            width: 3px;
+            height: 45%;
+            background-color: #388e3c; /* લીલો */
+            z-index: 20;
+        }
+
+        /* કેન્દ્રીય બિંદુ */
+        .center-pin {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #004d40;
+            transform: translate(-50%, -50%);
+            z-index: 30;
+        }
+
+        /* ઘડિયાળ પર નંબરિંગ - બધા નંબરોને પોઝિશન કરવા માટે નવું લોજિક */
+        .clock-number {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #004d40;
+            width: 30px; /* ટેક્સ્ટને કેન્દ્રમાં રાખવા માટે */
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            top: 50%;
+            left: 50%;
+            /* 100px એ ઘડિયાળના max-width (300px) ના અડધા કરતાં સહેજ ઓછું છે (કાંટાની આસપાસ જગ્યા છોડવા માટે) */
+            --radius: 120px; /* કેન્દ્રથી અંતર */
+        }
+        
+        /* 12 નંબરોને રેડિયલ પોઝિશન આપવા માટેના ટ્રાન્સફોર્મેશન */
+        /* આ જટિલ ટ્રાન્સફોર્મેશન્સ નંબરને તેમની રેડિયલ પોઝિશન પર મૂકે છે અને પછી તેમને પાછા સીધા ફેરવે છે */
+        .num-12 { transform: translate(-50%, -50%) rotate(0deg) translateY(calc(-1 * var(--radius))); }
+        .num-1 { transform: translate(-50%, -50%) rotate(30deg) translateY(calc(-1 * var(--radius))) rotate(-30deg); }
+        .num-2 { transform: translate(-50%, -50%) rotate(60deg) translateY(calc(-1 * var(--radius))) rotate(-60deg); }
+        .num-3 { transform: translate(-50%, -50%) rotate(90deg) translateY(calc(-1 * var(--radius))) rotate(-90deg); }
+        .num-4 { transform: translate(-50%, -50%) rotate(120deg) translateY(calc(-1 * var(--radius))) rotate(-120deg); }
+        .num-5 { transform: translate(-50%, -50%) rotate(150deg) translateY(calc(-1 * var(--radius))) rotate(-150deg); }
+        .num-6 { transform: translate(-50%, -50%) rotate(180deg) translateY(calc(-1 * var(--radius))) rotate(-180deg); }
+        .num-7 { transform: translate(-50%, -50%) rotate(210deg) translateY(calc(-1 * var(--radius))) rotate(-210deg); }
+        .num-8 { transform: translate(-50%, -50%) rotate(240deg) translateY(calc(-1 * var(--radius))) rotate(-240deg); }
+        .num-9 { transform: translate(-50%, -50%) rotate(270deg) translateY(calc(-1 * var(--radius))) rotate(-270deg); }
+        .num-10 { transform: translate(-50%, -50%) rotate(300deg) translateY(calc(-1 * var(--radius))) rotate(-300deg); }
+        .num-11 { transform: translate(-50%, -50%) rotate(330deg) translateY(calc(-1 * var(--radius))) rotate(-330deg); }
+
+        
+        /* વિકલ્પોના બટન */
+        .option-btn {
+            background-color: #e0f7fa; /* હળવો આસમાની */
+            border: 2px solid #00bcd4; /* આસમાની બોર્ડર */
+            transition: all 0.2s;
+        }
+        .option-btn:hover {
+            background-color: #b2ebf2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="p-4">
+    <!-- Creator: Rajesh Barochia -->
+
+    <div class="max-w-xl w-full game-card text-center">
+        <!-- શીર્ષક -->
+        <h1 class="text-3xl font-extrabold text-teal-800 mb-2">સમય ઓળખવાની રમત</h1>
+        <!-- બનાવનારનું નામ શીર્ષક પછી ઉમેર્યું -->
+        <p class="text-base font-semibold text-gray-500 mb-4">બનાવનાર: Rajesh Barochia</p>
+        <p class="text-lg text-gray-600 mb-4">ઘડિયાળ પર બતાવેલ સમય ઓળખીને યોગ્ય વિકલ્પ પસંદ કરો.</p>
+
+        <!-- ઘડિયાળનો વિસ્તાર -->
+        <div class="clock-container mb-8">
+            <!-- ઘડિયાળના નંબરો (બધા 1 થી 12 નંબરો ગુજરાતીમાં ઉમેર્યા છે) -->
+            <div class="clock-number num-12">૧૨</div>
+            <div class="clock-number num-1">૧</div>
+            <div class="clock-number num-2">૨</div>
+            <div class="clock-number num-3">૩</div>
+            <div class="clock-number num-4">૪</div>
+            <div class="clock-number num-5">૫</div>
+            <div class="clock-number num-6">૬</div>
+            <div class="clock-number num-7">૭</div>
+            <div class="clock-number num-8">૮</div>
+            <div class="clock-number num-9">૯</div>
+            <div class="clock-number num-10">૧૦</div>
+            <div class="clock-number num-11">૧૧</div>
+
+            <!-- કલાકનો કાંટો -->
+            <div id="hour-hand" class="hand"></div>
+            <!-- મિનિટનો કાંટો -->
+            <div id="minute-hand" class="hand"></div>
+            <!-- કેન્દ્રીય પિન -->
+            <div class="center-pin"></div>
+        </div>
+
+        <!-- વિકલ્પો -->
+        <div id="options-container" class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 mb-6">
+            <!-- વિકલ્પો અહીં JavaScript દ્વારા જનરેટ થશે -->
+        </div>
+
+        <!-- સંદેશ અને સ્કોર -->
+        <div class="mb-4">
+            <p id="message" class="text-xl font-bold min-h-[1.5em]"></p>
+            <p id="score" class="text-lg font-semibold text-gray-700 mt-2">સ્કોર: 0 / 0</p>
+        </div>
+
+        <!-- આગામી અને નવી ગેમ બટન -->
+        <button id="next-time-btn" class="px-6 py-3 bg-teal-600 text-white font-bold rounded-full shadow-md hover:bg-teal-700 transition duration-300 transform hover:scale-105">
+            નવો સમય જુઓ
+        </button>
+    </div>
+
+    <script>
+        // UI એલિમેન્ટ્સ
+        const hourHand = document.getElementById('hour-hand');
+        const minuteHand = document.getElementById('minute-hand');
+        const optionsContainer = document.getElementById('options-container');
+        const messageDisplay = document.getElementById('message');
+        const scoreDisplay = document.getElementById('score');
+        const nextTimeButton = document.getElementById('next-time-btn');
+
+        // ગેમ સ્ટેટ
+        let currentHour = 0;
+        let currentMinute = 0;
+        let score = 0;
+        let totalQuestions = 0;
+        let isAnswered = false;
+        
+        // ગુજરાતી અંકોનો મેપ (0-9)
+        const gujaratiNumbers = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'];
+
+        /**
+         * નંબરને ગુજરાતી અંકના ટેક્સ્ટ ફોર્મેટમાં ફેરવે છે.
+         * @param {number} num નંબર (0-59, 1-12)
+         * @returns {string} ગુજરાતી અંક
+         */
+        function convertToGujaratiNumber(num) {
+            return String(num).split('').map(digit => gujaratiNumbers[parseInt(digit)]).join('');
+        }
+
+        /**
+         * કલાક અને મિનિટના આધારે ઘડિયાળના કાંટા સેટ કરે છે.
+         * @param {number} hour કલાક (0-11).
+         * @param {number} minute મિનિટ (0-59).
+         */
+        function setClockHands(hour, minute) {
+            // મિનિટના કાંટા માટે: 6 ડિગ્રી પ્રતિ મિનિટ
+            const minuteDeg = minute * 6;
+            // કલાકના કાંટા માટે: 30 ડિગ્રી પ્રતિ કલાક + 0.5 ડિગ્રી પ્રતિ મિનિટ
+            const hourDeg = (hour * 30) + (minute * 0.5);
+
+            // કાંટાની સ્થિતિ સેટ કરો
+            // કાંટાને કેન્દ્રમાં ઉપર લાવવા માટે -50% X અને -100% Y ટ્રાન્સલેશનનો ઉપયોગ કરો
+            const baseTransform = 'translate(-50%, -100%)'; 
+            
+            minuteHand.style.transform = `${baseTransform} rotate(${minuteDeg}deg)`;
+            hourHand.style.transform = `${baseTransform} rotate(${hourDeg}deg)`;
+        }
+
+        /**
+         * કલાક અને મિનિટને ગુજરાતી ટેક્સ્ટ ફોર્મેટમાં ફેરવે છે.
+         * @param {number} h કલાક (1-12).
+         * @param {number} m મિનિટ (0-59).
+         * @returns {string} સમયનું ગુજરાતી ટેક્સ્ટ વર્ણન.
+         */
+        function timeToText(h, m) {
+            const currentHourText = convertToGujaratiNumber(h % 12 === 0 ? 12 : h % 12);
+            let nextHour = (h % 12) + 1;
+            nextHour = nextHour > 12 ? 1 : nextHour;
+            const nextHourText = convertToGujaratiNumber(nextHour);
+
+            // 00 મિનિટ - વાગ્યા
+            if (m === 0) return `${currentHourText} વાગ્યા`;
+            
+            // 15 મિનિટ - સવા
+            if (m === 15) return `સવા ${currentHourText}`;
+
+            // 30 મિનિટ - અડધો
+            if (m === 30) return `સાડા ${currentHourText}`;
+            
+            // 45 મિનિટ - પોણો
+            if (m === 45) return `પોણા ${nextHourText}`;
+
+            // 1 થી 29 મિનિટ - વાગીને (અથવા મિનિટ પાછળ)
+            if (m > 0 && m < 30) {
+                const minuteText = convertToGujaratiNumber(m);
+                // 5, 10, 20, 25 ના સરળ શબ્દો વાપરી શકાય, પણ મિનિટ પર જ રાખો.
+                return `${currentHourText} વાગીને ${minuteText} મિનિટ`;
+            }
+
+            // 31 થી 59 મિનિટ - વાગવામાં (બાકી)
+            if (m > 30 && m < 60) {
+                const minutesToNext = 60 - m;
+                const minutesToNextText = convertToGujaratiNumber(minutesToNext);
+                return `${nextHourText} વાગવામાં ${minutesToNextText} મિનિટ બાકી`;
+            }
+            
+            return 'ભૂલ સમય'; // ભૂલ નિવારણ માટે
+        }
+
+        /**
+         * નવી રેન્ડમ ટાઇમ જનરેટ કરે છે.
+         * @returns {Object} કલાક (h), મિનિટ (m) અને સાચો જવાબ (answerText) સાથેનો ઓબ્જેક્ટ.
+         */
+        function generateRandomTime() {
+            // કલાક 1 થી 12
+            const h = Math.floor(Math.random() * 12) + 1;
+            // મિનિટ ફક્ત 5 ના ગુણાંકમાં (જેમ કે ઘડિયાળના મુખ્ય ટિક માર્ક્સ)
+            const m = Math.floor(Math.random() * 12) * 5;
+
+            // 12-કલાક ફોર્મેટમાં કલાક: 0-11
+            const hourForHand = h % 12;
+
+            // કાંટા સેટ કરો
+            setClockHands(hourForHand, m);
+
+            // સ્ટેટ અપડેટ કરો
+            currentHour = h;
+            currentMinute = m;
+
+            // સાચો જવાબ જનરેટ કરો
+            const answerText = timeToText(h, m);
+            return { h, m, answerText };
+        }
+
+        /**
+         * ખોટા વિકલ્પો જનરેટ કરે છે.
+         * @param {string} correctText સાચો જવાબ.
+         * @param {number} count વિકલ્પોની સંખ્યા.
+         * @returns {Array<string>} ખોટા વિકલ્પોનો એરે.
+         */
+        function generateWrongOptions(correctText, count) {
+            const allOptions = new Set();
+            allOptions.add(correctText);
+            
+            // ફક્ત મુખ્ય સમય ફોર્મેટના ખોટા વિકલ્પો જનરેટ કરો
+            const minuteSteps = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+            
+            while (allOptions.size < count) {
+                const randomHour = Math.floor(Math.random() * 12) + 1;
+                const randomMinute = minuteSteps[Math.floor(Math.random() * minuteSteps.length)];
+                
+                const option = timeToText(randomHour, randomMinute);
+                allOptions.add(option);
+            }
+
+            // સાચા જવાબને દૂર કરો
+            allOptions.delete(correctText);
+            // જરૂરી સંખ્યાના ખોટા જવાબો પાછા આપો
+            return Array.from(allOptions).slice(0, count - 1);
+        }
+
+        /**
+         * વિકલ્પો જનરેટ કરે છે અને ગેમ શરૂ કરે છે.
+         */
+        function generateOptions() {
+            isAnswered = false;
+            messageDisplay.textContent = 'સમય ઓળખો.';
+            messageDisplay.classList.remove('text-green-600', 'text-red-600');
+            messageDisplay.classList.add('text-gray-700');
+            optionsContainer.innerHTML = ''; // જૂના વિકલ્પો દૂર કરો
+
+            const { answerText } = generateRandomTime();
+
+            // 4 વિકલ્પો માટે: 1 સાચો + 3 ખોટા
+            const wrongOptions = generateWrongOptions(answerText, 4);
+            const allOptions = [answerText, ...wrongOptions];
+
+            // વિકલ્પોને રેન્ડમલી શફલ કરો
+            allOptions.sort(() => Math.random() - 0.5);
+
+            // બટન દ્વારા વિકલ્પો બનાવો
+            allOptions.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add(
+                    'option-btn', 'px-3', 'py-2', 'rounded-lg', 'font-medium', 'text-teal-800',
+                    'hover:shadow-lg', 'focus:outline-none', 'text-sm'
+                );
+                button.dataset.correct = option === answerText ? 'true' : 'false';
+                button.addEventListener('click', handleAnswer);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        /**
+         * જવાબ હેન્ડલર
+         * @param {Event} event ક્લિક ઇવેન્ટ.
+         */
+        function handleAnswer(event) {
+            if (isAnswered) return; // જો પહેલેથી જ જવાબ આપી દીધો હોય, તો કશું ન કરો
+
+            isAnswered = true;
+            totalQuestions++;
+
+            const clickedButton = event.currentTarget;
+            const isCorrect = clickedButton.dataset.correct === 'true';
+
+            // બધા બટનોને ડિસેબલ કરો
+            Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
+
+            if (isCorrect) {
+                score++;
+                messageDisplay.textContent = 'સાચો જવાબ! સરસ કામ. ✅';
+                messageDisplay.classList.remove('text-gray-700', 'text-red-600');
+                messageDisplay.classList.add('text-green-600');
+                clickedButton.classList.remove('option-btn');
+                clickedButton.classList.add('bg-green-500', 'text-white', 'shadow-xl');
+            } else {
+                messageDisplay.textContent = 'ખોટો જવાબ. ❌';
+                messageDisplay.classList.remove('text-gray-700', 'text-green-600');
+                messageDisplay.classList.add('text-red-600');
+                clickedButton.classList.remove('option-btn');
+                clickedButton.classList.add('bg-red-500', 'text-white', 'shadow-xl');
+
+                // સાચો જવાબ બતાવો
+                const correctButton = Array.from(optionsContainer.children).find(btn => btn.dataset.correct === 'true');
+                if (correctButton) {
+                    correctButton.classList.remove('option-btn');
+                    correctButton.classList.add('bg-green-300', 'text-gray-900', 'border-green-500', 'shadow-xl');
+                }
+            }
+
+            // સ્કોર અપડેટ કરો
+            scoreDisplay.textContent = `સ્કોર: ${convertToGujaratiNumber(score)} / ${convertToGujaratiNumber(totalQuestions)}`;
+        }
+
+        // ઇવેન્ટ લિસનર્સ સેટ કરો
+        nextTimeButton.addEventListener('click', () => {
+            // જો જવાબ ન આપ્યો હોય, તો પણ આગળ વધવા દો
+            generateOptions();
+        });
+
+        // પેજ લોડ થવા પર ગેમ શરૂ કરો
+        window.onload = generateOptions;
+
+    </script>
+</body>
+</html>
