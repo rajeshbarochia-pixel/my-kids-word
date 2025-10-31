@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A,B,C,D શોધો (Find the Letters)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+GPL&display=swap" rel="stylesheet">
+    <style>
+        /* બેઝિક રીસેટ અને ફોન્ટ */
+        body {
+            font-family: 'Baloo GPL', sans-serif; /* ગુજરાતી માટે સારો ફોન્ટ */
+            background-color: #f0fdf4; /* હળવો ગ્રીન બેકગ્રાઉન્ડ */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 10px;
+            box-sizing: border-box;
+            color: #14532d; /* ડાર્ક ગ્રીન ટેક્સ્ટ */
+        }
+
+        /* મુખ્ય કન્ટેનર */
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        /* શીર્ષક અને સૂચનાઓ */
+        h1 {
+            color: #dc2626; /* રેડ કલર */
+            margin-bottom: 5px;
+            font-size: 2.2rem;
+            font-weight: 800;
+        }
+        p.instructions {
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            color: #14532d;
+        }
+
+        /* ગ્રીડ લેઆઉટ */
+        #appleGrid {
+            display: grid;
+            /* 5 કોલમ (5x6 ની ગ્રીડ - કુલ 30 બોક્સ) */
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* દરેક મૂળાક્ષર/એપલ બોક્સ */
+        .apple-box {
+            background-color: #fef3c7; /* ક્રીમ કલર */
+            border: 3px solid #f97316; /* ઓરેન્જ બોર્ડર */
+            border-radius: 15px; /* ગોળ કિનારીઓ */
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer; /* બધા બોક્સ પર ક્લિક કરી શકાય */
+            user-select: none;
+            color: #14532d; /* ટાઇપ કરેલો ટેક્સ્ટ ડાર્ક ગ્રીન દેખાશે */
+            text-transform: lowercase; /* આ સ્ટાઇલ ખાતરી કરે છે કે અક્ષર નાનો જ દેખાય */
+        }
+
+        /* ખૂટતા મૂળાક્ષર માટે સ્ટાઇલ */
+        .missing {
+            background-color: #fecaca; /* લાઇટ રેડ */
+            border-color: #dc2626; /* ડાર્ક રેડ બોર્ડર */
+        }
+        
+        /* સિલેક્ટ થયેલ ખૂટતું બોક્સ */
+        .selected {
+            box-shadow: 0 0 10px 4px #0ea5e9 !important; /* બ્લુ શેડો */
+            transform: scale(1.05);
+        }
+
+        /* જ્યારે જવાબ શોધાઈ જાય */
+        .solved {
+            background-color: #86efac; /* ગ્રીન કલર */
+            border-color: #16a34a;
+            color: #14532d;
+            animation: bounce 0.5s;
+            cursor: default;
+        }
+        
+        /* ડમી/ખાલી બોક્સ માટે સ્ટાઇલ (A થી Z પછીના) */
+        .dummy-box {
+            background-color: #e5e7eb; /* ગ્રે કલર */
+            border: 3px solid #9ca3af; 
+            cursor: default;
+            font-size: 1.5rem;
+            color: #6b7280;
+            opacity: 0.6;
+            pointer-events: none; /* ડમી બોક્સ પર ક્લિક ન કરી શકાય */
+        }
+
+        /* બટન કન્ટેનર */
+        .button-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        /* બટન સ્ટાઇલ - સામાન્ય */
+        .game-button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s ease, transform 0.1s ease;
+        }
+
+        /* નવી ગેમ બટન (ઓરેન્જ) */
+        #newGameBtn {
+            background: linear-gradient(135deg, #f97316, #ea580c); /* ઓરેન્જ ગ્રેડિયન્ટ */
+        }
+        #newGameBtn:hover {
+            background: linear-gradient(135deg, #ea580c, #f97316);
+        }
+
+        /* જવાબ ચેક કરો બટન (બ્લુ) */
+        #checkAnswerBtn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb); /* બ્લુ ગ્રેડિયન્ટ */
+        }
+        #checkAnswerBtn:hover {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+        }
+
+        .game-button:active {
+            transform: scale(0.98);
+        }
+
+        /* મેસેજ બોર્ડ */
+        #message {
+            margin-top: 15px;
+            min-height: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .correct { color: #16a34a; }
+        .incorrect { color: #dc2626; }
+        /* જીતનો સંદેશ: ફોન્ટ સાઇઝ વધારો અને બોલ્ડ કરો */
+        .win { 
+            color: #059669; 
+            font-size: 2.2rem; /* વધુ મોટો ફોન્ટ */
+            font-weight: 800;
+            padding: 15px; /* વધુ પેડિંગ */
+            border-radius: 10px;
+            background-color: #d1fae5; /* ખૂબ હળવો ગ્રીન બેકગ્રાઉન્ડ */
+            box-shadow: 0 5px 15px rgba(0,150,0,0.2); /* શેડો ઉમેરો */
+        }
+        .neutral { color: #3b82f6; } /* ન્યુટ્રલ મેસેજ માટે */
+
+        /* બનાવનાર ક્રેડિટ */
+        .credit {
+            margin-top: 25px;
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+
+        /* મોબાઇલ રિસ્પોન્સિવનેસ */
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 15px;
+            }
+            #appleGrid {
+                grid-template-columns: repeat(4, 1fr); /* નાના સ્ક્રીન માટે 4 કોલમ */
+                gap: 8px;
+            }
+            .apple-box {
+                height: 60px;
+                font-size: 1.5rem;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            .win {
+                font-size: 1.5rem; /* મોબાઇલ પર જીતનો સંદેશ થોડો નાનો */
+                padding: 10px;
+            }
+            .button-container {
+                 gap: 10px;
+            }
+            .game-button {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* એનિમેશન */
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-10px);}
+            60% {transform: translateY(-5px);}
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>A,B,C,D શોધો </h1>
+        <p class="instructions">ખૂટતા ખાના પર ક્લિક કરો, અક્ષર ટાઇપ કરો અને **જવાબ ચેક કરો** બટન દબાવો.</p>
+        
+        <!-- મૂળાક્ષરોની ગ્રીડ અહીં JS દ્વારા જનરેટ થશે --><div id="appleGrid">
+            <!-- Grid items will be inserted here --></div>
+
+        <div class="button-container">
+            <button id="checkAnswerBtn" class="game-button" onclick="checkActiveBoxAnswer()">જવાબ ચેક કરો</button>
+            <button id="newGameBtn" class="game-button" onclick="initGame()">નવી ગેમ</button>
+        </div>
+
+        <div id="message"></div>
+
+        <p class="credit">બનાવનાર: Rajesh barochia</p>
+    </div>
+
+    <script>
+        // હવે ALPHABET માં નાના અક્ષરો (a થી z) નો ઉપયોગ થશે
+        const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split(''); 
+        const TOTAL_ALPHABET_COUNT = ALPHABET.length; // 26
+        const COLUMNS = 5;
+        const ROWS = 6;
+        const GRID_SIZE = COLUMNS * ROWS; // 30 બોક્સ (26 અક્ષરો + 4 ખાલી)
+        const MISSING_COUNT = 8; // ખૂટતા મૂળાક્ષરોની સંખ્યા
+        let missingLetters = {}; // કયા બોક્સમાં કયો અક્ષર ખૂટે છે તેનો ટ્રેક રાખવા માટે
+        let activeMissingBox = null; // હાલમાં કયું ખૂટતું બોક્સ સિલેક્ટ થયેલું છે
+
+        const appleGrid = document.getElementById('appleGrid');
+        const messageBox = document.getElementById('message');
+        const checkAnswerButton = document.getElementById('checkAnswerBtn');
+        const newGameButton = document.getElementById('newGameBtn');
+        
+        /**
+         * 'જવાબ ચેક કરો' બટન માટેનું ફંક્શન
+         */
+        function checkActiveBoxAnswer() {
+             if (activeMissingBox) {
+                checkAnswer(activeMissingBox.textContent);
+            } else {
+                showMessage("કૃપા કરીને પહેલા ખૂટતા ખાના પર ક્લિક કરો.", 'neutral');
+            }
+        }
+
+        /**
+         * ક્રમશઃ મૂળાક્ષરો ગોઠવીને અને રેન્ડમલી કેટલાક અક્ષરો છુપાવીને ગેમ શરૂ કરે છે.
+         */
+        function initGame() {
+            // સ્ટેટ રીસેટ કરો
+            missingLetters = {};
+            messageBox.textContent = '';
+            messageBox.className = '';
+            appleGrid.innerHTML = '';
+            activeMissingBox = null;
+            
+            // a-z (26 અક્ષરો) અને બાકીના 4 બોક્સ માટે ડમી વેલ્યુ સાથે 30 બોક્સની યાદી બનાવો.
+            const gridItems = [];
+            for (let i = 0; i < GRID_SIZE; i++) {
+                if (i < TOTAL_ALPHABET_COUNT) {
+                    // a થી z સુધીના નાના અક્ષરો
+                    gridItems.push(ALPHABET[i]); 
+                } else {
+                    // બાકીના ડમી બોક્સ
+                    gridItems.push(null); 
+                }
+            }
+
+            // ખૂટતા અક્ષરોની પોઝિશન રેન્ડમલી પસંદ કરો
+            const missingIndices = new Set();
+            // ખૂટતા અક્ષરો માત્ર a થી z (0 થી 25) માંથી જ પસંદ કરવાના છે.
+            while (missingIndices.size < MISSING_COUNT) {
+                // 0 થી 25 (a થી z) માં રેન્ડમ ઇન્ડેક્સ
+                missingIndices.add(Math.floor(Math.random() * TOTAL_ALPHABET_COUNT));
+            }
+            
+            // બટન સ્ટેટ સેટ કરો
+            checkAnswerButton.disabled = false;
+
+            // ગ્રીડ રેન્ડર કરો
+            gridItems.forEach((item, index) => {
+                const box = document.createElement('div');
+                box.className = 'apple-box';
+                
+                if (item === null) {
+                    // ડમી બોક્સ (a થી z પછીના)
+                    box.className = 'apple-box dummy-box';
+                    box.textContent = ''; 
+                    // ડમી બોક્સ પર ક્લિક ન કરી શકાય
+                    box.style.cursor = 'default'; 
+                } else {
+                    // a થી z મૂળાક્ષર
+                    box.dataset.index = index;
+                    // correctLetter નાના અક્ષરમાં જ સ્ટોર કરો
+                    box.dataset.correctLetter = item; 
+
+                    if (missingIndices.has(index)) {
+                        // આ બોક્સ ખૂટતો અક્ષર બતાવશે
+                        box.className += ' missing';
+                        box.setAttribute('tabindex', '0'); 
+                        box.textContent = ''; // શરૂઆતમાં ખાલી
+                        // ખૂટતા અક્ષરોનો ટ્રેક રાખો
+                        missingLetters[index] = item; 
+                        
+                        // ક્લિક ઇવેન્ટ સેટ કરો
+                        box.addEventListener('click', () => {
+                            // ક્લિક થવા પર માત્ર સિલેક્ટ જ થશે
+                            selectBox(box);
+                        });
+                        // ફોકસ ઇવેન્ટ સેટ કરો
+                        box.addEventListener('focus', () => selectBox(box));
+
+                    } else {
+                        // આ બોક્સમાં અક્ષર દેખાશે
+                        box.textContent = item;
+                        box.dataset.isShown = true;
+                        // જે બોક્સમાં અક્ષર દેખાય છે તેના પર ક્લિક ન કરી શકાય
+                        box.style.cursor = 'default'; 
+                        box.style.pointerEvents = 'none'; /* આ બોક્સ પર કોઈ ઇવેન્ટ નહિ */
+                    }
+                }
+                
+                appleGrid.appendChild(box);
+            });
+
+            // પ્રથમ ખૂટતું બોક્સ ઓટોમેટીક સિલેક્ટ કરો અને ફોકસ કરો
+            const firstMissingBox = document.querySelector('.missing');
+            if (firstMissingBox) {
+                selectBox(firstMissingBox);
+            }
+        }
+
+        /**
+         * ખૂટતું બોક્સ સિલેક્ટ કરો અને હાઇલાઇટ કરો.
+         * @param {HTMLElement} box - સિલેક્ટ કરવા માટેનું apple-box એલિમેન્ટ.
+         */
+        function selectBox(box) {
+            // જો બોક્સ પહેલાથી જ સોલ્વ થઈ ગયું હોય, તો કશું ન કરો
+            if (box.classList.contains('solved') || !Object.keys(missingLetters).length) {
+                // જો ગેમ પૂરી થઈ ગઈ હોય, તો સિલેક્ટ ન કરો
+                return;
+            }
+
+            // અગાઉ સિલેક્ટ કરેલ બોક્સમાંથી selected ક્લાસ દૂર કરો
+            if (activeMissingBox) {
+                activeMissingBox.classList.remove('selected');
+            }
+            
+            // નવું બોક્સ સિલેક્ટ કરો અને હાઇલાઇટ કરો
+            activeMissingBox = box;
+            box.classList.add('selected');
+            messageBox.textContent = 'અક્ષર ટાઇપ કરો અને "જવાબ ચેક કરો" બટન દબાવો.';
+            messageBox.className = 'neutral';
+            
+            // ખાલી બોક્સ પર ફોકસ કરો જેથી કીબોર્ડ ઇનપુટ તૈયાર રહે
+            activeMissingBox.focus();
+        }
+
+        /**
+         * યુઝરના જવાબની તપાસ કરે છે.
+         * @param {string} inputValue - યુઝરે ટાઇપ કરેલો મૂળાક્ષર.
+         */
+        function checkAnswer(inputValue) {
+            // ઇનપુટને નાના અક્ષરમાં ફેરવીને ચેક કરો
+            const input = (inputValue || '').toLowerCase().trim();
+
+            if (!activeMissingBox || input.length !== 1) {
+                showMessage("કૃપા કરીને પહેલા મૂળાક્ષર ટાઇપ કરો.", 'incorrect');
+                activeMissingBox.focus(); 
+                return;
+            }
+
+            const correctLetter = activeMissingBox.dataset.correctLetter; // આ નાના અક્ષરમાં છે
+
+            // માત્ર એક મૂળાક્ષર હોય તો જ આગળ વધો
+            if (!ALPHABET.includes(input) && !ALPHABET.map(l => l.toUpperCase()).includes(input.toUpperCase())) {
+                 // આ સંદેશ સ્પષ્ટ રહેવા દો
+                 showMessage(`ખોટું! "${input}" મૂળાક્ષર નથી.`, 'incorrect'); 
+                 return;
+            }
+
+            if (input === correctLetter) {
+                // જવાબ સાચો છે
+                activeMissingBox.textContent = correctLetter;
+                activeMissingBox.classList.remove('missing', 'selected');
+                activeMissingBox.classList.add('solved');
+                
+                // ટૂંકો અને સ્પષ્ટ સંદેશ: 'સાચું! આગળ વધો.'
+                showMessage("સાચું! આગળ વધો.", 'correct');
+                
+                // ખૂટતા મૂળાક્ષરોની યાદીમાંથી દૂર કરો
+                delete missingLetters[activeMissingBox.dataset.index];
+
+                // આગળનું ખૂટતું બોક્સ ઓટોમેટીક સિલેક્ટ કરો
+                const nextMissingBox = document.querySelector('.missing');
+                if (nextMissingBox) {
+                    selectBox(nextMissingBox);
+                } else {
+                    // જો કોઈ ખૂટતું બોક્સ ન હોય, તો ગેમ સમાપ્ત
+                    handleWin(); 
+                }
+
+            } else {
+                // જવાબ ખોટો છે
+                // ટૂંકો અને સ્પષ્ટ સંદેશ: 'ખોટું! ફરી પ્રયાસ કરો.'
+                showMessage('ખોટું! ફરી પ્રયાસ કરો.', 'incorrect');
+                
+                // ખોટો પ્રયાસ બતાવેલો જ રહેશે (નાના અક્ષરમાં)
+                activeMissingBox.textContent = input;
+                activeMissingBox.focus(); // ફરીથી ફોકસ કરો
+            }
+        }
+
+        /**
+         * જીતવાની સ્થિતિ સંભાળે છે. (પરિણામ બતાવવા માટે)
+         */
+        function handleWin() {
+            // અંતિમ સંદેશ: યુઝરના વિનંતી મુજબનો સંદેશ
+            showMessage("અભિનંદન! તમે બધા મૂળાક્ષરો સાચા ભર્યા છે અને ગેમ પૂરી કરી છે!", 'win'); 
+            
+            // ગેમ પૂરી થયા પછી બટનને ડિસેબલ કરો
+            checkAnswerButton.disabled = true;
+
+            // ખાતરી કરો કે કોઈ બોક્સ સિલેક્ટ થયેલું નથી
+            if (activeMissingBox) {
+                activeMissingBox.classList.remove('selected');
+            }
+            activeMissingBox = null;
+        }
+
+        /**
+         * મેસેજ બોક્સમાં મેસેજ બતાવે છે.
+         * @param {string} msg - બતાવવા માટેનો મેસેજ.
+         * @param {string} type - મેસેજનો પ્રકાર ('correct', 'incorrect', 'win', 'neutral').
+         */
+        function showMessage(msg, type) {
+            messageBox.textContent = msg;
+            messageBox.className = type;
+        }
+
+        // ગ્લોબલ કીબોર્ડ ઇવેન્ટ લિસનર (Enter કીને હવે ચેક કરવા માટે વાપરવામાં આવતી નથી)
+        window.addEventListener('keydown', (event) => {
+            if (!activeMissingBox || activeMissingBox.classList.contains('solved')) {
+                return;
+            }
+
+            const key = event.key;
+            // માત્ર અક્ષરો (a-z, A-Z) જ એન્ટર કરવાની મંજૂરી આપો
+            const isLetter = key.length === 1 && key.match(/[a-zA-Z]/);
+            const isEnter = key === 'Enter'; // Enter કીનો ઉપયોગ માત્ર મોબાઇલ પર કીબોર્ડ બંધ કરવા માટે થશે, જવાબ ચેક કરવા માટે નહીં
+            const isBackspace = key === 'Backspace';
+
+            if (isLetter) {
+                // ટાઇપ કરેલો અક્ષર નાના અક્ષરમાં જ બતાવવા માટે
+                activeMissingBox.textContent = key.toLowerCase();
+            } else if (isEnter) {
+                // Enter દબાવવાથી હવે જવાબ ચેક નહીં થાય, પરંતુ ચેક બટન દબાવવું પડશે.
+                event.preventDefault(); 
+            } else if (isBackspace) {
+                // Backspace દબાવતા ખાનું ખાલી કરો
+                event.preventDefault(); 
+                activeMissingBox.textContent = '';
+            }
+            // અન્ય કીઝ અવગણવામાં આવશે.
+        });
+
+
+        // ગેમ લોડ થતાં જ શરૂ કરો
+        window.onload = initGame;
+    </script>
+
+</body>
+</html>
