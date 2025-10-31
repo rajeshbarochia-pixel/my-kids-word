@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>દશક અને એકમની ગેમ</title>
+    <!-- Tailwind CSS CDN --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font (for better Gujarati numeral rendering) --><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .input-box {
+            width: 60px;
+            text-align: center;
+            font-size: 2.5rem; /* Large font for numerals */
+            border: 3px solid #ccc;
+            border-radius: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            background-color: #fff;
+            transition: border-color 0.2s;
+            /* Ensure the font is consistent for proper Gujarati numeral display */
+            font-family: 'Inter', sans-serif; 
+        }
+        .input-box:focus {
+            outline: none;
+            border-color: #3B82F6; /* Blue border on focus */
+        }
+        /* Hide arrows for number input fields (even if we use type=text) */
+        .input-box::-webkit-outer-spin-button,
+        .input-box::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .block-container {
+            min-height: 200px;
+            max-height: 300px;
+            display: flex;
+            align-items: flex-end; /* Align blocks to the bottom */
+            justify-content: center;
+            gap: 20px;
+            padding: 10px;
+            margin-bottom: 20px;
+            /* CRITICAL FIX: Allow horizontal scrolling if content overflows */
+            overflow-x: auto; 
+        }
+
+        /* Styling for the Tens block (a column of 10 cubes) */
+        .tens-stick {
+            display: flex;
+            flex-direction: column;
+            width: 20px;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            flex-shrink: 0; /* Prevents sticks from shrinking when crowded */
+        }
+
+        .tens-unit {
+            width: 20px;
+            height: 20px;
+            background-color: #FBBF24; /* Amber-400 for yellow blocks */
+            border: 1px solid #92400E; /* Dark border */
+        }
+
+        /* Styling for the Ones cubes */
+        .ones-group {
+            display: flex;
+            flex-wrap: wrap;
+            width: 80px; /* Adjust width to fit 3-4 cubes wide */
+            align-content: flex-end; /* Align group to the bottom */
+            gap: 5px;
+            flex-shrink: 0; /* Prevents group from shrinking */
+            /* Add some margin to the right if scrolling is enabled */
+            margin-right: 10px; 
+        }
+
+        .ones-unit {
+            width: 20px;
+            height: 20px;
+            background-color: #FBBF24; /* Amber-400 for yellow blocks */
+            border: 1px solid #92400E; /* Dark border */
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <!-- Main Application Container --><div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow-2xl border-4 border-yellow-500">
+        <!-- શીર્ષક અપડેટ --><h1 class="text-3xl sm:text-4xl font-bold text-center mb-6 text-yellow-700">દશક અને એકમની રમત (૧ થી ૫૦)</h1>
+        <p class="text-center text-gray-600 mb-6">નીચે આપેલા બ્લોક્સ ગણો અને યોગ્ય સંખ્યા ગુજરાતી અંકોમાં દાખલ કરો.</p>
+
+        <!-- Block Visualization Area --><div id="block-visualization" class="block-container border-2 border-gray-300 rounded-lg bg-gray-50 shadow-inner">
+            <!-- Blocks will be drawn here --></div>
+
+        <!-- Input Grid and Labels --><div class="flex justify-center gap-4 mb-6 text-center">
+            
+            <!-- Tens Input --><div class="flex flex-col items-center p-3 rounded-lg bg-yellow-100 shadow-md">
+                <label for="tens-input" class="text-xl font-semibold text-yellow-800 mb-2">દશક (Tens)</label>
+                <input type="text" id="tens-input" class="input-box" maxlength="1" pattern="[૦-૯]*" inputmode="numeric">
+            </div>
+
+            <!-- Ones Input --><div class="flex flex-col items-center p-3 rounded-lg bg-yellow-100 shadow-md">
+                <label for="ones-input" class="text-xl font-semibold text-yellow-800 mb-2">એકમ (Ones)</label>
+                <input type="text" id="ones-input" class="input-box" maxlength="1" pattern="[૦-૯]*" inputmode="numeric">
+            </div>
+
+            <!-- Total Number Display --><div class="flex flex-col items-center p-3 rounded-lg bg-green-100 shadow-md">
+                <label for="total-number" class="text-xl font-semibold text-green-800 mb-2">કુલ સંખ્યા</label>
+                <!-- This will be read-only and updated by JS --><div id="total-number" class="input-box border-dashed border-green-500 bg-green-50 text-green-800"></div>
+            </div>
+
+        </div>
+
+        <!-- Controls and Feedback --><div class="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
+            <button id="check-btn" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-xl transition duration-300">
+                જવાબ ચકાસો
+            </button>
+            <button id="generate-btn" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-xl transition duration-300">
+                નવી રમત
+            </button>
+        </div>
+
+        <!-- Message/Score Area --><div id="message-area" class="mt-6 p-4 text-center text-lg font-semibold rounded-lg hidden"></div>
+        
+        <!-- Creator Credit --><div class="mt-6 pt-4 border-t border-gray-300 text-center text-sm text-gray-500">
+            Created by: Rajesh barochia
+        </div>
+    </div>
+
+    <!-- JavaScript Game Logic --><script type="module">
+        // Global variables for the current problem and Firebase (though not using Firestore)
+        let currentTens = 0;
+        let currentOnes = 0;
+        let correctAnswer = 0;
+
+        // --- Utility Functions for Gujarati Numerals ---
+
+        /**
+         * Converts Arabic numerals (0-9) to Gujarati numerals (૦-૯).
+         * @param {number|string} number - The number to convert.
+         * @returns {string} The number represented using Gujarati numerals.
+         */
+        function convertToGujaratiNumerals(number) {
+            if (number === null || number === undefined) return '';
+            const gujaratiMap = {
+                '0': '૦', '1': '૧', '2': '૨', '3': '૩', '4': '૪',
+                '5': '૫', '6': '૬', '7': '૭', '8': '૮', '9': '૯'
+            };
+            return String(number).replace(/[0-9]/g, digit => gujaratiMap[digit]);
+        }
+
+        /**
+         * Converts Gujarati numerals (૦-૯) back to Arabic numerals (0-9).
+         * @param {string} gujaratiNumber - The number represented using Gujarati numerals.
+         * @returns {string} The number represented using Arabic numerals.
+         */
+        function convertToArabicNumerals(gujaratiNumber) {
+            if (gujaratiNumber === null || gujaratiNumber === undefined) return '';
+            const arabicMap = {
+                '૦': '0', '૧': '1', '૨': '2', '૩': '3', '૪': '4',
+                '૫': '5', '૬': '6', '૭': '7', '૮': '8', '૯': '9'
+            };
+            return String(gujaratiNumber).replace(/[૦-૯]/g, digit => arabicMap[digit]);
+        }
+        
+        // --- Core Game Functions ---
+
+        /**
+         * Generates a new random tens and ones problem (Limited to numbers 1 to 50).
+         */
+        function generateProblem() {
+            let total;
+            do {
+                currentTens = Math.floor(Math.random() * 5); // 0 to 4
+                currentOnes = Math.floor(Math.random() * 10); // 0 to 9
+                total = (currentTens * 10) + currentOnes;
+            } while (total < 1 || total > 50); // Ensure total is between 1 and 50
+
+            // If total is 50, ensure currentOnes is 0 and currentTens is 5
+            if (total === 50) {
+                currentTens = 5;
+                currentOnes = 0;
+            }
+            
+            correctAnswer = (currentTens * 10) + currentOnes;
+            
+            console.log(`New Problem: ${currentTens} Tens, ${currentOnes} Ones. Total: ${correctAnswer}`);
+            
+            renderBlocks();
+            clearInputsAndFeedback();
+        }
+
+        /**
+         * Clears all input fields and resets feedback.
+         */
+        function clearInputsAndFeedback() {
+            const tensInput = document.getElementById('tens-input');
+            const onesInput = document.getElementById('ones-input');
+            const totalNumberDiv = document.getElementById('total-number');
+            const messageArea = document.getElementById('message-area');
+
+            tensInput.value = '';
+            onesInput.value = '';
+            totalNumberDiv.textContent = '';
+            
+            // Reset borders
+            tensInput.style.borderColor = '#ccc';
+            onesInput.style.borderColor = '#ccc';
+            
+            messageArea.classList.add('hidden');
+        }
+
+        /**
+         * Renders the blocks (tens sticks and ones cubes) based on current problem.
+         */
+        function renderBlocks() {
+            const visualizationDiv = document.getElementById('block-visualization');
+            visualizationDiv.innerHTML = '';
+            
+            // 1. Render Tens Blocks (Sticks of 10)
+            for (let i = 0; i < currentTens; i++) {
+                const tensStick = document.createElement('div');
+                tensStick.className = 'tens-stick';
+                for (let j = 0; j < 10; j++) {
+                    const unit = document.createElement('div');
+                    unit.className = 'tens-unit';
+                    tensStick.appendChild(unit);
+                }
+                visualizationDiv.appendChild(tensStick);
+            }
+
+            // 2. Render Ones Blocks (Single Cubes)
+            if (currentOnes > 0) {
+                const onesGroup = document.createElement('div');
+                onesGroup.className = 'ones-group';
+                for (let i = 0; i < currentOnes; i++) {
+                    const unit = document.createElement('div');
+                    unit.className = 'ones-unit';
+                    onesGroup.appendChild(unit);
+                }
+                visualizationDiv.appendChild(onesGroup);
+            }
+        }
+
+        /**
+         * Checks the user's answers against the correct tens, ones, and total number.
+         */
+        function checkAnswers() {
+            const tensInput = document.getElementById('tens-input');
+            const onesInput = document.getElementById('ones-input');
+            
+            // Get user input and convert from Gujarati to Arabic for validation
+            const userTensGujarati = tensInput.value.trim();
+            const userOnesGujarati = onesInput.value.trim();
+
+            const userTensArabic = parseInt(convertToArabicNumerals(userTensGujarati)) || 0;
+            const userOnesArabic = parseInt(convertToArabicNumerals(userOnesGujarati)) || 0;
+            const userTotalArabic = (userTensArabic * 10) + userOnesArabic;
+
+            let isCorrect = true;
+
+            // 1. Check Tens
+            if (userTensArabic === currentTens) {
+                tensInput.style.borderColor = '#10B981'; // Green
+            } else {
+                tensInput.style.borderColor = '#EF4444'; // Red
+                isCorrect = false;
+            }
+
+            // 2. Check Ones
+            if (userOnesArabic === currentOnes) {
+                onesInput.style.borderColor = '#10B981'; // Green
+            } else {
+                onesInput.style.borderColor = '#EF4444'; // Red
+                isCorrect = false;
+            }
+
+            // 3. Check Total (for user confirmation, not part of input directly)
+            const totalNumberDiv = document.getElementById('total-number');
+            totalNumberDiv.textContent = convertToGujaratiNumerals(userTotalArabic);
+
+            if (isCorrect) {
+                showMessage(`બધા જવાબો સાચા છે! કુલ સંખ્યા: ${convertToGujaratiNumerals(correctAnswer)}`, 'bg-green-100 text-green-700 border border-green-500');
+            } else {
+                showMessage(`કોઈક જવાબ ખોટો છે. સાચો દશક: ${convertToGujaratiNumerals(currentTens)}, સાચો એકમ: ${convertToGujaratiNumerals(currentOnes)}`, 'bg-red-100 text-red-700 border border-red-500');
+            }
+        }
+
+        /**
+         * Handles input change for Tens/Ones boxes, converts to Gujarati, and updates total display.
+         * @param {Event} event - The input event.
+         */
+        function handleInputChange(event) {
+            const input = event.target;
+            let value = input.value.trim();
+            
+            // Only allow maximum 1 character
+            value = value.slice(0, 1);
+
+            // Convert Arabic input to Gujarati for display and internal storage
+            const gujaratiValue = convertToGujaratiNumerals(value);
+
+            // Update the input field display with Gujarati numerals
+            input.value = gujaratiValue;
+            
+            // Reset border on input
+            input.style.borderColor = '#ccc';
+            
+            // Update total number display
+            updateTotalNumberDisplay();
+
+            // Hide previous message
+            document.getElementById('message-area').classList.add('hidden');
+        }
+
+        /**
+         * Calculates and updates the total number div based on current inputs.
+         */
+        function updateTotalNumberDisplay() {
+            const tensInput = document.getElementById('tens-input');
+            const onesInput = document.getElementById('ones-input');
+            const totalNumberDiv = document.getElementById('total-number');
+
+            const userTensArabic = parseInt(convertToArabicNumerals(tensInput.value.trim())) || 0;
+            const userOnesArabic = parseInt(convertToArabicNumerals(onesInput.value.trim())) || 0;
+            
+            const userTotalArabic = (userTensArabic * 10) + userOnesArabic;
+
+            // Display the total number in Gujarati
+            totalNumberDiv.textContent = convertToGujaratiNumerals(userTotalArabic);
+        }
+
+        /**
+         * Display status messages
+         */
+        function showMessage(text, className) {
+            const messageArea = document.getElementById('message-area');
+            messageArea.textContent = text;
+            messageArea.className = `mt-6 p-4 text-center text-lg font-semibold rounded-lg ${className}`;
+            messageArea.classList.remove('hidden');
+        }
+
+        /**
+         * Attaches all event listeners.
+         */
+        function setupEventListeners() {
+            document.getElementById('generate-btn').addEventListener('click', generateProblem);
+            document.getElementById('check-btn').addEventListener('click', checkAnswers);
+            
+            document.getElementById('tens-input').addEventListener('input', handleInputChange);
+            document.getElementById('ones-input').addEventListener('input', handleInputChange);
+        }
+        
+        // --- Initial Load ---
+        window.onload = () => {
+            setupEventListeners();
+            generateProblem(); // Start the first game
+        };
+    </script>
+</body>
+</html>
