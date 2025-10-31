@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>અંકો ઉમેરો</title>
+    <!-- Tailwind CSS CDN --><script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            touch-action: manipulation; /* Improves touch responsiveness */
+        }
+        .circle {
+            width: 50px;
+            height: 50px;
+            min-width: 50px; /* Ensure fixed size on mobile */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s ease-in-out;
+        }
+        .input-circle {
+            background-color: #ffffff;
+            border: 2px solid #ccc;
+            outline: none;
+            text-align: center;
+            cursor: pointer;
+        }
+        .input-circle:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+        .correct {
+            border-color: #10b981 !important;
+            background-color: #d1fae5;
+        }
+        .incorrect {
+            border-color: #ef4444 !important;
+            background-color: #fee2e2;
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% {transform: translateX(0);}
+            20%, 60% {transform: translateX(-5px);}
+            40%, 80% {transform: translateX(5px);}
+        }
+        /* Custom arrow styling using pseudo-elements */
+        .step-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .step-connector {
+            position: relative;
+            height: 100px;
+            width: 60px; /* Space for arrow and text */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 -5px; /* Slight overlap */
+        }
+        .arrow-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: currentColor;
+            transform: translateY(-50%);
+            z-index: 0;
+        }
+        .arrow-head {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 10px solid currentColor;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+        .add-text {
+            position: absolute;
+            top: 20px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            background-color: #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            z-index: 2;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-2xl">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center md:text-left">
+            અંકો ઉમેરો
+        </h1>
+        <p class="text-gray-500 mb-6 text-center md:text-left">
+            આપેલા સરવાળા પૂર્ણ કરો:
+        </p>
+
+        <div id="game-container" class="space-y-8 min-h-[100px] flex justify-center items-center">
+            <!-- Game row will be injected here --></div>
+
+        <div id="navigation-controls" class="mt-10 flex justify-center space-x-4">
+            <button id="prev-row-button"
+                class="px-6 py-3 bg-gray-400 text-white font-semibold rounded-lg shadow-lg hover:bg-gray-500 transition duration-150 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-300 focus:ring-opacity-50"
+                disabled>
+                પાછળ
+            </button>
+            <button id="new-game-button"
+                class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition duration-150 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                નવી રમત
+            </button>
+            <button id="next-row-button"
+                class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-lg hover:bg-blue-700 transition duration-150 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50"
+                disabled>
+                આગળ
+            </button>
+        </div>
+
+        <div id="feedback-message" class="mt-6 text-center text-xl font-bold h-8">
+            <!-- Feedback messages appear here --></div>
+
+        <div id="progress-message" class="mt-4 text-center text-lg text-gray-600 h-6">
+            <!-- Progress message appears here --></div>
+
+        <div class="mt-10 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
+            Created by: Rajesh Barochia
+        </div>
+    </div>
+
+    <script>
+        // ગ્લોબલ વેરીએબલ્સ
+        let gameProblems = [];
+        let currentRowIndex = 0; // નવું વેરીએબલ: વર્તમાનમાં કઈ હરોળ બતાવવી
+        const NUM_ROWS = 4;
+        const STEPS_PER_ROW = 4;
+        const START_MIN = 1;
+        const START_MAX = 20;
+        const ADD_MIN = 1;
+        const ADD_MAX = 9;
+        const ROW_COLORS = [
+            { id: 'blue', text: 'text-blue-700', border: 'border-blue-500', bg: 'bg-blue-100' },
+            { id: 'orange', text: 'text-orange-600', border: 'border-orange-500', bg: 'bg-orange-100' },
+            { id: 'green', text: 'text-green-700', border: 'border-green-500', bg: 'bg-green-100' },
+            { id: 'red', text: 'text-red-600', border: 'border-red-500', bg: 'bg-red-100' },
+        ];
+
+        // રેન્ડમ નંબર જનરેટ કરવા માટેનું ફંક્શન
+        const getRandomInt = (min, max) => {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        };
+
+        // નવી રમત જનરેટ કરવા માટેનું ફંક્શન
+        const generateProblem = (color) => {
+            const start = getRandomInt(START_MIN, START_MAX);
+            let currentValue = start;
+            const steps = [];
+
+            for (let i = 0; i < STEPS_PER_ROW; i++) {
+                const add = getRandomInt(ADD_MIN, ADD_MAX);
+                const expected = currentValue + add;
+                currentValue = expected;
+
+                steps.push({
+                    add: add,
+                    expected: expected,
+                    id: `input-${color.id}-${i}`,
+                    status: 'pending' // pending, correct, incorrect
+                });
+            }
+
+            return { start, color, steps, isCompleted: false }; // isCompleted property for row
+        };
+
+        // નેવિગેશન બટનોની સ્થિતિ અપડેટ કરો
+        const updateNavigationButtons = () => {
+            const prevButton = document.getElementById('prev-row-button');
+            const nextButton = document.getElementById('next-row-button');
+            const feedback = document.getElementById('feedback-message');
+            
+            prevButton.disabled = currentRowIndex === 0;
+            
+            // "આગળ" બટન માત્ર ત્યારે જ સક્ષમ કરો જો વર્તમાન હરોળ પૂર્ણ થઈ ગઈ હોય
+            nextButton.disabled = !gameProblems[currentRowIndex].isCompleted;
+
+            if (currentRowIndex === gameProblems.length - 1) {
+                nextButton.textContent = 'સમાપ્ત';
+                if (gameProblems[currentRowIndex].isCompleted && areAllRowsCompleted()) {
+                    feedback.textContent = 'તમે તમામ સરવાળા પૂર્ણ કર્યા! ખૂબ સરસ! 🥳';
+                    feedback.classList.remove('text-red-600', 'text-green-600');
+                    feedback.classList.add('text-indigo-600', 'text-2xl');
+                    nextButton.disabled = true; // Disable "સમાપ્ત" button after game completion
+                } else if (gameProblems[currentRowIndex].isCompleted) {
+                    feedback.textContent = 'આ છેલ્લી હરોળ છે! સમાપ્ત કરવા આગળ વધો. ✅';
+                    feedback.classList.remove('text-red-600', 'text-indigo-600', 'text-2xl');
+                    feedback.classList.add('text-green-600');
+                }
+            } else {
+                nextButton.textContent = 'આગળ';
+            }
+        };
+
+        // આગલી હરોળ પર જવા માટે
+        const goToNextRow = () => {
+            // માત્ર ત્યારે જ આગળ વધો જો વર્તમાન હરોળ પૂર્ણ થઈ ગઈ હોય
+            if (gameProblems[currentRowIndex].isCompleted && currentRowIndex < gameProblems.length - 1) {
+                currentRowIndex++;
+                clearFeedbackMessages();
+                renderGame();
+            } else if (gameProblems[currentRowIndex].isCompleted && currentRowIndex === gameProblems.length - 1) {
+                // રમત પૂર્ણ
+                const feedback = document.getElementById('feedback-message');
+                feedback.textContent = 'તમે તમામ સરવાળા પૂર્ણ કર્યા! ખૂબ સરસ! 🥳';
+                feedback.classList.remove('text-red-600', 'text-green-600');
+                feedback.classList.add('text-indigo-600', 'text-2xl');
+                document.getElementById('next-row-button').disabled = true;
+                document.getElementById('next-row-button').textContent = 'સમાપ્ત'; // Ensure button text is "સમાપ્ત"
+            }
+        };
+
+        // પાછલી હરોળ પર જવા માટે
+        const goToPrevRow = () => {
+            if (currentRowIndex > 0) {
+                currentRowIndex--;
+                clearFeedbackMessages();
+                renderGame();
+            }
+        };
+
+        // ગેમ UI ને રેન્ડર કરવા માટેનું ફંક્શન
+        const renderGame = () => {
+            const container = document.getElementById('game-container');
+            container.innerHTML = '';
+            
+            if (currentRowIndex >= 0 && currentRowIndex < gameProblems.length) {
+                const problem = gameProblems[currentRowIndex];
+                const problemIndex = currentRowIndex;
+
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'flex items-center justify-center p-2 md:p-0 space-x-2 md:space-x-4'; 
+
+                // 1. શરૂઆતનું સર્કલ (Start Circle)
+                const startCircle = document.createElement('div');
+                startCircle.className = `circle ${problem.color.text} ${problem.color.bg} border-2 ${problem.color.border} flex-shrink-0`;
+                startCircle.textContent = problem.start;
+                rowDiv.appendChild(startCircle);
+
+                let previousResult = problem.start;
+
+                problem.steps.forEach((step, stepIndex) => {
+                    const stepContainer = document.createElement('div');
+                    stepContainer.className = 'step-container flex-shrink-0';
+                    stepContainer.style.color = problem.color.text.replace('text-', '#'); 
+
+                    const connectorDiv = document.createElement('div');
+                    connectorDiv.className = 'step-connector';
+                    
+                    connectorDiv.innerHTML = `
+                        <div class="arrow-line rounded-full"></div>
+                        <div class="arrow-head"></div>
+                        <div class="add-text ${problem.color.bg}">+${step.add}</div>
+                    `;
+                    rowDiv.appendChild(connectorDiv);
+
+                    // 2. જવાબનું સર્કલ (Answer Circle)
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.className = `circle input-circle border-2 ${problem.color.border} ${problem.color.text}`;
+                    
+                    const currentStep = problem.steps[stepIndex];
+                    if (currentStep.status === 'correct') {
+                         input.value = currentStep.expected;
+                         input.classList.add('correct');
+                         input.disabled = true;
+                    } else {
+                         input.placeholder = '?';
+                         input.value = '';
+                    }
+
+                    input.id = step.id;
+                    input.maxLength = 3;
+                    input.setAttribute('data-row', problemIndex);
+                    input.setAttribute('data-step', stepIndex);
+                    input.setAttribute('data-prev-result', previousResult);
+                    input.setAttribute('data-add', step.add);
+                    
+                    input.addEventListener('input', (e) => checkAnswer(e.target, currentStep, problemIndex, stepIndex));
+
+                    rowDiv.appendChild(input);
+                    previousResult = currentStep.expected; 
+                });
+
+                container.appendChild(rowDiv);
+            } 
+            updateProgressMessage(); // Progress bar update
+            updateNavigationButtons();
+        };
+
+        // જવાબ ચકાસવા માટેનું ફંક્શન
+        const checkAnswer = (inputElement, stepData, rowIndex, stepIndex) => {
+            const value = parseInt(inputElement.value.trim());
+            const feedback = document.getElementById('feedback-message');
+            
+            inputElement.classList.remove('correct', 'incorrect');
+            gameProblems[rowIndex].steps[stepIndex].status = 'pending'; 
+
+            if (inputElement.value.trim() === '') {
+                feedback.textContent = '';
+                return;
+            }
+
+            if (value === stepData.expected) {
+                inputElement.classList.add('correct');
+                inputElement.disabled = true; 
+                gameProblems[rowIndex].steps[stepIndex].status = 'correct'; 
+                feedback.textContent = 'સાચો જવાબ! 🎉';
+                feedback.classList.remove('text-red-600');
+                feedback.classList.add('text-green-600');
+                checkRowCompletion(rowIndex); // Check completion for the current row
+            } else {
+                inputElement.classList.add('incorrect');
+                feedback.textContent = 'ખોટો જવાબ! 😞 ફરી પ્રયાસ કરો.';
+                feedback.classList.remove('text-green-600');
+                feedback.classList.add('text-red-600');
+            }
+            updateProgressMessage(); // Update progress message on each input
+        };
+        
+        // વર્તમાન હરોળ પૂર્ણ થઈ છે કે નહીં તે ચકાસવા માટેનું ફંક્શન
+        const checkRowCompletion = (rowIndex) => {
+            const currentRow = gameProblems[rowIndex];
+            let allStepsCorrect = true;
+            currentRow.steps.forEach(step => {
+                if (step.status !== 'correct') {
+                    allStepsCorrect = false;
+                }
+            });
+
+            currentRow.isCompleted = allStepsCorrect; // Update row completion status
+            updateNavigationButtons(); // Update buttons based on new row completion status
+        };
+
+        // શું બધી હરોળ પૂર્ણ થઈ ગઈ છે?
+        const areAllRowsCompleted = () => {
+            return gameProblems.every(row => row.isCompleted);
+        };
+
+        // પ્રોગ્રેસ મેસેજ અપડેટ કરો (દા.ત. "2/4 પ્રશ્નો પૂર્ણ")
+        const updateProgressMessage = () => {
+            const progressMessageDiv = document.getElementById('progress-message');
+            let completedStepsInCurrentRow = 0;
+            if (gameProblems.length > 0 && currentRowIndex < gameProblems.length) {
+                gameProblems[currentRowIndex].steps.forEach(step => {
+                    if (step.status === 'correct') {
+                        completedStepsInCurrentRow++;
+                    }
+                });
+                progressMessageDiv.textContent = `પ્રશ્ન ${currentRowIndex + 1}/${NUM_ROWS} | ${completedStepsInCurrentRow}/${STEPS_PER_ROW} પગલાં પૂર્ણ`;
+            } else {
+                progressMessageDiv.textContent = '';
+            }
+        };
+
+        // પ્રતિસાદ સંદેશાઓ સાફ કરવા માટે
+        const clearFeedbackMessages = () => {
+            document.getElementById('feedback-message').textContent = '';
+            document.getElementById('feedback-message').classList.remove('text-2xl', 'text-indigo-600', 'text-green-600', 'text-red-600');
+            document.getElementById('progress-message').textContent = '';
+        };
+
+        // નવી રમત શરૂ કરવા માટેનું મુખ્ય ફંક્શન
+        const startNewGame = () => {
+            gameProblems = [];
+            for (let i = 0; i < NUM_ROWS; i++) {
+                gameProblems.push(generateProblem(ROW_COLORS[i % ROW_COLORS.length]));
+            }
+
+            currentRowIndex = 0; 
+            
+            clearFeedbackMessages();
+            renderGame();
+            
+            console.log("New game started with problems:", gameProblems);
+        };
+
+        // ઇવેન્ટ લિસનર્સ
+        document.getElementById('new-game-button').addEventListener('click', startNewGame);
+        document.getElementById('next-row-button').addEventListener('click', goToNextRow);
+        document.getElementById('prev-row-button').addEventListener('click', goToPrevRow);
+
+        // પેજ લોડ થવા પર રમત શરૂ કરો
+        window.onload = startNewGame;
+
+    </script>
+</body>
+</html>
