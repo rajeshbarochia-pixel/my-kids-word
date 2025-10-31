@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>અપૂર્ણાંક, ટકાવારી અને દશાંશ સંબંધ</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-grey background */
+            min-height: 100vh;
+        }
+
+        .flip-card {
+            background-color: #ffffff;
+            border: 4px solid #ef4444; /* Red border like the physical chart */
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            height: 250px; /* Fixed height for visual consistency */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            text-align: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .flip-card-title {
+            position: absolute;
+            top: 0.5rem;
+            left: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #4b5563; /* Gray */
+            padding: 0 0.5rem;
+        }
+
+        /* Styling for the SVG Pie Chart */
+        .pie-chart-svg {
+            width: 150px;
+            height: 150px;
+            transform: rotate(-90deg); /* Start the segment from the top */
+        }
+        
+        /* Define colors for filled (red) and empty (light grey) segments */
+        .chart-segment-filled {
+            fill: #ef4444; /* Red color for the filled segment */
+        }
+        .chart-segment-empty {
+            fill: #e5e7eb; /* Very light grey for the empty segment */
+        }
+
+        .fraction-input-container input {
+            text-align: center;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            width: 80px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col items-center">
+
+    <div class="w-full max-w-6xl mx-auto">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-center text-red-600 mb-0">અપૂર્ણાંક, ટકાવારી, દશાંશ કન્વર્ટર</h1>
+        <!-- Added line below the title -->
+        <p class="text-center text-sm text-gray-700 mb-6 font-semibold">Created by :Rajesh Barochia</p>
+        
+        <p class="text-center text-gray-600 mb-8 text-lg">અંશ (Numerator) અને છેદ (Denominator) દાખલ કરો અને તેના વિવિધ સ્વરૂપો જુઓ.</p>
+
+        <!-- Target Input Line -->
+        <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8 mb-10 p-6 bg-white rounded-xl shadow-md border-2 border-indigo-500">
+            <label class="text-xl font-bold text-indigo-700">ટાર્ગેટ અપૂર્ણાંક દાખલ કરો:</label>
+            <div class="flex items-center space-x-2 fraction-input-container">
+                <!-- Numerator Input -->
+                <input type="number" id="numeratorInput" value="1" min="1" max="100" class="focus:ring-indigo-500 focus:border-indigo-500 p-2">
+                <span class="text-4xl font-extrabold text-indigo-700">/</span>
+                <!-- Denominator Input -->
+                <input type="number" id="denominatorInput" value="4" min="1" max="100" class="focus:ring-indigo-500 focus:border-indigo-500 p-2">
+            </div>
+            <button id="updateBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">
+                માહિતી અપડેટ કરો
+            </button>
+            <button id="generateRandomBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">
+                રેન્ડમ અપૂર્ણાંક
+            </button>
+        </div>
+        
+        <!-- Error Message -->
+        <div id="errorMsg" class="text-center text-red-500 font-bold mb-4 hidden">
+            કૃપા કરીને અંશ (Numerator) અને છેદ (Denominator) બંનેમાં માન્ય સંખ્યા દાખલ કરો. (અંશ છેદ કરતાં મોટો ન હોવો જોઈએ)
+        </div>
+
+
+        <!-- Flip Cards Container (Mobile: Column, Desktop: Grid) -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            
+            <!-- 1. Pie Chart (Visual Fraction) -->
+            <div id="chartCard" class="flip-card">
+                <span class="flip-card-title">અપૂર્ણાંક (ચિત્ર)</span>
+                <svg id="pieChart" class="pie-chart-svg" viewBox="0 0 100 100">
+                    <!-- Pie chart elements will be generated here -->
+                </svg>
+            </div>
+            
+            <!-- 2. Fraction -->
+            <div id="fractionCard" class="flip-card">
+                <span class="flip-card-title">અપૂર્ણાંક (Fraction)</span>
+                <div class="text-6xl font-black text-blue-600 leading-none" id="fractionDisplay">
+                    <!-- e.g. 1/2 -->
+                </div>
+            </div>
+
+            <!-- 3. Decimal (Moved to position 3) -->
+            <div id="decimalCard" class="flip-card">
+                <span class="flip-card-title">દશાંશ (Decimal)</span>
+                <div class="text-5xl font-black text-purple-600" id="decimalDisplay">
+                    <!-- Font size changed from text-6xl to text-5xl -->
+                </div>
+            </div>
+
+            <!-- 4. Percentage (Moved to position 4) -->
+            <div id="percentageCard" class="flip-card">
+                <span class="flip-card-title">ટકાવારી (Percentage)</span>
+                <div class="text-5xl font-black text-green-600" id="percentageDisplay">
+                    <!-- Font size changed from text-6xl to text-5xl -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // List of common, easy-to-visualize fractions for Random button
+        const presetFractions = [
+            { numerator: 1, denominator: 2 }, 
+            { numerator: 1, denominator: 4 }, 
+            { numerator: 3, denominator: 4 }, 
+            { numerator: 1, denominator: 5 }, 
+            { numerator: 2, denominator: 5 }, 
+            { numerator: 3, denominator: 5 }, 
+            { numerator: 1, denominator: 10 },
+            { numerator: 7, denominator: 10 },
+            { numerator: 1, denominator: 8 }, 
+            { numerator: 3, denominator: 8 }, 
+            { numerator: 1, denominator: 3 }, 
+            { numerator: 2, denominator: 3 }, 
+        ];
+
+        const numeratorInput = document.getElementById('numeratorInput');
+        const denominatorInput = document.getElementById('denominatorInput');
+        const updateBtn = document.getElementById('updateBtn');
+        const generateRandomBtn = document.getElementById('generateRandomBtn');
+        const errorMsg = document.getElementById('errorMsg');
+
+        // Function to calculate the coordinates for an arc's endpoint
+        const getCoordinatesForAngle = (angleInDegrees, radius, cx, cy) => {
+            const angleInRadians = (Math.PI / 180) * angleInDegrees;
+            // Cosine and Sine are used here. SVG's 0 degree is on the right (+X axis).
+            // The SVG is rotated -90deg via CSS, so this calculation works as intended.
+            const x = cx + radius * Math.cos(angleInRadians);
+            const y = cy + radius * Math.sin(angleInRadians);
+            return { x, y };
+        };
+
+        const updateChart = (frac) => {
+            const { numerator, denominator } = frac;
+
+            if (denominator <= 0 || numerator > denominator || numerator < 0) {
+                errorMsg.classList.remove('hidden');
+                // Clear displays on error
+                document.getElementById('pieChart').innerHTML = '';
+                document.getElementById('fractionDisplay').innerHTML = '—';
+                document.getElementById('decimalDisplay').textContent = '—';
+                document.getElementById('percentageDisplay').textContent = '—';
+                return;
+            } else {
+                errorMsg.classList.add('hidden');
+            }
+
+            const decimalValue = numerator / denominator;
+            const percentage = decimalValue * 100;
+
+            // --- 1. Update Pie Chart ---
+            const pieChart = document.getElementById('pieChart');
+            pieChart.innerHTML = ''; // Clear previous elements
+            
+            const radius = 45;
+            const cx = 50;
+            const cy = 50;
+            const angleStep = 360 / denominator;
+
+            // Draw segments (individual parts)
+            let currentAngle = 0;
+            for (let i = 0; i < denominator; i++) {
+                // Adjust for SVG coordinates: 0 deg is right. We use -90 offset for CSS rotation.
+                const startAngle = currentAngle - 90;
+                const endAngle = currentAngle + angleStep - 90;
+
+                const startCoord = getCoordinatesForAngle(startAngle, radius, cx, cy);
+                const endCoord = getCoordinatesForAngle(endAngle, radius, cx, cy);
+                
+                // Determine if this segment is filled (part of the numerator)
+                const isFilled = i < numerator;
+                
+                // Large arc flag for segments larger than 180 degrees (only needed if denominator < 2)
+                const largeArcFlag = angleStep > 180 ? 1 : 0; 
+                
+                // SVG Path command for a segment
+                const d = [
+                    `M ${cx},${cy}`,                                // Move to center
+                    `L ${startCoord.x},${startCoord.y}`,            // Line to start of arc
+                    `A ${radius},${radius} 0 ${largeArcFlag} 1 ${endCoord.x},${endCoord.y}`, // Arc to end point
+                    `Z`                                             // Close path (Line back to center)
+                ].join(' ');
+
+                const segmentPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                segmentPath.setAttribute('d', d);
+                // Assign class based on whether the segment is filled or empty
+                segmentPath.setAttribute('class', isFilled ? 'chart-segment-filled' : 'chart-segment-empty');
+                segmentPath.setAttribute('stroke', '#4b5563'); // Add stroke for clear division
+                segmentPath.setAttribute('stroke-width', '1');
+                pieChart.appendChild(segmentPath);
+
+                currentAngle += angleStep; // Move to the start of the next segment
+            }
+
+
+            // Draw the outer circle outline last for a clean edge
+            const circleOutline = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circleOutline.setAttribute('cx', '50');
+            circleOutline.setAttribute('cy', '50');
+            circleOutline.setAttribute('r', '45');
+            circleOutline.setAttribute('fill', 'none');
+            circleOutline.setAttribute('stroke', '#4b5563'); // Darker grey outline
+            circleOutline.setAttribute('stroke-width', '2');
+            pieChart.appendChild(circleOutline);
+
+
+            // --- 2. Update Fraction Display ---
+            // Display fraction using a simple stacked div for better appearance
+            document.getElementById('fractionDisplay').innerHTML = `
+                <div class="text-4xl leading-tight">${numerator}</div>
+                <div class="h-1 w-20 bg-blue-600 mx-auto my-1"></div> 
+                <div class="text-4xl leading-tight">${denominator}</div>
+            `;
+            
+            // --- 3. Update Decimal Display (Now located in position 3) ---
+            document.getElementById('decimalDisplay').textContent = decimalValue.toFixed(4).replace(/0+$/, ''); // Max 4 decimal places, remove trailing zeros
+
+
+            // --- 4. Update Percentage Display (Now located at the end) ---
+            // Handle repeating decimals (1/3, 2/3)
+            let percentageStr;
+            if (denominator === 3 || denominator === 6 || denominator === 7 || denominator === 9 || denominator === 11) {
+                // Use a fixed 2 decimal for repeating fractions for better reading
+                percentageStr = percentage.toFixed(2); 
+            } else {
+                percentageStr = percentage.toFixed(percentage % 1 === 0 ? 0 : 2);
+            }
+            
+            document.getElementById('percentageDisplay').textContent = `${percentageStr}%`;
+        };
+        
+        // --- Event Handlers ---
+        const handleUpdate = () => {
+            const num = parseInt(numeratorInput.value);
+            const den = parseInt(denominatorInput.value);
+            
+            if (isNaN(num) || isNaN(den) || den <= 0 || num > den || num < 0) {
+                updateChart({ numerator: -1, denominator: -1 }); // Trigger error state
+                return;
+            }
+            
+            updateChart({ numerator: num, denominator: den });
+        };
+
+        const handleRandom = () => {
+            const index = Math.floor(Math.random() * presetFractions.length);
+            const frac = presetFractions[index];
+            
+            numeratorInput.value = frac.numerator;
+            denominatorInput.value = frac.denominator;
+            
+            updateChart(frac);
+        };
+
+        // --- Event Listeners ---
+        updateBtn.addEventListener('click', handleUpdate);
+        generateRandomBtn.addEventListener('click', handleRandom);
+
+        // --- Initial Load ---
+        window.onload = () => {
+             // Set a default fraction on load
+             handleUpdate();
+        };
+
+    </script>
+</body>
+</html>
