@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>વિસ્તૃત સ્વરૂપ (Expanded Form) ગેમ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Colorful Gradient Background */
+            background: linear-gradient(to right top, #a78bfa, #818cf8, #6366f1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px 10px;
+            box-sizing: border-box;
+        }
+
+        #game-container {
+            max-width: 600px;
+            width: 100%;
+            background-color: #ffffff; /* White background for the main container */
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); /* Deeper shadow */
+            padding: 2.5rem; /* More padding */
+        }
+
+        /* Custom input style */
+        .expanded-input {
+            width: 100%;
+            padding: 14px 18px; /* Slightly more padding */
+            border: 3px solid #cbd5e1; /* Lighter default border */
+            border-radius: 0.75rem; /* Rounded corners */
+            font-size: 1.5rem; /* Even larger font */
+            font-weight: 700; /* Bolder font */
+            text-align: center;
+            transition: border-color 0.3s ease-in-out, background-color 0.3s ease-in-out;
+            outline: none;
+            color: #1f2937; /* Darker text for input */
+        }
+        
+        /* Specific styling for the main question area */
+        #single-question-area {
+            background-color: #f8fafc; /* Lighter background for question area */
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); /* Softer shadow */
+            border-radius: 1rem; /* Rounded corners */
+            padding: 2rem; /* More padding */
+        }
+
+        .correct-bg {
+            background-color: #dcfce7 !important; /* Lighter green */
+            border-color: #4ade80 !important; /* Bright green border */
+        }
+        .incorrect-bg {
+            background-color: #fee2e2 !important; /* Lighter red */
+            border-color: #ef4444 !important; /* Bright red border */
+        }
+        .message-box {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 50;
+            display: none;
+            max-width: 280px;
+            border-left: 4px solid;
+            font-weight: 600;
+        }
+        /* New style for inline success message */
+        .inline-success-message {
+            color: #10b981; /* Emerald green */
+            font-weight: 700;
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 1.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="game-container" class="flex flex-col items-center p-6 bg-white rounded-xl shadow-2xl">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-0 text-center">વિસ્તૃત સ્વરૂપ લખો</h1>
+        <p class="text-sm sm:text-base text-gray-600 mb-4 text-center">Created by : Rajesh Barochia</p>
+        <p class="text-base sm:text-lg text-gray-700 mb-6 text-center">નંબરોનું વિસ્તૃત સ્વરૂપ (દા.ત. 1234 = 1000+200+30+4) લખો.</p>
+        
+        <!-- Level Selection Dropdown --><div class="w-full flex justify-center mb-6">
+            <label for="level-select" class="text-lg font-bold text-purple-700 mr-4 self-center">લેવલ પસંદ કરો:</label>
+            <select id="level-select" onchange="generateNewGame(true)" class="level-select">
+                <option value="4">4 અંકની રકમ</option>
+                <option value="3">3 અંકની રકમ</option>
+                <option value="2">2 અંકની રકમ</option>
+            </select>
+        </div>
+        <!-- End Level Selection Dropdown --><!-- Single Question Display Area --><div id="single-question-area" class="w-full text-center p-6 border border-gray-200 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl sm:text-2xl text-gray-800 mb-4 font-bold">રકમ:</h2>
+            <div class="text-5xl sm:text-6xl font-extrabold text-purple-700 mb-8" id="display-number"></div>
+            
+            <input type="text" id="current-input" class="expanded-input" placeholder="દા.ત. 1000+500+90+8">
+            <div id="inline-success-message" class="inline-success-message hidden">જવાબ સાચો છે!</div>
+        </div>
+        <!-- End Single Question Display Area --><!-- Controls and Progress --><div class="w-full flex justify-between items-center px-2">
+            <div id="progress-bar" class="text-gray-700 text-base sm:text-lg font-bold pt-2">પ્રશ્ન 1 / 5</div>
+            
+            <div class="flex space-x-4">
+                <button onclick="checkCurrentQuestion()" id="check-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition transform hover:-translate-y-1 duration-300 text-base sm:text-lg">
+                    જવાબ ચકાસો
+                </button>
+                <button onclick="goToNextQuestion()" id="next-btn" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition transform hover:-translate-y-1 duration-300 text-base sm:text-lg hidden">
+                    આગળ ($\rightarrow$)
+                </button>
+            </div>
+        </div>
+
+        <button onclick="generateNewGame(true)" class="mt-8 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-8 rounded-lg shadow-md transition transform hover:-translate-y-1 duration-300 text-base sm:text-lg w-full max-w-sm">
+            નવી ગેમ (શરૂઆતથી)
+        </button>
+        
+        <div id="message-box" class="message-box"></div>
+    </div>
+
+    <script>
+        const NUM_QUESTIONS = 5; 
+        let CURRENT_NUMBERS = [];
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+        let NUM_DIGITS = 4; // Default to 4 digits
+
+        const messageBox = document.getElementById('message-box');
+        const displayNumElement = document.getElementById('display-number');
+        const inputElement = document.getElementById('current-input');
+        const checkBtn = document.getElementById('check-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const levelSelect = document.getElementById('level-select');
+        const inlineSuccessMessage = document.getElementById('inline-success-message'); // New element
+        
+        // Utility to display messages
+        function showMessage(text, isSuccess) {
+            messageBox.textContent = text;
+            messageBox.className = `message-box block ${isSuccess ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'} border-l-4 ${isSuccess ? 'border-green-400' : 'border-red-400'}`;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 3000);
+        }
+
+        // --- Core Logic: Generate Expected Expanded Form (Generalized for 2, 3, or 4 digits) ---
+        function getExpandedForm(number) {
+            const str = String(number);
+            const parts = [];
+            const len = str.length;
+
+            for (let i = 0; i < len; i++) {
+                const digit = parseInt(str[i]);
+                if (digit !== 0) {
+                    const placeValue = digit * Math.pow(10, len - 1 - i);
+                    parts.push(placeValue);
+                }
+            }
+            return parts.join('+');
+        }
+
+        // --- Core Logic: Compare User Input with Solution (Handles order changes) ---
+        function cleanAndValidateInput(userInput) {
+            const originalNumber = CURRENT_NUMBERS[currentQuestionIndex];
+            
+            // 1. Clean the user input: remove spaces, normalize plus signs, remove non-math characters
+            const cleanedInput = userInput.trim()
+                .replace(/\s/g, '') 
+                .replace(/[\u002B\uFF0B]/g, '+') 
+                .replace(/[^0-9+]/g, ''); 
+
+            // 2. Sum the parts of the user's expanded form
+            try {
+                // Ensure that only valid number strings are included in the sum calculation
+                const inputParts = cleanedInput.split('+')
+                    .map(p => {
+                        const num = parseInt(p.trim());
+                        return isNaN(num) ? 0 : num; // Treat non-numeric parts as 0 for sum
+                    });
+
+                const inputSum = inputParts.reduce((acc, val) => acc + val, 0);
+
+                // If the sum matches the original number, the expanded form is logically correct
+                return inputSum === originalNumber;
+
+            } catch (e) {
+                console.error("Validation error:", e);
+                return false;
+            }
+        }
+        
+        // --- Game Generation and Initialization ---
+        function generateNewGame(showMsg = false) {
+            // Get the selected number of digits from the dropdown
+            NUM_DIGITS = parseInt(levelSelect.value);
+
+            let min, max;
+            if (NUM_DIGITS === 2) {
+                min = 10;
+                max = 99;
+                inputElement.placeholder = "દા.ત. 50+8";
+            } else if (NUM_DIGITS === 3) {
+                min = 100;
+                max = 999;
+                inputElement.placeholder = "દા.ત. 300+40+7";
+            } else { // Default to 4
+                min = 1000;
+                max = 9999;
+                inputElement.placeholder = "દા.ત. 1000+500+90+8";
+            }
+
+            CURRENT_NUMBERS = [];
+            // Generate random numbers based on the selected digit count
+            for (let i = 0; i < NUM_QUESTIONS; i++) {
+                // Generate random number between min (inclusive) and max (inclusive)
+                CURRENT_NUMBERS.push(Math.floor(Math.random() * (max - min + 1)) + min);
+            }
+            
+            userAnswers = Array(NUM_QUESTIONS).fill(false);
+            currentQuestionIndex = 0;
+            
+            displayCurrentQuestion();
+
+            if (showMsg) {
+                showMessage(`${NUM_DIGITS} અંકની રકમ સાથે નવી ગેમ જનરેટ થઈ ગઈ છે!`, true);
+            }
+        }
+
+        // --- Display Logic ---
+        function displayCurrentQuestion() {
+            const number = CURRENT_NUMBERS[currentQuestionIndex];
+
+            displayNumElement.textContent = number;
+            inputElement.value = ''; // Clear input field
+            inputElement.classList.remove('correct-bg', 'incorrect-bg');
+            inputElement.removeAttribute('readonly');
+            inlineSuccessMessage.classList.add('hidden'); // Hide the inline message
+
+            // Update progress bar
+            progressBar.textContent = `પ્રશ્ન ${currentQuestionIndex + 1} / ${NUM_QUESTIONS}`;
+
+            // Manage buttons: show Check, hide Next
+            checkBtn.classList.remove('hidden');
+            nextBtn.classList.add('hidden');
+        }
+
+        // --- Check Logic ---
+        function checkCurrentQuestion() {
+            const userInput = inputElement.value;
+
+            if (userInput.trim() === '') {
+                showMessage('કૃપા કરીને પહેલા જવાબ ભરો.', false);
+                return;
+            }
+            
+            if (cleanAndValidateInput(userInput)) {
+                inputElement.classList.remove('incorrect-bg');
+                inputElement.classList.add('correct-bg');
+                inputElement.setAttribute('readonly', true); // Lock input after correct answer
+                
+                // Mark as correct in state
+                userAnswers[currentQuestionIndex] = true;
+                
+                // Show Next button
+                checkBtn.classList.add('hidden');
+                nextBtn.classList.remove('hidden');
+                
+                // Show inline success message instead of the top message box
+                inlineSuccessMessage.classList.remove('hidden');
+                
+                // Update Next button text if we are at the end
+                if (currentQuestionIndex === NUM_QUESTIONS - 1) {
+                     nextBtn.textContent = 'સમાપ્ત / નવી ગેમ';
+                     // For the final message, use the top message box for emphasis
+                     showMessage('અભિનંદન! તમે બધા પ્રશ્નો સફળતાપૂર્વક પૂર્ણ કર્યા!', true);
+                } else {
+                     nextBtn.textContent = 'આગળ વધો';
+                }
+                
+            } else {
+                inputElement.classList.add('incorrect-bg');
+                showMessage('જવાબ ખોટો છે. ફરી પ્રયાસ કરો.', false);
+                inlineSuccessMessage.classList.add('hidden'); // Ensure hidden on incorrect
+            }
+        }
+
+        // --- Navigation Logic ---
+        function goToNextQuestion() {
+            if (currentQuestionIndex === NUM_QUESTIONS - 1) {
+                // If at the last question, restart the game
+                generateNewGame(true);
+            } else {
+                currentQuestionIndex++;
+                displayCurrentQuestion();
+            }
+        }
+
+        // Initialize the game on load
+        window.onload = function() {
+            // Set default level and generate game
+            generateNewGame(false);
+        };
+    </script>
+
+</body>
+</html>
