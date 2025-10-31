@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>બાળકો માટે સ્કેલ ગેમ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* કસ્ટમ CSS: ફોન્ટ અને પૃષ્ઠભૂમિ સેટિંગ્સ */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0f7fa; /* આછો આકાશી વાદળી બેકગ્રાઉન્ડ */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .game-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            max-width: 480px; 
+            width: 100%;
+            text-align: center;
+            border: 5px solid #00bcd4; /* તેજસ્વી કિનારી */
+        }
+
+        /* કેનવાસ માટે કસ્ટમ શૈલી */
+        #rulerCanvas {
+            width: 100%;
+            max-width: 380px; 
+            height: 380px; 
+            display: block;
+            margin: 20px auto;
+            border-radius: 12px;
+            background-color: #f7f7f7; /* હળવો ગ્રે બેકગ્રાઉન્ડ */
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* સ્લાઇડર માટે કસ્ટમ શૈલી */
+        #levelSlider {
+            width: 90%;
+            margin: 15px auto;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 15px;
+            border-radius: 8px;
+            background: #bdbdbd;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+
+        #levelSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #ff7043; /* નારંગી રંગ */
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #levelSlider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #ff7043;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+
+        .btn-check {
+            background-color: #4caf50; /* તેજસ્વી લીલો રંગ */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 6px #388e3c;
+        }
+
+        .btn-check:hover {
+            background-color: #388e3c;
+        }
+
+        .btn-check:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px #388e3c;
+        }
+
+        /* મેસેજ માટે શૈલી */
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .correct {
+            background-color: #a5d6a7;
+            color: #1b5e20;
+        }
+
+        .incorrect {
+            background-color: #ef9a9a;
+            color: #b71c1c;
+        }
+        
+        .instruction {
+            padding: 10px 15px;
+            background-color: #ffcc80; /* હળવો નારંગી/પીળો */
+            color: #e65100;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-bottom: 20px;
+        }
+
+        .creator-info {
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: #607d8b; /* રાખોડી વાદળી */
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1 class="text-4xl font-extrabold text-pink-600 mb-4">પ્રવાહી માપો! 🧪</h1>
+    
+    <div id="targetInstruction" class="instruction"></div>
+
+    <canvas id="rulerCanvas" width="380" height="380"></canvas>
+
+    <!-- સ્લાઇડર ઇન્ટરફેસ --><div class="mt-4 flex flex-col items-center justify-center">
+        <label for="levelSlider" class="text-xl font-medium text-gray-700 mb-2">સ્તર ગોઠવો:</label>
+        <input type="range" id="levelSlider" min="0" max="100" step="5" value="0" oninput="updateLiquidLevel()">
+    </div>
+    
+    <!-- સ્લાઇડરનું મૂલ્ય દર્શાવો --><p class="text-2xl font-bold text-blue-700 mt-2">વર્તમાન સ્તર: <span id="currentLevelDisplay">0</span> mm</p>
+
+    <button id="checkButton" class="btn-check mt-6" onclick="checkAnswer()">તપાસો</button>
+
+    <div id="messageArea" class="message hidden"></div>
+    
+    <div class="mt-4 text-2xl font-bold">
+        તમારો સ્કોર: <span id="scoreDisplay" class="text-green-600">0</span>
+    </div>
+
+    <p class="creator-info">Created by : Rajesh Barochia</p>
+</div>
+
+<script type="text/javascript">
+    // વૈશ્વિક ચલો (Global Variables)
+    let canvas, ctx;
+    let targetLevelMM = 0; // બાળક દ્વારા સેટ કરવાનું લક્ષ્ય સ્તર
+    let userLevelMM = 0;   // સ્લાઇડર દ્વારા સેટ થયેલ વર્તમાન સ્તર
+    let maxRulerValue = 100; // માપકની મહત્તમ કિંમત (mm)
+    let majorTickInterval = 10; 
+    let minorTickInterval = 5; 
+    let currentScore = 0;
+    
+    // DOM એલિમેન્ટ્સ
+    const slider = document.getElementById('levelSlider');
+    const targetInstruction = document.getElementById('targetInstruction');
+    const currentLevelDisplay = document.getElementById('currentLevelDisplay');
+    const messageArea = document.getElementById('messageArea');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const checkButton = document.getElementById('checkButton');
+
+    // રેન્ડમ નંબર જનરેટ કરવા માટે (5 ના ગુણાંકમાં)
+    function getRandomLevel(min, max, step) {
+        const range = (max - min) / step;
+        const randomStep = Math.floor(Math.random() * (range + 1));
+        return min + (randomStep * step);
+    }
+
+    // માપક (Ruler) દોરવાનું કાર્ય
+    function drawRuler() {
+        // કેનવાસને સાફ કરો
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // માપક જગ (Ruler Jug) ના પરિમાણો
+        const PADDING = 20;
+        const BOTTOM_H = 15; 
+        const JUG_W_BOTTOM = 120; 
+        const JUG_W_TOP = 150; // ઉપરનો ભાગ વધુ પહોળો
+        const JUG_H = canvas.height - (2 * PADDING) - BOTTOM_H; 
+        
+        const JUG_X_CENTER = canvas.width / 2;
+        const JUG_X_START_BOTTOM = JUG_X_CENTER - (JUG_W_BOTTOM / 2);
+        const JUG_X_END_BOTTOM = JUG_X_CENTER + (JUG_W_BOTTOM / 2);
+        const JUG_X_START_TOP = JUG_X_CENTER - (JUG_W_TOP / 2);
+        const JUG_X_END_TOP = JUG_X_CENTER + (JUG_W_TOP / 2);
+
+        const JUG_Y_START = PADDING;
+        const JUG_Y_BOTTOM = JUG_Y_START + JUG_H;
+        
+        const TRAY_W = JUG_W_BOTTOM + 40;
+        const TRAY_X = JUG_X_CENTER - (TRAY_W / 2);
+        
+        // પ્રવાહી ભરવા માટેનો આંતરિક વિસ્તાર
+        const JUG_FILL_X_BOTTOM = JUG_X_START_BOTTOM + 5;
+        const JUG_FILL_W_BOTTOM = JUG_W_BOTTOM - 10;
+        const JUG_FILL_W_TOP = JUG_W_TOP - 10;
+        
+
+        // --- 1. જગનો આકાર દોરો (ખુલ્લો જગ અને હેન્ડલ) ---
+        
+        // --- પાયો (Base) ---
+        ctx.fillStyle = '#6d4c41'; // ડાર્ક બ્રાઉન બેઝ
+        ctx.fillRect(TRAY_X, JUG_Y_BOTTOM, TRAY_W, BOTTOM_H);
+        
+        ctx.strokeStyle = '#4e342e';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(JUG_X_CENTER, JUG_Y_BOTTOM, JUG_W_BOTTOM / 2, 5, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // --- જગની બોડી (Body) ---
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // ડાબી બાજુ
+        ctx.moveTo(JUG_X_START_BOTTOM, JUG_Y_BOTTOM);
+        ctx.lineTo(JUG_X_START_TOP, JUG_Y_START + 10); 
+        // ઉપરની ગોળ કિનારી (Top Curve - Open)
+        ctx.bezierCurveTo(JUG_X_START_TOP, JUG_Y_START, JUG_X_END_TOP, JUG_Y_START, JUG_X_END_TOP, JUG_Y_START + 10);
+        // જમણી બાજુ
+        ctx.lineTo(JUG_X_END_BOTTOM, JUG_Y_BOTTOM); 
+        ctx.stroke();
+
+        // --- હેન્ડલ (Handle) ---
+        const HANDLE_X = JUG_X_END_BOTTOM; 
+        ctx.beginPath();
+        ctx.moveTo(HANDLE_X, JUG_Y_START + 25);
+        ctx.bezierCurveTo(HANDLE_X + 45, JUG_Y_START + 15, // હેન્ડલ મોટું અને ગોળ
+                           HANDLE_X + 45, JUG_Y_BOTTOM - 15, 
+                           HANDLE_X, JUG_Y_BOTTOM - 25);
+        ctx.stroke();
+
+        // --- 2. પ્રવાહી (Liquid) ભરો ---
+        const fillHeight = (userLevelMM / maxRulerValue) * JUG_H;
+        const fillY = JUG_Y_BOTTOM - fillHeight;
+        
+        ctx.fillStyle = 'rgba(30, 144, 255, 0.7)'; // વાદળી રંગ
+        
+        // પ્રવાહીનો આકાર દોરવા માટે, જગના આકારને અનુરૂપ ટ્રેપેઝોઇડનો ઉપયોગ કરો
+        ctx.beginPath();
+        
+        // વર્તમાન સ્તર પરની પહોળાઈની ગણતરી કરો
+        const currentFillWidth = JUG_FILL_W_BOTTOM + (JUG_FILL_W_TOP - JUG_FILL_W_BOTTOM) * ((JUG_Y_BOTTOM - fillY) / JUG_H);
+        const currentFillX = JUG_FILL_X_BOTTOM - (JUG_FILL_W_TOP - JUG_FILL_W_BOTTOM) / 2 * ((JUG_Y_BOTTOM - fillY) / JUG_H);
+        
+        // પ્રવાહીનું ટ્રેપેઝોઇડ આકાર
+        ctx.moveTo(JUG_FILL_X_BOTTOM, JUG_Y_BOTTOM); 
+        ctx.lineTo(JUG_FILL_X_BOTTOM + JUG_FILL_W_BOTTOM, JUG_Y_BOTTOM);
+        ctx.lineTo(currentFillX + currentFillWidth, fillY);
+        ctx.lineTo(currentFillX, fillY);
+        
+        ctx.closePath();
+        ctx.fill();
+
+
+        // ઉપર પ્રવાહીની સપાટી (સહેજ વક્ર)
+        ctx.strokeStyle = 'rgba(30, 144, 255, 1.0)'; // વાદળી રંગ
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(currentFillX, fillY);
+        ctx.bezierCurveTo(currentFillX + (currentFillWidth / 4), fillY - 4, 
+                           currentFillX + (3 * currentFillWidth / 4), fillY - 4, 
+                           currentFillX + currentFillWidth, fillY);
+        ctx.stroke();
+        
+        // --- 3. ટિક માર્ક્સ અને લેબલ્સ દોરો ---
+        const tickLengthMajor = 15;
+        const tickLengthMinor = 8;
+        const totalPixelsPerMM = JUG_H / maxRulerValue; 
+
+        // 0 mm થી maxRulerValue mm સુધી ફેરવો
+        for (let mm = 0; mm <= maxRulerValue; mm += minorTickInterval) {
+            const tickY = JUG_Y_BOTTOM - (mm * totalPixelsPerMM);
+            
+            let tickLength = 0;
+            let isLabelVisible = false;
+            
+            if (mm % majorTickInterval === 0) {
+                // મુખ્ય ટિક (Major Tick) - 10, 20, 30...
+                tickLength = tickLengthMajor;
+                isLabelVisible = true; 
+                ctx.lineWidth = 2;
+            } else if (mm % minorTickInterval === 0) {
+                // નાના ટિક (Minor Tick) - 5, 15, 25...
+                tickLength = tickLengthMinor;
+                isLabelVisible = false; // અંકો કાઢી નાખ્યા છે
+                ctx.lineWidth = 1;
+            } else {
+                continue; 
+            }
+
+            // ટિક માર્ક દોરો (જગની ડાબી બાજુએ)
+            ctx.strokeStyle = '#000000';
+            ctx.beginPath();
+            
+            // જગની ડાબી કિનારી (ઉપરથી નીચે બદલાય છે)
+            const currentJugLeftX = JUG_X_START_BOTTOM - (JUG_X_START_BOTTOM - JUG_X_START_TOP) * ((JUG_Y_BOTTOM - tickY) / JUG_H);
+
+            ctx.moveTo(currentJugLeftX, tickY); 
+            ctx.lineTo(currentJugLeftX - tickLength, tickY); // બહારની તરફ દોરો
+            ctx.stroke();
+
+            // લેબલ (માપક પરનો અંક)
+            if (isLabelVisible && mm > 0) {
+                ctx.fillStyle = '#000000';
+                ctx.font = 'bolder 14px Inter, sans-serif'; 
+                ctx.textAlign = 'right';
+                ctx.fillText(mm + " mm", currentJugLeftX - tickLength - 5, tickY + 5); 
+            }
+        }
+    }
+
+    // સ્લાઇડર મૂલ્ય અપડેટ કરો
+    function updateLiquidLevel() {
+        // સ્લાઇડરનું મૂલ્ય વાંચો અને userLevelMM માં સ્ટોર કરો
+        userLevelMM = parseInt(slider.value);
+        currentLevelDisplay.textContent = userLevelMM;
+        drawRuler();
+    }
+    
+    // નવી રમત શરૂ કરો
+    function newGame() {
+        // 5 ના ગુણાંકમાં રેન્ડમ લક્ષ્ય સ્તર પસંદ કરો (100 mm સુધી)
+        targetLevelMM = getRandomLevel(5, maxRulerValue, 5);
+        
+        // સ્લાઇડરનું શરૂઆતનું મૂલ્ય રેન્ડમ સેટ કરો (લક્ષ્યથી અલગ)
+        let initialLevel;
+        do {
+            initialLevel = getRandomLevel(0, maxRulerValue, 5);
+        } while (initialLevel === targetLevelMM);
+        
+        userLevelMM = initialLevel;
+        slider.value = userLevelMM;
+
+        targetInstruction.textContent = `જગને ${targetLevelMM} mm સુધી ભરો.`;
+        currentLevelDisplay.textContent = userLevelMM;
+
+        slider.disabled = false;
+        checkButton.disabled = false;
+        messageArea.classList.add('hidden');
+        messageArea.textContent = '';
+        messageArea.classList.remove('correct', 'incorrect');
+        
+        drawRuler();
+    }
+
+    // જવાબ તપાસો
+    function checkAnswer() {
+        // userLevelMM એ સ્લાઇડર દ્વારા સેટ થયેલું મૂલ્ય છે
+        
+        // 5 mm ની ભૂલ મર્યાદા (tolerance) આપીએ જેથી બાળકો માટે સરળ રહે
+        const tolerance = 5; 
+        
+        if (userLevelMM >= targetLevelMM - tolerance && userLevelMM <= targetLevelMM + tolerance) {
+            // સાચો જવાબ
+            currentScore += 1;
+            scoreDisplay.textContent = currentScore;
+            showMessage('શાબાશ! તમે લગભગ બરાબર માપ્યું છે! 🎉', 'correct');
+            
+            slider.disabled = true;
+            checkButton.disabled = true;
+            
+            setTimeout(newGame, 2000);
+
+        } else {
+            // ખોટો જવાબ
+            showMessage(`ઓહ! સ્તર ${targetLevelMM} mm ની નજીક નથી. ફરી પ્રયાસ કરો.`, 'incorrect');
+            // સ્કોર રીસેટ ન કરવો
+        }
+    }
+    
+    // સંદેશ પ્રદર્શિત કરો
+    function showMessage(text, type) {
+        messageArea.textContent = text;
+        messageArea.classList.remove('hidden');
+        messageArea.classList.remove('correct', 'incorrect');
+        messageArea.classList.add(type);
+    }
+    
+    // કેનવાસ અને કોન્ટેક્સ્ટ શરૂ કરો
+    window.onload = function() {
+        canvas = document.getElementById('rulerCanvas');
+        ctx = canvas.getContext('2d');
+        
+        // કેનવાસનું કદ તેની આસપાસના કન્ટેનરને મેચ કરવા માટે
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            drawRuler(); // કદ બદલાય ત્યારે ફરીથી દોરો
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // ગેમ શરૂ કરો
+        newGame();
+    };
+    
+</script>
+
+</body>
+</html>
