@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>લંબાઈ માપન</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom Tailwind Configuration for nice font -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'gujarat-green': '#10B981', // Emerald Green
+                        'gujarat-yellow': '#FBBF24', // Amber
+                        'gujarat-red': '#EF4444', // Red
+                        'primary-blue': '#4F46E5', // Indigo-600
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base styles for the game container */
+        .ruler-container {
+            position: relative;
+            width: 100%;
+            background-color: #e5e7eb; /* Light gray background for ruler area */
+            border-radius: 8px;
+            padding-top: 25px; /* Increased padding for labels */
+            border: 2px solid #9ca3af; /* subtle border */
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        /* New wrapper to ensure visuals share the same maximum width and are centered */
+        .game-visuals-wrapper {
+            width: 100%;
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding-left: 20px; /* Space for the start of the block */
+        }
+
+        /* Styling for the ruler marks (New colorful scheme) */
+        .ruler-mark {
+            position: absolute;
+            bottom: 0;
+            width: 1px; 
+            background-color: #1E40AF; /* Dark Blue for major marks */
+            transform-origin: bottom;
+            height: 15px; /* Major marks (1 cm) */
+        }
+        
+        /* Half centimeter mark (5 mm) */
+        .ruler-mark.half {
+            height: 10px; 
+            background-color: #3B82F6; /* Medium Blue */
+        }
+
+        /* Millimeter marks (1 mm) */
+        .ruler-mark.fifth { 
+            height: 5px; 
+            background-color: #60A5FA; /* Light Blue */
+        }
+
+        /* Animation for correct answer feedback (Box turns Green) */
+        @keyframes correct-flash {
+            0% { background-color: white; }
+            50% { background-color: #A7F3D0; } /* Green-200 */
+            100% { background-color: white; }
+        }
+
+        .correct-flash-bg {
+            animation: correct-flash 0.5s ease-out;
+        }
+
+        /* Custom style for the measurement block */
+        .measurement-block {
+            height: 30px; /* Slightly taller block */
+            transition: width 0.3s ease-out;
+            max-width: 100%; 
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Deeper shadow */
+            border: 2px solid rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 font-sans flex flex-col items-center">
+
+    <div class="w-full max-w-xl bg-white shadow-2xl rounded-3xl p-6 md:p-8 border-t-8 border-primary-blue">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-center mb-2 text-primary-blue">
+            લંબાઈ માપન
+        </h1>
+        <p class="text-center text-sm md:text-base text-gray-600 mb-6 font-medium">
+            લંબાઈને સે.મી.માં માપો. તમે જવાબ લખશો કે તરત જ તે આપોઆપ ચકાસવામાં આવશે.
+        </p>
+        <p class="text-xs text-right text-gray-500 mb-4">
+            બનાવનાર: <span class="font-semibold text-primary-blue">Rajesh barochia</span>
+        </p>
+
+        <!-- Display the current score -->
+        <p id="score-display" class="text-center text-xl font-bold text-gray-800 mb-6 p-2 bg-yellow-100 rounded-lg border border-yellow-300">
+            સ્કોર: 0 / 4
+        </p>
+
+        <div id="game-container" class="space-y-8 min-h-[250px] flex items-center justify-center">
+            <!-- Current Game row will be injected here (only one at a time) -->
+        </div>
+
+        <div id="message-box" class="mt-8 p-3 text-center text-sm font-medium rounded-lg hidden shadow-md"></div>
+
+        <!-- Action Buttons - Managed dynamically by JS -->
+        
+        <button onclick="goToNextRound()" id="next-button"
+            class="w-full mt-4 py-3 bg-gujarat-yellow text-gray-900 font-extrabold text-lg rounded-xl shadow-lg hover:bg-yellow-500 transition duration-300 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-gujarat-yellow/50 hidden">
+            આગળનો સવાલ
+        </button>
+
+        <button onclick="startGame()" id="new-game-button"
+            class="w-full mt-4 py-2 bg-primary-blue text-white font-semibold rounded-xl shadow-md hover:bg-indigo-700 transition duration-300 focus:outline-none focus:ring-4 focus:ring-primary-blue/50 hidden">
+            નવો રાઉન્ડ શરૂ કરો
+        </button>
+    </div>
+
+    <script type="text/javascript">
+        // ---------------------- Game State and Setup ----------------------
+
+        const NUM_ROUNDS = 4; // Total number of questions
+        let gameData = []; // Array to hold all question data
+        let currentRoundIndex = 0; // Index of the current question being displayed
+        let debounceTimer; // Timer for delaying the automatic check
+
+        const MAX_CM = 15; // The total length of the ruler in cm
+
+        // Helper function to generate a random length in half-centimeter increments
+        function getRandomLength() {
+            // Generates random number of half-centimeters (e.g., 6 to 29, for lengths 3.0 to 14.5 cm)
+            const minHalves = 6; // 3.0 cm
+            const maxHalves = 29; // 14.5 cm
+            
+            // Generate a random integer number of halves
+            const randomHalves = Math.floor(Math.random() * (maxHalves - minHalves + 1)) + minHalves;
+            
+            // Calculate the length precisely (e.g., 17 / 2 = 8.5)
+            let rawLength = randomHalves / 2;
+            
+            // Ensure the result is strictly 1 decimal place (e.g., 4.0, 4.5, 5.0)
+            return parseFloat(rawLength.toFixed(1)); 
+        }
+
+        // Initialize the game data with random lengths
+        function initializeGameData() {
+            gameData = [];
+            for (let i = 0; i < NUM_ROUNDS; i++) {
+                gameData.push({
+                    id: i,
+                    correctLength: getRandomLength(),
+                    isCorrect: false
+                });
+            }
+        }
+
+        // ---------------------- Rendering Functions ----------------------
+
+        // Renders a simple colored block with width proportional to its length
+        function renderMeasurementBlock(length) {
+            // The block width is set to a percentage of the ruler's width (which represents MAX_CM).
+            const widthPercent = (length / MAX_CM) * 100;
+            // Generate a distinct random color
+            // Using a brighter, more saturated color scheme for a colorful look
+            const blockColor = `hsl(${Math.random() * 360}, 85%, 60%)`; 
+
+            // Use a simple div for better alignment
+            return `
+                <div class="measurement-block" style="width: ${widthPercent}%; background-color: ${blockColor};"></div>
+            `;
+        }
+        
+        // Renders the static ruler background
+        function renderRuler(id) {
+            let marks = '';
+            const totalCm = MAX_CM;
+            const unitsPerCm = 10; // Millimeters (mm)
+            const totalUnits = totalCm * unitsPerCm; // 150 marks for a 15 cm ruler
+
+            for (let i = 0; i <= totalUnits; i++) {
+                const position = (i / totalUnits) * 100; // Position in percentage
+                let markClass = 'ruler-mark fifth'; // Default: millimeter mark (minor)
+                let label = '';
+                let labelClass = 'text-xs font-semibold absolute top-4 text-blue-900'; /* Label color changed to dark blue */
+                
+                if (i % unitsPerCm === 0) {
+                    // Major Centimeter Mark (0, 1, 2, ...)
+                    markClass = 'ruler-mark h-4';
+                    label = i / unitsPerCm;
+                } else if (i % (unitsPerCm / 2) === 0) {
+                    // Half Centimeter Mark (5 mm mark)
+                    markClass = 'ruler-mark h-3 half';
+                }
+
+                // Append the mark
+                marks += `<div class="${markClass}" style="left: ${position}%;"></div>`;
+                
+                // Append the label for major marks (0, 1, 2, ...)
+                if (label !== '') {
+                    marks += `<span class="${labelClass}" style="left: calc(${position}% - 5px);">${label}</span>`;
+                }
+            }
+
+            return `
+                <div class="ruler-container relative h-16 mb-4">
+                    ${marks}
+                </div>
+            `;
+        }
+
+        // Renders a single game row (block, ruler, input)
+        function renderGameRow(data) {
+            const { id, correctLength } = data;
+            const rulerHTML = renderRuler(id);
+            // Use the new block renderer
+            const blockHTML = renderMeasurementBlock(correctLength);
+            
+            // The input field stores the correct length in a data attribute
+            const inputValue = ''; 
+
+            return `
+                <div id="row-${id}" class="game-row bg-white p-4 rounded-xl border-2 border-primary-blue/30 shadow-lg w-full transition duration-300">
+                    <p class="text-base font-bold text-primary-blue mb-4">સવાલ ${currentRoundIndex + 1} / ${NUM_ROUNDS}</p>
+
+                    <!-- Wrapper to ensure block and ruler align perfectly at 0-mark -->
+                    <div class="game-visuals-wrapper">
+                        <!-- The block is aligned to the start (0-mark) using 'justify-start' -->
+                        <div class="flex items-center justify-start mb-4">
+                            ${blockHTML}
+                        </div>
+                        
+                        ${rulerHTML}
+                    </div>
+
+                    <div class="flex items-center justify-between mt-6">
+                        <label for="input-${id}" class="text-lg text-gray-800 font-bold whitespace-nowrap">લંબાઈ (સે.મી.):</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="number" step="0.5" id="input-${id}"
+                                placeholder="ઉદા. 4.5"
+                                value="${inputValue}"
+                                oninput="debounceCheck()"
+                                class="w-28 p-3 text-center border-4 border-gray-300 rounded-xl focus:ring-primary-blue focus:border-primary-blue transition duration-150 text-lg font-bold"
+                                data-correct-length="${correctLength.toFixed(1)}"
+                            >
+                            <span class="text-gray-600 hidden sm:inline text-lg">સે.મી.</span>
+                            <div id="feedback-${id}" class="w-7 h-7 rounded-full border-2 border-gray-400 flex-shrink-0 shadow-inner"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Updates the score display on the screen
+        function updateScoreDisplay() {
+            const scoreDisplay = document.getElementById('score-display');
+            const correctCount = gameData.filter(d => d.isCorrect).length;
+            scoreDisplay.textContent = `સ્કોર: ${correctCount} / ${NUM_ROUNDS}`;
+        }
+
+
+        // Main rendering function that controls which question is shown
+        function renderGame() {
+            const container = document.getElementById('game-container');
+            const nextButton = document.getElementById('next-button');
+            const newGameButton = document.getElementById('new-game-button');
+            const messageBox = document.getElementById('message-box');
+            
+            updateScoreDisplay(); 
+            messageBox.style.display = 'none'; // Hide message box on render
+
+            if (currentRoundIndex < NUM_ROUNDS) {
+                // Render the current round only
+                const currentData = gameData[currentRoundIndex];
+                container.innerHTML = renderGameRow(currentData);
+                
+                // Hide buttons
+                nextButton.classList.add('hidden');
+                newGameButton.classList.add('hidden');
+            } else {
+                // Game finished view
+                const correctCount = gameData.filter(d => d.isCorrect).length;
+                container.innerHTML = `
+                    <div class="text-center p-8 bg-primary-blue/10 rounded-xl w-full border border-primary-blue/30 shadow-xl">
+                        <h2 class="text-3xl font-extrabold text-primary-blue">રમત સમાપ્ત!</h2>
+                        <p class="mt-4 text-2xl font-extrabold p-2 rounded-lg inline-block ${correctCount === NUM_ROUNDS ? 'text-gujarat-green bg-green-100' : 'text-gujarat-red bg-red-100'}">
+                            અંતિમ સ્કોર: ${correctCount} / ${NUM_ROUNDS}
+                        </p>
+                        <p class="mt-4 text-base text-gray-700">ફરી પ્રયાસ કરવા માટે નીચે બટન દબાવો.</p>
+                    </div>`;
+                nextButton.classList.add('hidden');
+                newGameButton.classList.remove('hidden'); // Show the New Game button
+            }
+        }
+
+        // ---------------------- Interaction Logic ----------------------
+        
+        // Debounce function to delay the check after input stops
+        function debounceCheck() {
+            clearTimeout(debounceTimer);
+            // Delay is 1000ms (1 second)
+            debounceTimer = setTimeout(() => {
+                checkCurrentAnswer();
+            }, 1000); 
+        }
+
+        // Resets the visual feedback elements
+        function resetFeedback(input, feedbackDot, row, messageBox, nextButton) {
+            // Reset the input box styling
+            input.classList.remove('border-gujarat-green', 'bg-green-100', 'border-gujarat-red', 'bg-red-100', 'border-4', 'correct-flash-bg');
+            input.classList.add('border-gray-300', 'border-2');
+            
+            // Reset the round feedback dot
+            feedbackDot.className = 'w-7 h-7 rounded-full border-2 border-gray-400 flex-shrink-0 shadow-inner';
+            
+            // Hide messages and next button
+            messageBox.style.display = 'none';
+            nextButton.classList.add('hidden');
+        }
+
+
+        function checkCurrentAnswer() {
+            const data = gameData[currentRoundIndex];
+            const inputElement = document.getElementById(`input-${data.id}`);
+            const feedbackElement = document.getElementById(`feedback-${data.id}`);
+            const rowElement = document.getElementById(`row-${data.id}`);
+            const messageBox = document.getElementById('message-box');
+            const nextButton = document.getElementById('next-button');
+
+            if (!inputElement || !feedbackElement) return;
+
+            // Check if the user has entered a valid number (non-empty and convertible to float)
+            const inputVal = inputElement.value;
+            const userAnswer = parseFloat(inputVal);
+
+            if (inputVal === "" || isNaN(userAnswer)) {
+                // If input is empty or invalid, clear previous feedback and stop
+                resetFeedback(inputElement, feedbackElement, rowElement, messageBox, nextButton);
+                return;
+            }
+
+            const correctAnswer = data.correctLength; 
+
+            // Use a small epsilon for float comparison to handle user input rounding
+            const epsilon = 0.05; 
+
+            // Check if the input is close to the correct answer
+            const isClose = Math.abs(userAnswer - correctAnswer) < epsilon;
+
+            // If the input is close to the correct answer 
+            if (isClose) {
+                // Correct Answer
+                data.isCorrect = true;
+                
+                // *** APPLY GREEN TO INPUT BOX ***
+                inputElement.classList.remove('border-gray-300', 'border-2', 'border-gujarat-red', 'bg-red-100');
+                inputElement.classList.add('border-gujarat-green', 'bg-green-100', 'border-4', 'correct-flash-bg'); 
+                
+                feedbackElement.className = 'w-7 h-7 rounded-full bg-gujarat-green border-2 border-gujarat-green flex-shrink-0 shadow-lg';
+
+                inputElement.disabled = true;
+
+                messageBox.classList.remove('bg-red-100', 'text-gujarat-red');
+                messageBox.classList.add('bg-green-100', 'text-gujarat-green');
+                messageBox.innerHTML = `સાચો જવાબ! (${correctAnswer.toFixed(1)} સે.મી.).`;
+                messageBox.style.display = 'block';
+
+                // Show next button
+                nextButton.classList.remove('hidden');
+                
+                updateScoreDisplay();
+
+            } else {
+                // Incorrect Answer
+                data.isCorrect = false;
+                
+                // *** APPLY RED TO INPUT BOX ***
+                inputElement.classList.remove('border-gray-300', 'border-2', 'border-gujarat-green', 'bg-green-100');
+                inputElement.classList.add('border-gujarat-red', 'bg-red-100', 'border-4'); 
+                
+                feedbackElement.className = 'w-7 h-7 rounded-full bg-gujarat-red border-2 border-gujarat-red flex-shrink-0 shadow-lg';
+
+                inputElement.disabled = false; // Ensure input is enabled for another try
+
+                messageBox.classList.remove('bg-green-100', 'text-gujarat-green');
+                messageBox.classList.add('bg-red-100', 'text-gujarat-red');
+                messageBox.innerHTML = 'ખોટો જવાબ. ફરી પ્રયાસ કરો.';
+                messageBox.style.display = 'block';
+
+                // Hide next button
+                nextButton.classList.add('hidden');
+            }
+        }
+
+        function goToNextRound() {
+            // Clear any pending debounce timer before moving on
+            clearTimeout(debounceTimer); 
+            currentRoundIndex++;
+            renderGame(); 
+        }
+
+        // Function to start a new game/round
+        function startGame() {
+            initializeGameData();
+            currentRoundIndex = 0; // Reset to the first round
+            renderGame(); // Initial render
+        }
+
+        // Start the game when the page loads
+        window.onload = startGame;
+
+    </script>
+</body>
+</html>
