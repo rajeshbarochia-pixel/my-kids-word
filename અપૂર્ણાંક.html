@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>અપૂર્ણાંક રમત</title>
+    
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+        canvas {
+            border: 3px solid #3b82f6;
+            border-radius: 0.75rem;
+            touch-action: manipulation; /* Improves touch handling */
+        }
+        /* Style for the fraction display */
+        .fraction-display {
+            display: inline-block;
+            font-size: 3rem;
+            line-height: 1;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin: 0.5rem 0;
+        }
+        .fraction-display .numerator {
+            border-bottom: 4px solid #1e3a8a;
+            padding-bottom: 2px;
+        }
+        .fraction-display .denominator {
+            padding-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="card">
+            <h1 class="text-3xl font-bold text-center text-blue-800 mb-2">અપૂર્ણાંક રમત</h1>
+            <p class="text-sm text-center text-gray-500 mb-6">Created by:Rajesh Barochia</p>
+
+            <!-- Score and Question Status -->
+            <div class="flex justify-between items-center text-lg font-medium mb-4">
+                <div class="text-gray-700">સ્કોર: <span id="scoreDisplay" class="font-bold text-green-600">0</span></div>
+                <div class="text-gray-700">પ્રશ્ન: <span id="questionCountDisplay" class="font-bold text-blue-600">0</span></div>
+            </div>
+
+            <!-- Instruction and Fraction Display -->
+            <div class="text-center mb-6">
+                <p class="text-xl font-semibold text-gray-800 mb-2">અપૂર્ણાંક દર્શાવવા માટે ભાગોને રંગ કરો:</p>
+                <div id="fractionTarget" class="fraction-display mx-auto">
+                    <!-- Fraction will be injected here -->
+                </div>
+            </div>
+
+            <!-- Canvas for Interactive Shape -->
+            <div class="w-full h-auto flex justify-center mb-6">
+                <canvas id="gameCanvas" width="300" height="300" class="w-full max-w-xs"></canvas>
+            </div>
+
+            <!-- Feedback Message -->
+            <p id="feedback" class="text-center text-lg font-bold h-6 mb-4"></p>
+
+            <!-- Action Button -->
+            <div class="flex justify-center">
+                <button id="nextButton" class="w-full py-3 px-6 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition shadow-lg shadow-blue-300/50" onclick="checkAnswer()">
+                    જવાબ તપાસો
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ગ્લોબલ વેરીએબલ્સ
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const questionCountDisplay = document.getElementById('questionCountDisplay');
+        const fractionTarget = document.getElementById('fractionTarget');
+        const feedback = document.getElementById('feedback');
+        const nextButton = document.getElementById('nextButton');
+
+        let score = 0;
+        let questionCount = 0;
+        let currentQuestion = null;
+        let shadedParts = []; // યુઝર દ્વારા રંગાયેલા ભાગોના ઇન્ડેક્સ
+        let questionsPlayedIndices = []; // રમાઈ ગયેલા પ્રશ્નોના ઇન્ડેક્સનો ટ્રેક રાખવા
+        let currentShapeColor = '#f0f4f8'; // આકારનો વર્તમાન પૃષ્ઠભૂમિ રંગ
+
+        // પ્રશ્નોનો ડેટા (અપૂર્ણાંક અને આકારનો પ્રકાર)
+        // નોંધ: તારા આકારને હવે 5 સમાન ભાગોમાં વિભાજિત કરવામાં આવ્યો છે.
+        const allQuestions = [
+            // Row 1
+            { n: 1, d: 2, type: 'circle', segments: 2 }, // 1/2
+            { n: 2, d: 5, type: 'polygon', sides: 5, segments: 5 }, // 2/5 (Pentagon)
+            // Row 2
+            { n: 1, d: 5, type: 'star', segments: 5 }, // 1/5 (Star - હવે 5 મોટા ભાગો) <--- સુધારેલો ભાગ
+            { n: 3, d: 4, type: 'rect', segments: 4 }, // 3/4 (Square grid)
+            // Row 3
+            { n: 1, d: 2, type: 'rect', segments: 2, horizontal: true }, // 1/2 (Horizontal rectangle)
+            { n: 5, d: 6, type: 'circle', segments: 6 }, // 5/6 (Circle 6 segments)
+            // Row 4
+            { n: 3, d: 8, type: 'circle', segments: 8 }, // 3/8 (Octagon-like circle segments)
+            { n: 1, d: 6, type: 'triangle', segments: 6 }, // 1/6 (Large triangle, divided into 6)
+            // Row 5
+            { n: 1, d: 4, type: 'triangle', segments: 4 }, // 1/4 (Large triangle, divided into 4)
+        ];
+
+        // રંગબેરંગી પૃષ્ઠભૂમિ રંગોની યાદી
+        const colorfulBackgrounds = [
+            '#FFDDC1', // Light Peach
+            '#FFABAB', // Light Red
+            '#FFDA9E', // Light Orange
+            '#FFFFB3', // Light Yellow
+            '#D0F0C0', // Light Green
+            '#A7D9D9', // Light Cyan
+            '#ADD8E6', // Light Blue
+            '#C9A0DC', // Light Purple
+            '#F0E68C', // Khaki
+            '#F08080'  // Light Coral
+        ];
+
+        // ------------------------------------------------------------------
+        // રેન્ડમ પ્રશ્ન પસંદ કરો
+        // ------------------------------------------------------------------
+        function getNextQuestion() {
+            // જો બધા પ્રશ્નો રમાઈ ગયા હોય, તો ઇન્ડેક્સ રીસેટ કરો
+            if (questionsPlayedIndices.length === allQuestions.length) {
+                questionsPlayedIndices = [];
+            }
+            
+            let availableIndices = allQuestions
+                .map((_, index) => index)
+                .filter(index => !questionsPlayedIndices.includes(index));
+            
+            // જો કોઈ ઉપલબ્ધ ન હોય (મોટાભાગે ન થવું જોઈએ), બધામાંથી પસંદ કરો
+            if (availableIndices.length === 0) {
+                 availableIndices = allQuestions.map((_, index) => index);
+            }
+
+            const randomIndexInAvailable = Math.floor(Math.random() * availableIndices.length);
+            const questionIndex = availableIndices[randomIndexInAvailable];
+            const question = allQuestions[questionIndex];
+
+            questionsPlayedIndices.push(questionIndex); // પ્રશ્નના ઇન્ડેક્સને રમાઈ ગયેલા તરીકે માર્ક કરો
+            return question;
+        }
+
+        // ------------------------------------------------------------------
+        // નવી ગેમ શરૂ કરો (સ્કોર રીસેટ કરીને)
+        // ------------------------------------------------------------------
+        function startNewRound() {
+            score = 0;
+            questionCount = 0;
+            questionsPlayedIndices = []; 
+            loadNextQuestion(); // પ્રથમ પ્રશ્ન લોડ કરો
+        }
+
+        // ------------------------------------------------------------------
+        // આગલો પ્રશ્ન લોડ કરો
+        // ------------------------------------------------------------------
+        function loadNextQuestion() {
+            currentQuestion = getNextQuestion();
+            questionCount++; 
+            shadedParts = []; // રંગાયેલા ભાગો રીસેટ કરો
+            
+            // આકાર માટે રેન્ડમ પૃષ્ઠભૂમિ રંગ પસંદ કરો
+            currentShapeColor = colorfulBackgrounds[Math.floor(Math.random() * colorfulBackgrounds.length)];
+
+            // અપૂર્ણાંક ડિસ્પ્લે અપડેટ કરો (દા.ત., 3/4)
+            fractionTarget.innerHTML = `
+                <div class="numerator">${currentQuestion.n}</div>
+                <div class="denominator">${currentQuestion.d}</div>
+            `;
+            
+            // UI અપડેટ કરો
+            scoreDisplay.textContent = score;
+            questionCountDisplay.textContent = questionCount;
+            feedback.textContent = '';
+            feedback.className = 'text-center text-lg font-bold h-6 mb-4'; 
+            
+            nextButton.textContent = 'જવાબ તપાસો';
+            nextButton.onclick = checkAnswer;
+
+            // આકાર દોરો
+            drawShape();
+        }
+
+        // ------------------------------------------------------------------
+        // કેનવાસ પર આકાર દોરો
+        // ------------------------------------------------------------------
+        function drawShape() {
+            const { segments, type } = currentQuestion;
+            const size = canvas.width;
+            const center = size / 2;
+            ctx.clearRect(0, 0, size, size);
+            
+            // ડ્રોઇંગ ફંક્શન જે દરેક સેગમેન્ટ માટે એક પાથ પરત કરે છે
+            const segmentPaths = getSegmentPaths(type, segments, size, center);
+
+            segmentPaths.forEach((path, i) => {
+                ctx.beginPath();
+                ctx.strokeStyle = '#1e3a8a';
+                ctx.lineWidth = 2;
+                
+                // પાથ દોરો
+                path.forEach((p, index) => {
+                    if (index === 0) {
+                        ctx.moveTo(p.x, p.y);
+                    } else {
+                        if (p.arc) {
+                            // વર્તુળ સેગમેન્ટ્સ માટે arc() નો ઉપયોગ કરો
+                            ctx.arc(p.cx, p.cy, p.r, p.start, p.end);
+                        } else {
+                            ctx.lineTo(p.x, p.y);
+                        }
+                    }
+                });
+
+                // વર્તુળ/લંબચોરસ બંધ કરો
+                if (type === 'circle' || type === 'polygon' || type === 'triangle' || type === 'rect' || type === 'star') {
+                    ctx.closePath();
+                }
+
+                // રંગાયેલો ભાગ
+                if (shadedParts.includes(i)) {
+                    ctx.fillStyle = '#60a5fa'; // વાદળી રંગ
+                } else {
+                    ctx.fillStyle = currentShapeColor; // આકારનો રેન્ડમ પૃષ્ઠભૂમિ રંગ
+                }
+
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+
+        // આકારના આધારે સેગમેન્ટ પાથ્સની ગણતરી
+        function getSegmentPaths(type, segments, size, center) {
+            const paths = [];
+            const margin = 10;
+            const effectiveSize = size - 2 * margin;
+            const effectiveCenter = center;
+
+            if (type === 'rect' && segments === 4) { // 4-ભાગ ચોરસ
+                const segmentSize = effectiveSize / 2;
+                paths.push([ // Top Left
+                    { x: margin, y: margin }, { x: center, y: margin }, { x: center, y: center }, { x: margin, y: center }
+                ]);
+                paths.push([ // Top Right
+                    { x: center, y: margin }, { x: size - margin, y: margin }, { x: size - margin, y: center }, { x: center, y: center }
+                ]);
+                paths.push([ // Bottom Right
+                    { x: center, y: center }, { x: size - margin, y: center }, { x: size - margin, y: size - margin }, { x: center, y: size - margin }
+                ]);
+                paths.push([ // Bottom Left
+                    { x: margin, y: center }, { x: center, y: center }, { x: center, y: size - margin }, { x: margin, y: size - margin }
+                ]);
+            } else if (type === 'rect' && segments === 2) { // 2-ભાગ લંબચોરસ (Vertical)
+                const segmentWidth = effectiveSize / 2;
+                paths.push([ // Left Half
+                    { x: margin, y: margin }, { x: margin + segmentWidth, y: margin }, { x: margin + segmentWidth, y: size - margin }, { x: margin, y: size - margin }
+                ]);
+                paths.push([ // Right Half
+                    { x: margin + segmentWidth, y: margin }, { x: size - margin, y: margin }, { x: size - margin, y: size - margin }, { x: margin + segmentWidth, y: size - margin }
+                ]);
+            } else if (type === 'rect' && segments === 2 && currentQuestion.horizontal) { // 2-ભાગ લંબચોરસ (Horizontal)
+                const segmentHeight = effectiveSize / 2;
+                paths.push([ // Top Half
+                    { x: margin, y: margin }, { x: size - margin, y: margin }, { x: size - margin, y: margin + segmentHeight }, { x: margin, y: margin + segmentHeight }
+                ]);
+                paths.push([ // Bottom Half
+                    { x: margin, y: margin + segmentHeight }, { x: size - margin, y: margin + segmentHeight }, { x: size - margin, y: size - margin }, { x: margin, y: size - margin }
+                ]);
+            } else if (type === 'circle') {
+                const radius = effectiveSize / 2;
+                const angleStep = (2 * Math.PI) / segments;
+
+                for (let i = 0; i < segments; i++) {
+                    const startAngle = i * angleStep - Math.PI / 2; // ઉપરથી શરૂ કરો
+                    const endAngle = (i + 1) * angleStep - Math.PI / 2;
+
+                    paths.push([
+                        { x: effectiveCenter, y: effectiveCenter },
+                        { arc: true, cx: effectiveCenter, cy: effectiveCenter, r: radius, start: startAngle, end: endAngle },
+                        { x: effectiveCenter, y: effectiveCenter } // સેન્ટર પર પાછા ફરો
+                    ]);
+                }
+            } else if (type === 'polygon' && segments === 5) { // 5-ભાગ પેન્ટાગોન (પાંચ ત્રિકોણ)
+                const radius = effectiveSize / 2.5; // Slightly smaller to fit
+                const angleStep = (2 * Math.PI) / segments;
+                const offset = Math.PI / 2 + angleStep / 2; // Point top vertex up
+
+                for (let i = 0; i < segments; i++) {
+                    const startAngle = i * angleStep + offset;
+                    const endAngle = (i + 1) * angleStep + offset;
+
+                    const p1 = { x: effectiveCenter + radius * Math.cos(startAngle), y: effectiveCenter - radius * Math.sin(startAngle) };
+                    const p2 = { x: effectiveCenter + radius * Math.cos(endAngle), y: effectiveCenter - radius * Math.sin(endAngle) };
+                    
+                    paths.push([
+                        { x: effectiveCenter, y: effectiveCenter }, p1, p2
+                    ]);
+                }
+            } else if (type === 'triangle' && (segments === 4 || segments === 6)) {
+                // Image triangle is an equilateral triangle divided into smaller triangles.
+                const h = effectiveSize * Math.sqrt(3) / 2;
+                const side = effectiveSize;
+                const pA = { x: effectiveCenter, y: margin }; // Top point
+                const pB = { x: margin, y: size - margin }; // Bottom-left
+                const pC = { x: size - margin, y: size - margin }; // Bottom-right
+                const pCenter = { x: effectiveCenter, y: (pA.y + pB.y + pC.y) / 3 }; // Centroid
+
+                if (segments === 4) {
+                    // 4 segments (Central triangle + 3 outer triangles)
+                    const pMidAB = { x: (pA.x + pB.x) / 2, y: (pA.y + pB.y) / 2 };
+                    const pMidBC = { x: (pB.x + pC.x) / 2, y: (pB.y + pC.y) / 2 };
+                    const pMidCA = { x: (pC.x + pA.x) / 2, y: (pC.y + pA.y) / 2 };
+
+                    paths.push([pA, pMidCA, pMidAB]); // Top Triangle
+                    paths.push([pB, pMidAB, pMidBC]); // Left Triangle
+                    paths.push([pC, pMidBC, pMidCA]); // Right Triangle
+                    paths.push([pMidAB, pMidCA, pMidBC]); // Center Triangle
+
+                } else if (segments === 6) {
+                    // 6 segments (Central point divides into 6 triangles)
+                    
+                    const pMidAB = { x: (pA.x + pB.x) / 2, y: (pA.y + pB.y) / 2 };
+                    const pMidBC = { x: (pB.x + pC.x) / 2, y: (pB.y + pC.y) / 2 };
+                    const pMidCA = { x: (pC.x + pA.x) / 2, y: (pC.y + pA.y) / 2 };
+
+                    // 6 triangles meeting at centroid
+                    paths.push([pA, pMidAB, pCenter]);
+                    paths.push([pA, pMidCA, pCenter]);
+
+                    paths.push([pB, pMidAB, pCenter]);
+                    paths.push([pB, pMidBC, pCenter]);
+
+                    paths.push([pC, pMidBC, pCenter]);
+                    paths.push([pC, pMidCA, pCenter]);
+                }
+
+            } else if (type === 'star') {
+                // STAR SHAPE: Now modified to 5 large, symmetrical segments (as requested for a 1/5 fraction)
+                // This draws 5 kite-shaped segments from the center, ignoring the inner star lines.
+                const numPoints = 5;
+                const outerRadius = effectiveSize / 2.5;
+                const innerRadius = outerRadius / 2.5;
+                const angleStep = Math.PI / numPoints; // Angle between outer points
+                const angleOffset = -Math.PI / 2; // Start from top
+                
+                let outerPoints = [];
+                let innerPoints = [];
+                
+                // Calculate 5 outer and 5 inner points
+                for (let i = 0; i < 2 * numPoints; i++) {
+                    const r = (i % 2 === 0) ? outerRadius : innerRadius;
+                    const angle = i * angleStep + angleOffset;
+                    const point = {
+                        x: effectiveCenter + r * Math.cos(angle),
+                        y: effectiveCenter + r * Math.sin(angle)
+                    };
+                    if (i % 2 === 0) {
+                        outerPoints.push(point);
+                    } else {
+                        innerPoints.push(point);
+                    }
+                }
+
+                // Create 5 large kite-shaped segments meeting at the center
+                for (let i = 0; i < numPoints; i++) {
+                    const outerP = outerPoints[i];
+                    const innerP_start = innerPoints[(i - 1 + numPoints) % numPoints]; // Previous inner point
+                    const innerP_end = innerPoints[i]; // Current inner point
+                    
+                    paths.push([
+                        { x: effectiveCenter, y: effectiveCenter }, 
+                        innerP_start, 
+                        outerP,
+                        innerP_end
+                    ]);
+                }
+            }
+
+            return paths;
+        }
+
+        // ------------------------------------------------------------------
+        // ચેક કરો કે પોઈન્ટ કયા સેગમેન્ટમાં છે
+        // ------------------------------------------------------------------
+        function isPointInPath(x, y, path) {
+            // આ ફંક્શન CANVAS નો ઉપયોગ કરીને પોઈન્ટ પાથની અંદર છે કે કેમ તે તપાસે છે
+            ctx.beginPath();
+            path.forEach((p, index) => {
+                if (index === 0) {
+                    ctx.moveTo(p.x, p.y);
+                } else {
+                    if (p.arc) {
+                        ctx.arc(p.cx, p.cy, p.r, p.start, p.end);
+                    } else {
+                        ctx.lineTo(p.x, p.y);
+                    }
+                }
+            });
+            ctx.closePath();
+            return ctx.isPointInPath(x, y);
+        }
+
+        // ------------------------------------------------------------------
+        // ક્લિક/ટચ ઇવેન્ટ હેન્ડલર
+        // ------------------------------------------------------------------
+        function handleInteraction(event) {
+            // જવાબ ચેક કર્યા પછી ઇન્ટરેક્શન અટકાવો
+            if (nextButton.textContent !== 'જવાબ તપાસો') {
+                return;
+            }
+
+            // કેનવાસના સંબંધમાં માઉસ/ટચ કોઓર્ડિનેટ્સ મેળવો
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            if (event.touches) {
+                // ટચ ઇવેન્ટ્સ માટે
+                clientX = event.touches[0].clientX;
+                clientY = event.touches[0].clientY;
+            } else {
+                // માઉસ ઇવેન્ટ્સ માટે
+                clientX = event.clientX;
+                clientY = event.clientY;
+            }
+
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+            
+            const { segments, type } = currentQuestion;
+            const center = canvas.width / 2;
+            const segmentPaths = getSegmentPaths(type, segments, canvas.width, center);
+            let segmentIndex = -1;
+            
+            // દરેક સેગમેન્ટ પાથ પર પોઈન્ટનું પરીક્ષણ કરો
+            for (let i = 0; i < segmentPaths.length; i++) {
+                if (isPointInPath(x, y, segmentPaths[i])) {
+                    segmentIndex = i;
+                    break;
+                }
+            }
+            
+            // ભાગને રંગો અથવા રંગ કાઢી નાખો
+            if (segmentIndex !== -1) {
+                const indexInArray = shadedParts.indexOf(segmentIndex);
+                if (indexInArray > -1) {
+                    // જો પહેલાથી રંગાયેલો હોય, તો કાઢી નાખો
+                    shadedParts.splice(indexInArray, 1);
+                } else {
+                    // જો રંગાયેલો ન હોય, તો ઉમેરો
+                    shadedParts.push(segmentIndex);
+                }
+                drawShape(); // અપડેટ કરેલો આકાર ફરીથી દોરો
+            }
+        }
+        
+        // કેનવાસ પર ક્લિક/ટચ ઇવેન્ટ સાંભળનાર
+        canvas.addEventListener('click', handleInteraction);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // ડિફોલ્ટ સ્ક્રોલિંગ અટકાવો
+            handleInteraction(e);
+        }, { passive: false });
+
+        // ------------------------------------------------------------------
+        // જવાબ તપાસો
+        // ------------------------------------------------------------------
+        window.checkAnswer = function() {
+            const requiredShades = currentQuestion.n;
+            const userShades = shadedParts.length;
+
+            if (userShades === requiredShades) {
+                // સાચો જવાબ
+                score++;
+                feedback.className = 'text-center text-lg font-bold text-green-600 mb-4';
+                feedback.textContent = 'સાચું! 🎉';
+                
+                // આગામી પ્રશ્ન માટે બટન બદલો
+                nextButton.textContent = 'આગળનો પ્રશ્ન';
+                nextButton.onclick = loadNextQuestion;
+
+            } else {
+                // ખોટો જવાબ
+                feedback.className = 'text-center text-lg font-bold text-red-600 mb-4';
+                feedback.textContent = `ખોટું. તમારે ${requiredShades} ભાગ રંગવાની જરૂર છે. (${userShades} રંગાયેલા છે)`;
+                // યુઝરને ફરીથી પ્રયાસ કરવા દો
+                nextButton.textContent = 'ફરી પ્રયાસ કરો';
+                nextButton.onclick = () => {
+                    feedback.textContent = '';
+                    nextButton.textContent = 'જવાબ તપાસો';
+                    nextButton.onclick = checkAnswer;
+                }
+            }
+            scoreDisplay.textContent = score; // સ્કોર અપડેટ કરો
+        }
+
+        // ------------------------------------------------------------------
+        // પ્રારંભ
+        // ------------------------------------------------------------------
+        // કેનવાસનું કદ સેટ કરો જેથી તે રિસ્પોન્સિવ રહે
+        function resizeCanvas() {
+            const containerWidth = canvas.parentElement.offsetWidth;
+            const size = Math.min(containerWidth, 350); // મહત્તમ 350px અથવા કન્ટેનરની પહોળાઈ
+            canvas.width = size;
+            canvas.height = size;
+            if (currentQuestion) {
+                 drawShape(); // કદ બદલાયા પછી આકાર ફરીથી દોરો
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // શરૂઆતમાં કદ સેટ કરો
+        loadNextQuestion(); // પ્રથમ પ્રશ્ન લોડ કરીને રમત શરૂ કરો
+    </script>
+</body>
+</html>
