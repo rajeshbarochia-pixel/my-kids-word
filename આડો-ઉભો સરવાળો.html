@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગણિત સરવાળો કોયડો</title>
+    <!-- Tailwind CSS CDN માટે -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter ફોન્ટ -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* હળવો ગ્રે બેકગ્રાઉન્ડ */
+        }
+        .grid-cell {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem; /* મોટો ફોન્ટ */
+            font-weight: 700;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            aspect-ratio: 1 / 1; /* કોષોને ચોરસ રાખો */
+        }
+        .input-cell {
+            text-align: center;
+            background-color: #fff;
+            border: 3px solid #3b82f6; /* વાદળી કિનારી */
+            color: #1e40af;
+            outline: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .input-cell:focus {
+            border-color: #ef4444; /* ફોકસ પર લાલ */
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5);
+        }
+        .fixed-cell {
+            background-color: #dbeafe; /* હળવો વાદળી બેકગ્રાઉન્ડ */
+            color: #1e40af;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+        }
+        /* સરવાળાના પ્રદર્શન માટે સ્ટાઇલ */
+        .sum-display {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* પંક્તિ સરવાળા જમણી બાજુએ શરૂ થશે */
+            padding-left: 0.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #4b5563; /* Default gray text */
+            transition: color 0.3s;
+        }
+        .col-sum-display {
+            justify-content: center; /* સ્તંભ સરવાળા કેન્દ્રમાં */
+            padding-left: 0;
+            padding-top: 0.5rem;
+            height: 100%;
+        }
+        /* ખાલી Firebase auth div માટે */
+        #loading-auth {
+            height: 0;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body class="p-4 flex items-start justify-center min-h-screen">
+
+    <div id="app" class="w-full max-w-lg bg-white p-6 md:p-8 rounded-xl shadow-2xl space-y-6">
+        <!-- શીર્ષક અને ક્રિએટરનું નામ -->
+        <h1 class="text-3xl md:text-4xl font-extrabold text-center text-gray-800 mb-0">આડો-ઉભો સરવાળો કરો</h1>
+        <p class="text-md font-medium text-center text-gray-500 mb-4 pt-1">Created by : Rajesh Barochia</p>
+        
+        <!-- ફાયરબેઝ/ઓથેન્ટિકેશન લોડિંગ સ્ટેટ (હવે છુપાયેલું છે) -->
+        <div id="loading-auth">
+            <!-- આ Div હવે ખાલી છે અને કોડ દ્વારા છુપાયેલું છે -->
+        </div>
+
+        <!-- સૂચનાઓ -->
+        <div class="p-3 bg-yellow-100 border-l-4 border-yellow-500 rounded-md">
+            <p class="text-sm font-medium text-yellow-800">સૂચના:</p>
+            <p class="text-md text-yellow-700 font-semibold">તમામ પંક્તિઓ (આડી) અને સ્તંભો (ઊભી)નો સરવાળો નીચે આપેલ 'લક્ષ્ય સરવાળા' બરાબર થાય તે રીતે ખાલી બોક્સ ભરો.</p>
+        </div>
+
+        <!-- લક્ષ્ય સરવાળો -->
+        <div class="text-center">
+            <p class="text-xl font-semibold text-gray-700">લક્ષ્ય સરવાળો (Target Sum):</p>
+            <div id="target-sum-display" class="inline-block px-6 py-2 mt-2 text-3xl font-bold text-white bg-blue-600 rounded-full shadow-lg shadow-blue-300/50">--</div>
+        </div>
+
+        <!-- કોયડો ગ્રીડ અને સરવાળાના સૂચક -->
+        <div id="puzzle-layout" class="w-full max-w-sm mx-auto p-2">
+            
+            <!-- 1. The 3x3 grid + 3 Row Sums (4 columns) -->
+            <!-- grid-cols-[] નો ઉપયોગ 3 ગ્રીડ કોષો અને 1 ઓટો-સાઇઝ્ડ સરવાળા કૉલમ માટે થાય છે -->
+            <div id="grid-and-row-sums" class="grid gap-2" style="grid-template-columns: repeat(3, minmax(0, 1fr)) auto;">
+                <!-- Cells (i, j) અને Row Sums (i) અહીં રેન્ડર થશે -->
+            </div>
+
+            <!-- 2. The 3 Column Sums + 1 Corner cell (4 columns) -->
+            <div id="col-sums-and-corner" class="grid gap-2 mt-2" style="grid-template-columns: repeat(3, minmax(0, 1fr)) auto;">
+                <!-- Column Sums (j) અહીં રેન્ડર થશે -->
+                <!-- Corner Cell (ખાલી ખૂણો) -->
+            </div>
+        </div>
+
+        <!-- બટનો -->
+        <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
+            <button id="check-btn" class="flex-1 w-full sm:w-auto px-6 py-3 text-lg font-bold text-white bg-green-500 rounded-lg shadow-lg shadow-green-400/50 hover:bg-green-600 transition duration-150 transform hover:scale-105" onclick="checkSolution()">
+                ✅ જવાબ ચકાસો
+            </button>
+            <button id="new-puzzle-btn" class="flex-1 w-full sm:w-auto px-6 py-3 text-lg font-bold text-white bg-red-500 rounded-lg shadow-lg shadow-red-400/50 hover:bg-red-600 transition duration-150 transform hover:scale-105" onclick="generatePuzzle()">
+                🔄 નવો કોયડો
+            </button>
+        </div>
+        
+        <!-- સ્ટેટસ ફીડબેક -->
+        <div id="status-feedback" class="text-center text-lg font-semibold py-2 rounded-lg transition-colors duration-300 h-10">
+            <!-- અહીં યુઝરને ફીડબેક મળશે -->
+        </div>
+
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase (required boilerplate)
+        window.app = null;
+        window.db = null;
+        window.auth = null;
+        window.userId = null;
+        
+        // Use the global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        /**
+         * Firebase ને પ્રારંભ કરે છે અને વપરાશકર્તાને પ્રમાણિત કરે છે.
+         */
+        async function initFirebase() {
+            try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.warn("Firebase config is missing. Skipping Firestore initialization.");
+                    // document.getElementById('loading-auth').textContent = 'Firebase પ્રારંભ (Initialization) છોડી દેવાયો.'; // UI માં કંઈપણ પ્રદર્શિત કરશો નહીં
+                    window.userId = 'anonymous-user'; // fallback
+                    window.generatePuzzle(); 
+                    return;
+                }
+                
+                window.app = initializeApp(firebaseConfig);
+                window.db = getFirestore(window.app);
+                window.auth = getAuth(window.app);
+                setLogLevel('error'); // ફક્ત ભૂલો લોગ કરો
+
+                // પ્રમાણીકરણ (Authentication)
+                if (initialAuthToken) {
+                    await signInWithCustomToken(window.auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(window.auth);
+                }
+
+                // પ્રમાણીકરણ સ્થિતિમાં ફેરફાર માટે સાંભળો
+                onAuthStateChanged(window.auth, (user) => {
+                    if (user) {
+                        window.userId = user.uid;
+                        // વપરાશકર્તા ID અહીંથી દૂર કરવામાં આવ્યું છે.
+                        window.generatePuzzle(); 
+                    } else {
+                        window.userId = crypto.randomUUID(); // Fallback for anonymous
+                        window.generatePuzzle(); 
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase પ્રારંભમાં ભૂલ:", error);
+                // document.getElementById('loading-auth').textContent = `Firebase ભૂલ: ${error.message}`; // UI માં કંઈપણ પ્રદર્શિત કરશો નહીં
+                window.userId = crypto.randomUUID(); // Fallback
+                window.generatePuzzle(); 
+            }
+        }
+
+        // DOM લોડ થયા પછી Firebase શરૂ કરો
+        document.addEventListener('DOMContentLoaded', initFirebase);
+    </script>
+
+    <script>
+        // ગ્લોબલ ગેમ સ્ટેટ
+        let solutionGrid = [[]]; // સાચો જવાબ
+        let targetSum = 0;
+        const GRID_SIZE = 3;
+        const MAX_SINGLE_DIGIT = 9; // કોષોમાં મહત્તમ મૂલ્ય
+
+        /**
+         * એક રેન્ડમ પૂર્ણાંક મેળવે છે.
+         * @param {number} min લઘુત્તમ મૂલ્ય (સમાવિષ્ટ).
+         * @param {number} max મહત્તમ મૂલ્ય (સમાવિષ્ટ).
+         * @returns {number} રેન્ડમ પૂર્ણાંક.
+         */
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /**
+         * સ્ટેટસ ફીડબેક એરિયાને અપડેટ કરે છે.
+         * @param {string} text સંદેશ ટેક્સ્ટ.
+         * @param {string} colorClass Tailwind કલર ક્લાસ (દા.ત., 'bg-green-100 text-green-700').
+         */
+        function updateStatus(text, colorClass) {
+            const statusDiv = document.getElementById('status-feedback');
+            // પહેલાના કલર ક્લાસ દૂર કરો
+            statusDiv.className = 'text-center text-lg font-semibold py-2 rounded-lg transition-colors duration-300 h-10'; 
+            statusDiv.textContent = text;
+            if (colorClass) {
+                statusDiv.classList.add(...colorClass.split(' '));
+            }
+        }
+
+        /**
+         * 20 સુધીના લક્ષ્ય સરવાળા સાથે રેન્ડમ કોયડો જનરેટ કરે છે.
+         */
+        window.generatePuzzle = function() {
+            // 1. લક્ષ્ય સરવાળો 10 થી 20 વચ્ચે રેન્ડમલી નક્કી કરો
+            // ખાતરી કરો કે TargetSum 3 * 1 = 3 થી ઓછો નથી અને 3 * 9 = 27 થી વધુ નથી.
+            targetSum = getRandomInt(10, 20); 
+            solutionGrid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+
+            const maxCellVal = Math.min(MAX_SINGLE_DIGIT, targetSum - 2); // ખાતરી કરો કે 3 કોષોમાં સરવાળો TargetSum કરતાં વધી ન જાય
+
+            // કોયડાની પેઢી (generation) ને પુનરાવર્તિત કરો જ્યાં સુધી માન્ય ગ્રીડ ન મળે
+            let attempts = 0;
+            const MAX_ATTEMPTS = 100;
+
+            while (attempts < MAX_ATTEMPTS) {
+                attempts++;
+                let isValid = true;
+
+                // 2. પ્રથમ બે કૉલમ અને પ્રથમ બે પંક્તિઓ રેન્ડમલી ભરો (1 થી maxCellVal ની આસપાસ)
+                for (let i = 0; i < GRID_SIZE; i++) {
+                    for (let j = 0; j < GRID_SIZE; j++) {
+                        solutionGrid[i][j] = 0; // રીસેટ
+                    }
+                }
+
+                for (let i = 0; i < GRID_SIZE - 1; i++) {
+                    for (let j = 0; j < GRID_SIZE - 1; j++) {
+                        // દરેક કોષમાં ઓછામાં ઓછું 1 હોવું જોઈએ
+                        solutionGrid[i][j] = getRandomInt(1, maxCellVal); 
+                    }
+                }
+                
+                // 3. છેલ્લા સ્તંભ અને પંક્તિમાં ખૂટતા મૂલ્યોની ગણતરી કરો
+                
+                // છેલ્લા સ્તંભની ગણતરી (જમણી બાજુ)
+                for (let i = 0; i < GRID_SIZE - 1; i++) {
+                    let rowSum = solutionGrid[i][0] + solutionGrid[i][1];
+                    let requiredVal = targetSum - rowSum;
+                    
+                    if (requiredVal < 1 || requiredVal > MAX_SINGLE_DIGIT) {
+                        isValid = false;
+                        break;
+                    }
+                    solutionGrid[i][GRID_SIZE - 1] = requiredVal;
+                }
+                if (!isValid) continue; // જો અમાન્ય હોય તો આગલા પ્રયાસ પર જાઓ
+                
+                // છેલ્લી પંક્તિની ગણતરી (નીચેની બાજુ)
+                for (let j = 0; j < GRID_SIZE - 1; j++) {
+                    let colSum = solutionGrid[0][j] + solutionGrid[1][j];
+                    let requiredVal = targetSum - colSum;
+
+                    if (requiredVal < 1 || requiredVal > MAX_SINGLE_DIGIT) {
+                        isValid = false;
+                        break;
+                    }
+                    solutionGrid[GRID_SIZE - 1][j] = requiredVal;
+                }
+                if (!isValid) continue; // જો અમાન્ય હોય તો આગલા પ્રયાસ પર જાઓ
+                
+                // 4. છેલ્લો કોષ (solutionGrid[2][2]) તપાસો (બંને પંક્તિ અને સ્તંભ દ્વારા)
+                
+                // છેલ્લી પંક્તિ દ્વારા ગણતરી
+                const lastRowSum = solutionGrid[GRID_SIZE - 1][0] + solutionGrid[GRID_SIZE - 1][1];
+                const valByRow = targetSum - lastRowSum;
+
+                // છેલ્લા સ્તંભ દ્વારા ગણતરી
+                const lastColSum = solutionGrid[0][GRID_SIZE - 1] + solutionGrid[1][GRID_SIZE - 1];
+                const valByCol = targetSum - lastColSum;
+
+                // ખાતરી કરો કે મૂલ્યો સમાન છે, 1 થી 9 ની વચ્ચે છે, અને 0 નથી
+                if (valByRow === valByCol && valByRow >= 1 && valByRow <= MAX_SINGLE_DIGIT) {
+                    solutionGrid[GRID_SIZE - 1][GRID_SIZE - 1] = valByRow;
+                    isValid = true;
+                    break; // માન્ય કોયડો મળ્યો!
+                } else {
+                    isValid = false;
+                }
+            }
+
+            if (attempts >= MAX_ATTEMPTS) {
+                console.error("Error: Could not generate a valid puzzle within max attempts. Retrying.");
+                return generatePuzzle(); // જો પ્રયાસ નિષ્ફળ જાય, તો પુનરાવર્તન કરો
+            }
+
+            // 5. ખાલી કરવા માટે કોષોની પસંદગી
+            const cellsToEmpty = getRandomInt(4, 5); // 4 કે 5 કોષો ખાલી કરો
+            const allCells = [];
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    allCells.push({ i, j });
+                }
+            }
+            
+            // શફલ કરો અને પ્રથમ 'cellsToEmpty' જેટલા કોષો પસંદ કરો
+            for (let i = allCells.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allCells[i], allCells[j]] = [allCells[j], allCells[i]];
+            }
+            const emptyCells = allCells.slice(0, cellsToEmpty);
+
+            // 6. DOM ને અપડેટ કરો
+            renderGrid(emptyCells);
+            document.getElementById('target-sum-display').textContent = targetSum;
+            updateStatus('નવો કોયડો તૈયાર છે. બોક્સ ભરો!', 'text-gray-600'); 
+        };
+
+        /**
+         * ગ્રીડને DOM માં રેન્ડર કરે છે.
+         * @param {Array<{i: number, j: number}>} emptyCells ખાલી રાખવાના કોષોની યાદી.
+         */
+        function renderGrid(emptyCells) {
+            const gridAndRowSumsContainer = document.getElementById('grid-and-row-sums');
+            const colSumsAndCornerContainer = document.getElementById('col-sums-and-corner');
+            gridAndRowSumsContainer.innerHTML = '';
+            colSumsAndCornerContainer.innerHTML = '';
+
+            // 1. 3x3 ગ્રીડ અને પંક્તિ સરવાળા (જમણી બાજુ) રેન્ડર કરો
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    const isInput = emptyCells.some(cell => cell.i === i && cell.j === j);
+                    
+                    const cellDiv = document.createElement('div');
+                    cellDiv.classList.add('grid-cell');
+                    
+                    if (isInput) {
+                        // ઇન્ટરેક્ટિવ ઇનપુટ બોક્સ
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.min = '1';
+                        input.max = MAX_SINGLE_DIGIT; // મહત્તમ 9 સુધી જ મંજૂરી આપો
+                        input.maxLength = '1';
+                        input.classList.add('input-cell', 'w-full', 'h-full', 'text-2xl', 'p-1');
+                        input.setAttribute('data-row', i);
+                        input.setAttribute('data-col', j);
+                        input.value = '';
+                        input.addEventListener('input', (e) => {
+                            // ઇનપુટને 1 અંક સુધી મર્યાદિત કરો અને ખાતરી કરો કે તે 1-9 વચ્ચે છે
+                            e.target.value = e.target.value.replace(/[^1-9]/g, '').slice(0, 1);
+                            // ઇનપુટ પછી સ્ટેટસ રીસેટ કરો
+                            updateStatus('જવાબ ચકાસવા માટે ✅ બટન દબાવો.', 'text-gray-600');
+                        });
+                        cellDiv.appendChild(input);
+                    } else {
+                        // ફિક્સ્ડ નંબર
+                        cellDiv.classList.add('fixed-cell', 'shadow-md');
+                        cellDiv.textContent = solutionGrid[i][j];
+                    }
+                    gridAndRowSumsContainer.appendChild(cellDiv);
+                }
+
+                // 4th column: પંક્તિ સરવાળા (જમણી બાજુ) - placeholder
+                const rowSumDiv = document.createElement('div');
+                rowSumDiv.id = `row-sum-${i}`;
+                rowSumDiv.textContent = `=?`; 
+                rowSumDiv.classList.add('sum-display', 'w-auto', 'h-full', 'text-gray-500');
+                gridAndRowSumsContainer.appendChild(rowSumDiv);
+            }
+            
+            // 2. સ્તંભ સરવાળા (નીચે) અને ખૂણો રેન્ડર કરો
+            for (let j = 0; j < GRID_SIZE; j++) {
+                // સ્તંભ સરવાળા (નીચે) - placeholder
+                const colSumDiv = document.createElement('div');
+                colSumDiv.id = `col-sum-${j}`;
+                colSumDiv.textContent = `=?`; 
+                colSumDiv.classList.add('sum-display', 'col-sum-display', 'w-full', 'text-gray-500');
+                colSumsAndCornerContainer.appendChild(colSumDiv);
+            }
+
+            // 4th column of the bottom row: ખાલી ખૂણો
+            const cornerDiv = document.createElement('div');
+            cornerDiv.classList.add('w-auto', 'h-full');
+            colSumsAndCornerContainer.appendChild(cornerDiv);
+        }
+
+        /**
+         * વપરાશકર્તાના જવાબની ચકાસણી કરે છે.
+         */
+        window.checkSolution = function() {
+            const inputs = document.querySelectorAll('.input-cell');
+            let isSolved = true;
+            
+            // 1. ઇનપુટ્સમાંથી વર્તમાન ગ્રીડ મેળવો અને ખાલી કોષો તપાસો
+            const currentGrid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+            let allFilled = true;
+
+            inputs.forEach(input => {
+                const val = parseInt(input.value);
+                
+                if (isNaN(val) || val <= 0) {
+                    allFilled = false;
+                    input.classList.add('border-yellow-500', 'ring-2', 'ring-yellow-300');
+                    return;
+                }
+                input.classList.remove('border-yellow-500', 'ring-2', 'ring-yellow-300');
+            });
+            
+            if (!allFilled) {
+                updateStatus("❗ કૃપા કરીને બધા ખાલી બોક્સમાં સંખ્યાઓ ભરો.", 'bg-yellow-100 text-yellow-700');
+                return;
+            }
+
+            // 2. સંપૂર્ણ ગ્રીડ બનાવો
+            const cells = document.querySelectorAll('#grid-and-row-sums > .grid-cell');
+            cells.forEach((cell, index) => {
+                // 3x3 ગ્રીડ માટે યોગ્ય ઇન્ડેક્સિંગ:
+                const i = Math.floor(index / GRID_SIZE); 
+                const j = index % GRID_SIZE;           
+                
+                const input = cell.querySelector('input');
+                if (input) {
+                    currentGrid[i][j] = parseInt(input.value) || 0;
+                } else {
+                    currentGrid[i][j] = parseInt(cell.textContent) || 0;
+                }
+            });
+
+            // 3. પંક્તિઓ અને સ્તંભોના સરવાળાની ચકાસણી
+            for (let k = 0; k < GRID_SIZE; k++) {
+                let rowSum = 0;
+                let colSum = 0;
+                
+                for (let l = 0; l < GRID_SIZE; l++) {
+                    rowSum += currentGrid[k][l]; 
+                    colSum += currentGrid[l][k]; 
+                }
+
+                // પંક્તિ સરવાળાની ચકાસણી (જમણી બાજુ)
+                const rowSumDiv = document.getElementById(`row-sum-${k}`);
+                rowSumDiv.classList.remove('text-green-600', 'text-red-500', 'text-gray-500'); 
+                if (rowSum === targetSum) {
+                    rowSumDiv.classList.add('text-green-600');
+                } else {
+                    isSolved = false;
+                    rowSumDiv.classList.add('text-red-500');
+                }
+                rowSumDiv.textContent = `=${rowSum} ${rowSum === targetSum ? '✅' : '❌'}`;
+
+                // સ્તંભ સરવાળાની ચકાસણી (નીચે)
+                const colSumDiv = document.getElementById(`col-sum-${k}`);
+                colSumDiv.classList.remove('text-green-600', 'text-red-500', 'text-gray-500'); 
+                if (colSum === targetSum) {
+                    colSumDiv.classList.add('text-green-600');
+                } else {
+                    isSolved = false;
+                    colSumDiv.classList.add('text-red-500');
+                }
+                colSumDiv.textContent = `=${colSum} ${colSum === targetSum ? '✅' : '❌'}`;
+            }
+
+            // 4. અંતિમ સંદેશ (હવે સ્ટેટસ એરિયામાં)
+            if (isSolved) {
+                updateStatus("🥳 અભિનંદન! કોયડો બરાબર ઉકેલાઈ ગયો છે!", 'bg-green-100 text-green-700');
+            } else {
+                updateStatus("🤔 જરા ફરી પ્રયાસ કરો. ભૂલભરેલા સરવાળાવાળી પંક્તિઓ/સ્તંભો લાલ રંગમાં હાઇલાઇટ કરેલ છે.", 'bg-red-100 text-red-700');
+            }
+        };
+
+        // પેજ લોડ થાય ત્યારે ઑટોમેટિકલી પ્રથમ કોયડો શરૂ કરો.
+        // નોંધ: Firebase પ્રારંભ થયા પછી generatePuzzle() ને કૉલ કરવામાં આવે છે.
+    </script>
+</body>
+</html>
