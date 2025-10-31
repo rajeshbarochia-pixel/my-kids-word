@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ખૂટતા મૂળાક્ષરો(a,b,c,d)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* કસ્ટમ CSS */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 900px;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 4px solid #65a30d;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            /* ગ્રીડ હવે 6 રો ને સમાવવા માટે લાંબી હશે */
+            gap: 1.75rem;
+            padding: 1rem 0;
+        }
+
+        .circle-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+        }
+
+        .circle-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .letter-input {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            border: none;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 4rem;
+            line-height: 1;
+            font-weight: 800;
+            color: #1e40af;
+            background: transparent;
+            text-transform: uppercase;
+            outline: none;
+            caret-color: #6d28d9;
+            cursor: text;
+        }
+
+        .circle-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* ગોળ રાઉન્ડનો મુખ્ય ભાગ */
+        .circle-path {
+            fill: #fef08a; /* પીળો રંગ */
+            stroke: #000000; /* કાળી આઉટલાઇન */
+            stroke-width: 2.5;
+        }
+        
+        .circle-svg text {
+            font-family: Arial, sans-serif;
+            font-size: 4rem;
+            fill: #1e40af;
+            font-weight: 800;
+        }
+
+        .correct-fill {
+            animation: pulse-correct 0.4s ease-in-out 2;
+        }
+
+        .incorrect-shake {
+            animation: shake-incorrect 0.4s ease-in-out 2;
+        }
+
+        @keyframes pulse-correct {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes shake-incorrect {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .mouse-container {
+            margin-top: 2.5rem;
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+            padding-right: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            #game-container {
+                padding: 1.25rem;
+                border-radius: 1.25rem;
+            }
+            .game-grid {
+                gap: 1.25rem;
+            }
+            .letter-input, .circle-svg text {
+                font-size: 3.2rem;
+            }
+            .mouse-container {
+                justify-content: center;
+                margin-top: 1.5rem;
+                padding-right: 0;
+            }
+            .mouse-container > div {
+                width: 80px;
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div id="game-container">
+        
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-extrabold text-lime-700">ખૂટતા મૂળાક્ષરો(A,B,C,D)</h1>
+            <p class="text-sm text-gray-600 mt-1">Created by: Rajesh Barochia</p>
+            
+            <button id="new-game-button" class="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-300 transform hover:scale-105">
+                નવી રમત (રેન્ડમ)
+            </button>
+
+            <p id="instruction-text" class="mt-4 text-xl font-semibold text-blue-600">
+                ખાલી રાઉન્ડ પર ક્લિક કરો અને ખૂટતો મૂળાક્ષર દાખલ કરો!
+            </p>
+        </header>
+
+        <div id="letters-grid" class="game-grid">
+            <!-- મૂળાક્ષરો અહીં JavaScript દ્વારા જનરેટ થશે --></div>
+
+        <div class="mouse-container">
+            <div class="w-24 h-24 relative">
+                <div class="absolute top-1/2 left-1/2 text-7xl transform -translate-x-1/2 -translate-y-1/2" title="Mouse">
+                    🐭
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center p-4 z-50" onclick="closeModal()">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center" onclick="event.stopPropagation()">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4"></h2>
+            <p id="modal-message" class="text-gray-700 mb-6"></p>
+            <button onclick="closeModal()" class="bg-blue-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-blue-700 transition">
+                બરાબર
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        const gridContainer = document.getElementById('letters-grid');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const instructionText = document.getElementById('instruction-text');
+        const newGameButton = document.getElementById('new-game-button');
+        
+        let currentGridData = []; // વર્તમાન ગેમ ડેટા સ્ટોર કરવા માટે
+
+        window.onload = () => {
+            newGameButton.addEventListener('click', generateRandomGame);
+            generateRandomGame(); // શરૂઆતમાં એક રેન્ડમ ગેમ શરૂ કરો
+        };
+
+        /**
+         * A થી Z માંથી રેન્ડમ મૂળાક્ષરોને ખૂટતા તરીકે પસંદ કરે છે.
+         */
+        function generateRandomMissingLetters() {
+            const numLetters = allLetters.length; // 26
+            const numMissing = 12; // 12 મૂળાક્ષરો ખૂટતા રાખ્યા છે.
+            
+            // 0 થી 25 સુધીના ઇન્ડેક્સની યાદી બનાવો
+            let indices = Array.from({length: numLetters}, (_, i) => i);
+            
+            // 12 રેન્ડમ ઇન્ડેક્સ પસંદ કરો (ખૂટતા મૂળાક્ષરો)
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+            const missingIndices = indices.slice(0, numMissing);
+
+            // finalDisplayedLetters array બનાવો (26 મૂળાક્ષરો માટે)
+            let finalDisplayedLetters = Array(numLetters).fill('');
+            for(let i = 0; i < numLetters; i++) {
+                // જો index, missingIndices માં ન હોય તો મૂળાક્ષર ભરો
+                if (!missingIndices.includes(i)) {
+                    finalDisplayedLetters[i] = allLetters[i];
+                }
+            }
+            
+            // 26 સ્થાનોને 6x5 (30 સ્થાનો) ગ્રીડમાં મૂકવા માટે
+            // બાકીના 4 સ્થાનો ખાલી છોડી દો (ફક્ત 26 મૂળાક્ષરો બતાવવા માટે).
+            return finalDisplayedLetters.concat(Array(4).fill(''));
+        }
+        
+        /**
+         * નવી રેન્ડમ ગેમ શરૂ કરે છે.
+         */
+        function generateRandomGame() {
+            instructionText.textContent = 'ખાલી રાઉન્ડ પર ક્લિક કરો અને ખૂટતો મૂળાક્ષર દાખલ કરો!';
+            currentGridData = generateRandomMissingLetters();
+            generateGameGrid();
+            closeModal(); // ખાતરી કરો કે કોઈ મોડલ ખુલ્લું નથી
+        }
+
+        function showModal(title, message, isSuccess = true) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modalTitle.classList.remove('text-green-700', 'text-red-700');
+            modalTitle.classList.add(isSuccess ? 'text-green-700' : 'text-red-700');
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+        }
+
+        /**
+         * ગોળ રાઉન્ડ SVG આઇકન જનરેટ કરે છે.
+         * @param {string} letter - રાઉન્ડ પર બતાવવાનો મૂળાક્ષર.
+         */
+        function generateCircleSVG(letter) {
+            const letterContent = letter.trim() 
+                ? `<text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" class="font-extrabold">${letter}</text>`
+                : '';
+
+            return `
+                <svg viewBox="0 0 100 100" class="circle-svg" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" class="circle-path" />
+                    ${letterContent}
+                </svg>
+            `;
+        }
+
+        function generateGameGrid() {
+            gridContainer.innerHTML = '';
+
+            currentGridData.forEach((letter, index) => {
+                // માત્ર A થી Z (ઇન્ડેક્સ 0-25) ના સ્થાનો બતાવો.
+                if (index >= 26) {
+                    return;
+                }
+
+                const isMissing = !letter.trim();
+                const expectedLetter = allLetters[index];
+
+                const circleDiv = document.createElement('div');
+                circleDiv.className = 'circle-container relative';
+                circleDiv.dataset.expected = expectedLetter;
+                circleDiv.dataset.index = index;
+                circleDiv.dataset.isMissing = isMissing;
+
+                circleDiv.innerHTML = generateCircleSVG(letter);
+
+                if (isMissing) {
+                    const inputElement = document.createElement('input');
+                    inputElement.type = 'text';
+                    inputElement.maxLength = 1;
+                    inputElement.readOnly = false; 
+                    inputElement.className = 'letter-input';
+                    inputElement.setAttribute('aria-label', `ખૂટતો મૂળાક્ષર ${expectedLetter} માટે`);
+                    
+                    circleDiv.appendChild(inputElement);
+                    
+                    circleDiv.onclick = () => {
+                        if (circleDiv.dataset.isCorrect !== 'true') {
+                            inputElement.focus();
+                        }
+                    };
+                    
+                    inputElement.oninput = (event) => handleInputValidation(event, circleDiv, inputElement, expectedLetter);
+                    
+                    inputElement.onblur = () => {
+                        if (inputElement.value === '' && circleDiv.dataset.isCorrect !== 'true') {
+                            const pathElement = circleDiv.querySelector('.circle-path');
+                            inputElement.classList.remove('incorrect-shake');
+                            pathElement.classList.remove('incorrect-shake');
+                        }
+                    };
+
+                } else {
+                    circleDiv.style.cursor = 'default';
+                }
+
+                gridContainer.appendChild(circleDiv);
+            });
+        }
+
+        function handleInputValidation(event, circleDiv, inputElement, expectedLetter) {
+            const input = event.target.value.trim().toUpperCase();
+            
+            if (input.length === 0) {
+                const pathElement = circleDiv.querySelector('.circle-path');
+                inputElement.classList.remove('incorrect-shake');
+                pathElement.classList.remove('incorrect-shake');
+                return;
+            }
+
+            const cleanInput = input[0];
+
+            inputElement.value = cleanInput;
+            inputElement.blur();
+
+            const pathElement = circleDiv.querySelector('.circle-path');
+
+            circleDiv.classList.remove('incorrect-shake', 'correct-fill');
+            pathElement.classList.remove('incorrect-shake');
+
+            if (cleanInput === expectedLetter) {
+                circleDiv.dataset.isCorrect = 'true';
+                inputElement.readOnly = true; 
+
+                circleDiv.classList.add('correct-fill'); 
+                
+                setTimeout(() => {
+                    circleDiv.classList.remove('correct-fill');
+                }, 800);
+                
+                inputElement.style.color = '#1e40af'; 
+
+                checkGameCompletion();
+
+            } else {
+                circleDiv.classList.add('incorrect-shake');
+
+                setTimeout(() => {
+                    if (circleDiv.dataset.isCorrect !== 'true') {
+                        inputElement.value = '';
+                        inputElement.focus();
+                    }
+                }, 800);
+            }
+        }
+
+        function checkGameCompletion() {
+            // હવે માત્ર A થી Z સુધીના 26 મૂળાક્ષરોમાંથી ખૂટતા મૂળાક્ષરોની ગણતરી કરો
+            const allItems = document.querySelectorAll('.circle-container');
+            const missingCircles = Array.from(allItems).filter(circle => 
+                circle.dataset.isMissing === 'true' && parseInt(circle.dataset.index) < 26
+            );
+
+            const allCorrect = missingCircles.every(circle => circle.dataset.isCorrect === 'true');
+
+            if (allCorrect) {
+                setTimeout(() => {
+                    showModal('ખૂબ સરસ!', 'તમે A થી Z સુધીના તમામ ખૂટતા મૂળાક્ષરો સફળતાપૂર્વક પૂર્ણ કર્યા છે! 🎉', true);
+                    instructionText.textContent = 'તમે ગેમ પૂર્ણ કરી છે! અભિનંદન!';
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>
