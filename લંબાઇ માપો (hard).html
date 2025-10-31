@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Measuring Bars Game -લંબાઇ માપો (hard game)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .creator-tag {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .creator-tag strong {
+            color: #764ba2;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        .question-info {
+            text-align: center;
+            font-size: 1.3em;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            text-align: center;
+            font-size: 1.2em;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .ruler-container {
+            background: #f9f9f9;
+            padding: 40px 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .instruction {
+            text-align: center;
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .ruler {
+            position: relative;
+            width: 100%;
+            height: 60px;
+            background: #fef5e7;
+            border: 2px solid #333;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .ruler-marks {
+            display: flex;
+            justify-content: space-between;
+            height: 100%;
+            position: relative;
+        }
+
+        .mark {
+            position: relative;
+            width: 2px;
+            background: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .mark.major {
+            height: 30px;
+        }
+
+        .mark.minor {
+            height: 15px;
+        }
+
+        .mark-label {
+            position: absolute;
+            bottom: -25px;
+            font-size: 0.9em;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .bar {
+            position: absolute;
+            height: 30px;
+            top: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .answer-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .answer-input {
+            font-size: 1.5em;
+            padding: 15px 25px;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            width: 200px;
+            text-align: center;
+            margin: 0 10px;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn {
+            font-size: 1.2em;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            margin: 10px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-next {
+            background: #4CAF50;
+            color: white;
+            display: none;
+        }
+
+        .btn-next:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .feedback {
+            text-align: center;
+            font-size: 1.5em;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .feedback.wrong {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .final-score {
+            text-align: center;
+            display: none;
+        }
+
+        .final-score h2 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin: 20px 0;
+        }
+
+        .final-score p {
+            font-size: 1.5em;
+            color: #555;
+            margin: 10px 0;
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            margin-top: 20px;
+        }
+
+        .btn-restart:hover {
+            transform: translateY(-2px);
+        }
+
+        .footer-credit {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 0.85em;
+            color: #999;
+            font-style: italic;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .answer-input {
+                width: 150px;
+                font-size: 1.2em;
+            }
+
+            .btn {
+                padding: 12px 30px;
+                font-size: 1em;
+            }
+
+            .footer-credit {
+                position: static;
+                text-align: center;
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>📏 લંબાઇ માપો (hard game) 📏</h1>
+            <div class="creator-tag">Created by: <strong>Rajesh Barochia</strong></div>
+        </div>
+
+        <div id="gameArea">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="question-info">
+                પ્રશ્ન <span id="currentQuestion">1</span> / <span id="totalQuestions">8</span>
+            </div>
+
+            <div class="score">
+                સ્કોર: <span id="score">0</span> / <span id="attempted">0</span>
+            </div>
+
+            <div class="instruction">
+                લંબાઈ માપો (સેન્ટીમીટરમાં):
+            </div>
+
+            <div class="ruler-container">
+                <div class="ruler" id="ruler">
+                    <div class="ruler-marks" id="rulerMarks"></div>
+                    <div class="bar" id="bar"></div>
+                </div>
+            </div>
+
+            <div class="answer-section">
+                <input type="number" 
+                       class="answer-input" 
+                       id="answerInput" 
+                       placeholder="?"
+                       min="0"
+                       max="15"
+                       step="0.5">
+                <span style="font-size: 1.5em; color: #333;">cm</span>
+                <br>
+                <button class="btn btn-submit" id="submitBtn" onclick="checkAnswer()">
+                    જવાબ તપાસો ✓
+                </button>
+                <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()">
+                    આગલો પ્રશ્ન →
+                </button>
+            </div>
+
+            <div class="feedback" id="feedback"></div>
+        </div>
+
+        <div class="final-score" id="finalScore">
+            <h2>🎉 ગેમ પૂર્ણ થઈ! 🎉</h2>
+            <p>તમારો અંતિમ સ્કોર: <strong><span id="finalScoreText"></span></strong></p>
+            <p id="performanceText"></p>
+            <button class="btn btn-restart" onclick="restartGame()">
+                ફરીથી રમો 🔄
+            </button>
+        </div>
+
+        <div class="footer-credit">Created by: Rajesh Barochia</div>
+    </div>
+
+    <script>
+        // Game state
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let attempted = 0;
+        let totalQuestions = 8;
+        let currentAnswer = 0;
+
+        // Color options
+        const colors = [
+            '#e91e63', // Pink
+            '#4CAF50', // Green
+            '#2196F3', // Blue
+            '#FF5722', // Orange/Red
+            '#F44336', // Red
+            '#9C27B0', // Purple
+            '#795548', // Brown
+            '#FF9800'  // Orange
+        ];
+
+        // Initialize ruler
+        function createRuler() {
+            const rulerMarks = document.getElementById('rulerMarks');
+            rulerMarks.innerHTML = '';
+            
+            for (let i = 0; i <= 15; i++) {
+                const mark = document.createElement('div');
+                mark.className = 'mark major';
+                
+                const label = document.createElement('span');
+                label.className = 'mark-label';
+                label.textContent = i;
+                mark.appendChild(label);
+                
+                rulerMarks.appendChild(mark);
+            }
+        }
+
+        // Generate random question with 0.5 cm increments
+        function generateQuestion() {
+            // Random start position in 0.5 increments (0, 0.5, 1, 1.5, ... 10)
+            const startOptions = [];
+            for (let i = 0; i <= 10; i += 0.5) {
+                startOptions.push(i);
+            }
+            const startPos = startOptions[Math.floor(Math.random() * startOptions.length)];
+            
+            // Random length in 0.5 increments (2.5 to 8 cm)
+            const lengthOptions = [];
+            for (let i = 2.5; i <= 8; i += 0.5) {
+                lengthOptions.push(i);
+            }
+            const length = lengthOptions[Math.floor(Math.random() * lengthOptions.length)];
+            
+            // Make sure it doesn't exceed ruler
+            const maxLength = 15 - startPos;
+            const actualLength = Math.min(length, maxLength);
+            
+            // Round to nearest 0.5
+            const roundedLength = Math.round(actualLength * 2) / 2;
+            
+            // Random color
+            const color = colors[currentQuestionIndex % colors.length];
+            
+            return {
+                start: startPos,
+                length: roundedLength,
+                color: color,
+                answer: roundedLength
+            };
+        }
+
+        // Display question
+        function displayQuestion() {
+            const question = generateQuestion();
+            currentAnswer = question.answer;
+            
+            const bar = document.getElementById('bar');
+            const ruler = document.getElementById('ruler');
+            const rulerWidth = ruler.offsetWidth;
+            
+            // Calculate positions
+            const startPercent = (question.start / 15) * 100;
+            const widthPercent = (question.length / 15) * 100;
+            
+            bar.style.left = startPercent + '%';
+            bar.style.width = widthPercent + '%';
+            bar.style.backgroundColor = question.color;
+            
+            // Update UI
+            document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+            document.getElementById('progressFill').style.width = 
+                ((currentQuestionIndex / totalQuestions) * 100) + '%';
+            
+            // Reset input and buttons
+            document.getElementById('answerInput').value = '';
+            document.getElementById('answerInput').disabled = false;
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('feedback').style.display = 'none';
+            
+            // Focus input
+            document.getElementById('answerInput').focus();
+        }
+
+        // Check answer
+        function checkAnswer() {
+            const userAnswer = parseFloat(document.getElementById('answerInput').value);
+            const feedback = document.getElementById('feedback');
+            
+            if (isNaN(userAnswer)) {
+                feedback.textContent = '⚠️ કૃપા કરીને સંખ્યા દાખલ કરો!';
+                feedback.className = 'feedback wrong';
+                feedback.style.display = 'block';
+                return;
+            }
+            
+            attempted++;
+            document.getElementById('attempted').textContent = attempted;
+            
+            // Exact match required for 0.5 increments
+            const isCorrect = Math.abs(userAnswer - currentAnswer) < 0.25;
+            
+            if (isCorrect) {
+                score++;
+                feedback.textContent = '✅ સાચો જવાબ! શાબાશ! 🎉';
+                feedback.className = 'feedback correct';
+                document.getElementById('score').textContent = score;
+            } else {
+                feedback.textContent = `❌ ખોટો જવાબ! સાચો જવાબ: ${currentAnswer} cm`;
+                feedback.className = 'feedback wrong';
+            }
+            
+            feedback.style.display = 'block';
+            document.getElementById('answerInput').disabled = true;
+            document.getElementById('submitBtn').style.display = 'none';
+            
+            if (currentQuestionIndex < totalQuestions - 1) {
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            } else {
+                setTimeout(showFinalScore, 2000);
+            }
+        }
+
+        // Next question
+        function nextQuestion() {
+            currentQuestionIndex++;
+            displayQuestion();
+        }
+
+        // Show final score
+        function showFinalScore() {
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('finalScore').style.display = 'block';
+            
+            const percentage = (score / totalQuestions) * 100;
+            document.getElementById('finalScoreText').textContent = 
+                `${score} / ${totalQuestions} (${percentage.toFixed(0)}%)`;
+            
+            let performanceText = '';
+            if (percentage === 100) {
+                performanceText = '🏆 શાનદાર! તમે બધા જવાબ સાચા આપ્યા! 🏆';
+            } else if (percentage >= 75) {
+                performanceText = '⭐ ખૂબ સરસ! તમે સારું કર્યું! ⭐';
+            } else if (percentage >= 50) {
+                performanceText = '👍 સારું! ફરીથી પ્રયાસ કરો અને વધુ સારું કરો!';
+            } else {
+                performanceText = '💪 ફિકર નહીં! પ્રેક્ટિસ કરો અને વધુ સારું કરો!';
+            }
+            
+            document.getElementById('performanceText').textContent = performanceText;
+        }
+
+        // Restart game
+        function restartGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            attempted = 0;
+            
+            document.getElementById('score').textContent = '0';
+            document.getElementById('attempted').textContent = '0';
+            document.getElementById('gameArea').style.display = 'block';
+            document.getElementById('finalScore').style.display = 'none';
+            
+            displayQuestion();
+        }
+
+        // Handle Enter key
+        document.getElementById('answerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (document.getElementById('submitBtn').style.display !== 'none') {
+                    checkAnswer();
+                } else if (document.getElementById('nextBtn').style.display !== 'none') {
+                    nextQuestion();
+                }
+            }
+        });
+
+        // Initialize game
+        createRuler();
+        displayQuestion();
+    </script>
+</body>
+</html>
