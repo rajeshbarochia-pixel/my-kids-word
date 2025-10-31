@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>રેન્ડમ નંબર ચેઇન પઝલ (એક પછી એક)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* કસ્ટમ ફોન્ટ અને બેકગ્રાઉન્ડ */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e5e7eb; /* હળવો રાખોડી બેકગ્રાઉન્ડ */
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            min-height: 100vh;
+            padding: 16px; 
+        }
+
+        /* ઇનપુટ સર્કલ સ્ટાઇલિંગ - Responsive Sizing */
+        .circle-input {
+            width: 36px; /* સ્મોલ સ્ક્રીન માટે */
+            height: 36px;
+            font-size: 0.9rem;
+            
+            /* sm (640px) થી ઉપર માટે */
+            @media (min-width: 640px) {
+                width: 44px;
+                height: 44px;
+                font-size: 1.05rem;
+            }
+            
+            border-radius: 50%;
+            text-align: center;
+            font-weight: 600;
+            border: 3px solid #a855f7; /* VIBRANT: Purple-500 કિનારી */
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 0 2px;
+            /* Disable user selection/highlight on mobile */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .circle-input:focus {
+            outline: none;
+            border-color: #f59e0b; /* ફોકસ પર પીળી કિનારી */
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.5);
+        }
+
+        /* પરિણામ સ્ટેટસ કલર્સ - વધુ તેજસ્વી */
+        .status-correct {
+            background-color: #6ee7b7 !important; /* Teal-300 */
+            border-color: #0d9488 !important; /* Teal-600 */
+            color: #0d9488 !important;
+        }
+
+        .status-incorrect {
+            background-color: #fca5a5 !important; /* Red-400 */
+            border-color: #dc2626 !important;
+            color: #dc2626 !important;
+        }
+
+        /* પ્રારંભ/અંત સર્કલ સ્ટાઇલિંગ - Responsive Sizing */
+        .fixed-circle {
+            width: 36px; 
+            height: 36px;
+            @media (min-width: 640px) {
+                width: 44px;
+                height: 44px;
+            }
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            font-weight: 700;
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+            flex-shrink: 0; 
+            margin: 0 2px;
+        }
+
+        /* ઑપરેશન લેબલ સ્ટાઇલિંગ */
+        .operation-label {
+            min-width: 25px; 
+            @media (min-width: 640px) {
+                min-width: 35px;
+            }
+            text-align: center;
+            font-weight: 600;
+            color: #4b5563;
+            flex-shrink: 0;
+            font-size: 0.8rem;
+            margin: 0 1px;
+        }
+
+        /* બરાબર (=) નિશાન માટે કસ્ટમ સ્ટાઇલ */
+        .equals-label {
+            font-size: 1.4rem; 
+            font-weight: 800;
+            color: #1f2937; 
+            min-width: 15px;
+            text-align: center;
+            flex-shrink: 0;
+            margin: 0 1px;
+        }
+
+        /* બટન સ્ટાઇલિંગ */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 9999px;
+            font-weight: 700;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .btn:hover:not(:disabled) {
+            opacity: 0.9;
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(-1px);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* પઝલ રો - મોબાઈલ માટે એડજસ્ટમેન્ટ */
+        .puzzle-row {
+            padding: 8px;
+            @media (min-width: 640px) {
+                padding: 12px;
+            }
+        }
+        
+        .main-card {
+            margin-top: auto;
+            margin-bottom: auto;
+        }
+        
+        /* પ્રગતિ સૂચક */
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            transition: width 0.5s ease-in-out;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="max-w-xl w-full bg-white p-6 md:p-8 rounded-2xl shadow-2xl space-y-6 main-card">
+        <!-- શીર્ષક -->
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-800 text-center mb-1">
+            ક્રમિક નંબર ચેઇન પઝલ
+        </h1>
+        <p class="text-center text-sm font-medium text-gray-500 mb-4">
+            નિર્માણકર્તા: રાજેશ બારોચિયા
+        </p>
+        
+        <!-- પ્રગતિ સૂચક -->
+        <div class="space-y-2">
+            <p id="puzzle-progress-text" class="text-center text-sm font-medium text-gray-600">
+                પઝલ 1 / 7
+            </p>
+            <div class="w-full bg-gray-200 rounded-full">
+                <div id="progress-bar" class="progress-bar bg-purple-500" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <!-- પઝલ કન્ટેનર -->
+        <!-- માત્ર એક પઝલ રો જ અહીં ઉમેરવામાં આવશે -->
+        <div id="puzzles-container" class="min-h-[70px] flex items-center justify-center">
+            <!-- અહીં વર્તમાન પઝલની હરોળ (row) JS દ્વારા ઉમેરવામાં આવશે -->
+        </div>
+
+        <!-- ઇનલાઇન ફીડબેક મેસેજ - નવી ઉમેરાયેલ લાઇન -->
+        <div id="feedback-message" class="text-center font-semibold p-3 mt-4 rounded-lg hidden transition-all duration-300 min-h-[44px] flex items-center justify-center">
+            <!-- મેસેજ અહીં JS દ્વારા ઉમેરવામાં આવશે -->
+        </div>
+
+        <!-- બટન કન્ટેનર -->
+        <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-gray-200">
+            <button id="check-button" class="btn bg-purple-600 text-white hover:bg-purple-700">
+                જવાબ ચકાસો
+            </button>
+            <button id="next-button" class="btn bg-teal-500 text-white hover:bg-teal-600 hidden">
+                આગળની પઝલ
+            </button>
+            <button id="reset-button" class="btn bg-gray-200 text-gray-700 hover:bg-gray-300">
+                ફરીથી શરૂ કરો
+            </button>
+        </div>
+
+        <!-- સમાપ્તિ મેસેજ બોક્સ (રમત પૂરી થવા માટે આ મોડલ જરૂરી છે) -->
+        <div id="completion-box" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full text-center space-y-4">
+                <h3 class="text-2xl font-bold text-teal-600">🎉 અભિનંદન! 🎉</h3>
+                <p class="text-gray-700 text-lg">તમે બધી <span id="final-total"></span> પઝલ સફળતાપૂર્વક પૂર્ણ કરી છે.</p>
+                <button id="play-again-button" class="btn bg-purple-500 text-white hover:bg-purple-600">
+                    નવી રમત રમો
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ગ્લોબલ વેરિએબલ્સ
+        let generatedPuzzles = [];
+        const NUM_OF_PUZZLES = 7;
+        const NUM_OF_STEPS = 4;
+        let currentPuzzleIndex = 0;
+        let isPuzzleSolved = false;
+
+        const container = document.getElementById('puzzles-container');
+        const checkButton = document.getElementById('check-button');
+        const nextButton = document.getElementById('next-button');
+        const resetButton = document.getElementById('reset-button');
+        
+        // બદલાયેલું: ઇનલાઇન ફીડબેક એલિમેન્ટ
+        const feedbackMessage = document.getElementById('feedback-message'); 
+
+        // મોડલ સંબંધિત જૂના કોડને દૂર કર્યો
+
+        const completionBox = document.getElementById('completion-box');
+        const playAgainButton = document.getElementById('play-again-button');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('puzzle-progress-text');
+
+
+        // --- UI હેલ્પર્સ ---
+
+        /**
+         * ઇનલાઇન ફીડબેક મેસેજ દર્શાવે છે.
+         */
+        function displayFeedback(content, isError = false) {
+            feedbackMessage.textContent = content;
+            feedbackMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-teal-100', 'text-teal-700');
+            
+            if (isError) {
+                // લાલ રંગનું બેકગ્રાઉન્ડ (ખરાબ જવાબ/ભૂલ)
+                feedbackMessage.classList.add('bg-red-100', 'text-red-700');
+            } else {
+                // લીલા રંગનું બેકગ્રાઉન્ડ (સાચો જવાબ/માહિતી)
+                feedbackMessage.classList.add('bg-teal-100', 'text-teal-700');
+            }
+        }
+        
+        playAgainButton.onclick = () => {
+            completionBox.classList.add('hidden');
+            resetGame();
+        }
+
+        /**
+         * પ્રગતિ પટ્ટી અને ટેક્સ્ટ અપડેટ કરે છે
+         */
+        function updateProgress() {
+            // currentPuzzleIndex એ 0 થી શરૂ થાય છે, તેથી પ્રગતિ માટે 1 ઉમેરો
+            const displayIndex = currentPuzzleIndex + 1;
+            
+            const progress = (currentPuzzleIndex / NUM_OF_PUZZLES) * 100;
+            
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `પઝલ ${displayIndex} / ${NUM_OF_PUZZLES}`;
+            
+            if (currentPuzzleIndex >= NUM_OF_PUZZLES) {
+                progressText.textContent = `પઝલ પૂર્ણ`;
+                progressBar.style.width = '100%';
+            }
+        }
+
+
+        // --- પઝલ લોજિક ---
+
+        /**
+         * 1 થી max સુધીનો રેન્ડમ પૂર્ણાંક મેળવે છે.
+         */
+        function getRandomInt(max) {
+            return Math.floor(Math.random() * max) + 1;
+        }
+
+        /**
+         * રેન્ડમ પઝલની એક હરોળ જનરેટ કરે છે.
+         */
+        function generateRandomPuzzle() {
+            let startValue = getRandomInt(10) + 2; 
+            let currentValue = startValue;
+            let puzzle = [startValue];
+
+            for (let i = 0; i < NUM_OF_STEPS; i++) {
+                let opType = Math.random() < 0.5 ? '+' : '-';
+                let opNum = getRandomInt(5); 
+
+                let nextValue;
+                
+                // ખાતરી કરો કે પરિણામ 1 થી 25 ની વચ્ચે રહે
+                if (opType === '-') {
+                    if (currentValue - opNum < 1) {
+                        opType = '+';
+                    }
+                }
+                
+                if (opType === '+') {
+                    if (currentValue + opNum > 25) {
+                        opType = '-';
+                        opNum = getRandomInt(Math.min(5, currentValue - 1));
+                    }
+                }
+
+                if (opType === '+') {
+                    nextValue = currentValue + opNum;
+                } else { 
+                    nextValue = currentValue - opNum;
+                }
+                
+                if (nextValue < 1 || nextValue > 25) {
+                    i--;
+                    continue; 
+                }
+
+                puzzle.push([opType + opNum, nextValue]);
+                currentValue = nextValue;
+            }
+
+            puzzle.push(currentValue);
+
+            return puzzle;
+        }
+
+        /**
+         * વર્તમાન ઇન્ડેક્સ પરની પઝલને રેન્ડર કરે છે.
+         */
+        function renderCurrentPuzzle() {
+            container.innerHTML = ''; // કન્ટેનર સાફ કરો
+            isPuzzleSolved = false; // સ્ટેટ રીસેટ
+            feedbackMessage.classList.add('hidden'); // નવો પ્રશ્ન આવે ત્યારે ફીડબેક મેસેજ છુપાવો
+
+            if (currentPuzzleIndex >= NUM_OF_PUZZLES) {
+                // રમત પૂર્ણ થઈ ગઈ છે
+                document.getElementById('final-total').textContent = NUM_OF_PUZZLES;
+                completionBox.classList.remove('hidden');
+                checkButton.classList.add('hidden');
+                nextButton.classList.add('hidden');
+                updateProgress(); // પ્રગતિ પટ્ટીને 100% પર સેટ કરો
+                return;
+            }
+            
+            // બટનોને યોગ્ય રીતે સેટ કરો
+            checkButton.classList.remove('hidden');
+            nextButton.classList.add('hidden');
+            checkButton.disabled = false; // Check બટનને સક્ષમ કરો
+
+            const puzzle = generatedPuzzles[currentPuzzleIndex];
+            
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'puzzle-row flex items-center p-2 rounded-xl bg-gray-50 shadow-md flex-nowrap overflow-x-auto';
+            
+            const innerContainer = document.createElement('div');
+            innerContainer.className = 'flex items-center w-full justify-start';
+
+            // 1. શરૂઆતનો નંબર (Fixed Circle) - Purple
+            const startCircle = document.createElement('div');
+            startCircle.className = 'fixed-circle bg-purple-600'; 
+            startCircle.textContent = puzzle[0];
+            innerContainer.appendChild(startCircle);
+
+            // 2. ઑપરેશન અને ઇનપુટ સર્કલ્સ
+            for (let i = 1; i <= NUM_OF_STEPS; i++) {
+                const [operationStr] = puzzle[i];
+                
+                // ઑપરેશન લેબલ
+                const opLabel = document.createElement('div');
+                opLabel.className = 'operation-label'; 
+                opLabel.textContent = operationStr;
+                innerContainer.appendChild(opLabel);
+
+                // ઇનપુટ સર્કલ
+                const inputCircle = document.createElement('input');
+                inputCircle.type = 'number';
+                inputCircle.className = 'circle-input appearance-none text-center bg-white'; 
+                inputCircle.maxLength = 2;
+                // Add event listener to clear status when user types
+                inputCircle.addEventListener('input', (e) => {
+                    if (e.target.value.length > 2) {
+                        e.target.value = e.target.value.slice(0, 2);
+                    }
+                    e.target.classList.remove('status-correct', 'status-incorrect');
+                    isPuzzleSolved = false; // જો યુઝર ટાઇપ કરે તો સોલ્વ સ્ટેટસ દૂર કરો
+                    checkButton.disabled = false;
+                    nextButton.classList.add('hidden');
+                    feedbackMessage.classList.add('hidden'); // ટાઈપ કરતી વખતે ફીડબેક છુપાવો
+                });
+                innerContainer.appendChild(inputCircle);
+            }
+
+            // 3. અંતિમ નંબર (= અને Fixed Circle) - Teal
+            const opLabelEnd = document.createElement('div');
+            opLabelEnd.className = 'equals-label'; 
+            opLabelEnd.textContent = '=';
+            innerContainer.appendChild(opLabelEnd);
+
+            const endCircle = document.createElement('div');
+            endCircle.className = 'fixed-circle bg-teal-600'; 
+            endCircle.textContent = puzzle[puzzle.length - 1]; 
+            innerContainer.appendChild(endCircle);
+
+            rowDiv.appendChild(innerContainer);
+            container.appendChild(rowDiv);
+            
+            updateProgress();
+        }
+
+        /**
+         * વર્તમાન પઝલના જવાબોની ગણતરી કરે છે અને ફીડબેક આપે છે.
+         */
+        function checkAnswers() {
+            if (isPuzzleSolved) {
+                // જો પહેલેથી જ સોલ્વ થઈ ગયું હોય, તો ફરીથી તપાસશો નહીં
+                displayFeedback('આ પઝલ પહેલાથી જ સાચી રીતે પૂર્ણ થઈ ગઈ છે. કૃપા કરીને "આગળની પઝલ" બટન દબાવો.', false);
+                return;
+            }
+
+            let allCorrect = true;
+            const puzzle = generatedPuzzles[currentPuzzleIndex];
+            let currentValue = puzzle[0];
+            
+            const inputElements = container.querySelectorAll('.circle-input');
+            
+            // ખાલી ઇનપુટ્સ તપાસો
+            let hasEmptyInput = false;
+            inputElements.forEach(input => {
+                if (input.value === '' || isNaN(parseInt(input.value))) {
+                    hasEmptyInput = true;
+                }
+            });
+
+            if (hasEmptyInput) {
+                displayFeedback('કૃપા કરીને આગળ વધતા પહેલા તમામ ખાલી જગ્યાઓ ભરો.', true);
+                return;
+            }
+
+
+            inputElements.forEach((inputElement, i) => {
+                const stepIndex = i + 1; 
+                const [operationStr] = puzzle[stepIndex];
+                
+                // સાચો જવાબ ગણો
+                const sign = operationStr.substring(0, 1);
+                const value = parseInt(operationStr.substring(1));
+                
+                if (sign === '+') {
+                    currentValue += value;
+                } else if (sign === '-') {
+                    currentValue -= value;
+                }
+
+                const userInput = parseInt(inputElement.value);
+
+                // સ્ટેટસ ક્લાસ દૂર કરો
+                inputElement.classList.remove('status-correct', 'status-incorrect');
+
+                // જવાબ ચકાસો
+                if (userInput === currentValue) {
+                    inputElement.classList.add('status-correct');
+                } else {
+                    inputElement.classList.add('status-incorrect');
+                    allCorrect = false;
+                }
+            });
+
+            // અંતિમ ફીડબેક અને બટન અપડેટ
+            if (allCorrect) {
+                isPuzzleSolved = true;
+                checkButton.disabled = true;
+                nextButton.classList.remove('hidden');
+                displayFeedback('સાચો જવાબ! તમે આ પઝલ સાચી રીતે ઉકેલી છે! હવે આગળ વધો.', false);
+            } else {
+                isPuzzleSolved = false;
+                nextButton.classList.add('hidden');
+                displayFeedback('ફરી પ્રયાસ કરો. તમારા કેટલાક જવાબો ખોટા છે. લાલ રંગના ખાનાઓ ફરીથી ચકાસો.', true);
+            }
+        }
+        
+        /**
+         * આગલા પઝલ પર જાય છે.
+         */
+        function nextPuzzle() {
+            if (isPuzzleSolved) {
+                currentPuzzleIndex++;
+                renderCurrentPuzzle();
+            } else {
+                displayFeedback('કૃપા કરીને પહેલા વર્તમાન પઝલ સાચી રીતે પૂર્ણ કરો.', true);
+            }
+        }
+
+        /**
+         * રમતને ફરીથી શરૂ કરે છે.
+         */
+        function resetGame() {
+            // બધી પઝલ ફરીથી જનરેટ કરો
+            generatedPuzzles = [];
+            for(let i = 0; i < NUM_OF_PUZZLES; i++) {
+                generatedPuzzles.push(generateRandomPuzzle());
+            }
+
+            currentPuzzleIndex = 0;
+            isPuzzleSolved = false;
+            
+            // પ્રથમ પઝલ રેન્ડર કરો
+            renderCurrentPuzzle();
+            displayFeedback(`${NUM_OF_PUZZLES} નવી રેન્ડમ પઝલ તૈયાર છે. પ્રથમ પઝલથી શરૂઆત કરો!`, false);
+        }
+
+        // ઇવેન્ટ લિસનર્સ
+        checkButton.addEventListener('click', checkAnswers);
+        nextButton.addEventListener('click', nextPuzzle);
+        resetButton.addEventListener('click', resetGame);
+
+        // પેજ લોડ થવા પર રમત શરૂ કરો
+        window.onload = resetGame;
+
+    </script>
+
+</body>
+</html>
