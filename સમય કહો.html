@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>સમય કહો (Telling Time) ક્વિઝ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans Gujarati', 'Inter', sans-serif;
+            background-color: #ffe0e6; /* હળવો, રમતિયાળ બેકગ્રાઉન્ડ */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        #game-container {
+            background-color: #ffffff;
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(255, 100, 150, 0.3); /* રમતિયાળ શેડો */
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            border: 4px solid #f87171; /* લાલ બોર્ડર */
+        }
+
+        #clockCanvas {
+            border: 5px solid #10b981; /* આકર્ષક લીલી બોર્ડર */
+            border-radius: 50%;
+            margin: 20px auto;
+            display: block;
+            touch-action: none; 
+            background-color: #ffffff;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        #timeInput {
+            flex-grow: 1;
+            padding: 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 1.125rem;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        #checkButton {
+            background-color: #f59e0b; /* નારંગી/પીળું બટન */
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px #b45309;
+        }
+
+        #checkButton:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 0 #b45309;
+        }
+
+        #checkButton:hover:not(:disabled) {
+            background-color: #d97706;
+            transform: scale(1.02);
+        }
+        
+        #checkButton:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #feedback-box {
+            min-height: 40px;
+            margin-top: 15px;
+            font-weight: 800;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            padding: 10px;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .correct { background-color: #a7f3d0; color: #059669; }
+        .wrong { background-color: #fecaca; color: #dc2626; }
+        
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            background-color: #fbcfe8; /* આછો ગુલાબી સ્કોર બેકગ્રાઉન્ડ */
+            padding: 10px;
+            border-radius: 10px;
+            color: #831843;
+        }
+        
+        .score-item {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1 class="text-3xl font-extrabold text-gray-800 mb-4">સમય કહો ક્વિઝ ⏰</h1>
+    
+    <div class="score-board">
+        <div class="score-item">
+            સ્કોર: <span id="currentScore">0</span>
+        </div>
+        <div class="score-item">
+            સર્વોચ્ચ સ્કોર: <span id="highScore">0</span>
+        </div>
+    </div>
+
+    <p class="text-xl font-bold text-blue-700 mb-4">ઘડિયાળમાં કેટલો સમય થયો છે? (HH:MM ફોર્મેટ)</p>
+    
+    <canvas id="clockCanvas"></canvas>
+
+    <div id="feedback-box"></div>
+
+    <div class="input-group">
+        <!-- Input for typing the time -->
+        <input type="text" id="timeInput" 
+               placeholder="દા.ત. 03:30" 
+               maxlength="5" 
+               oninput="formatTimeInput(this)"
+               title="કૃપા કરીને HH:MM ફોર્મેટમાં સમય દાખલ કરો (દા.ત. 03:30)"
+        />
+        <button id="checkButton" onclick="checkTime()">સમય તપાસો</button>
+    </div>
+
+    <p class="text-xs text-gray-500 mt-4">
+        Created by : Rajesh Barochia
+    </p>
+</div>
+
+<!-- Firebase Scripts -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- Global Firebase/Auth Variables ---
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    
+    let db;
+    let auth;
+    let userId = null;
+    let isFirebaseReady = false;
+
+    // --- Game Variables (accessible globally via window) ---
+    window.currentCorrectTime = ''; // ઘડિયાળમાં બતાવેલો સાચો સમય
+    window.score = 0;
+    window.highScore = 0;
+    
+    // Time variables used for drawing the clock hands
+    let currentHour = 12; // 1-12
+    let currentMinute = 0; // 0-59
+    
+    // Canvas and Geometry
+    window.canvas = document.getElementById('clockCanvas');
+    window.ctx = window.canvas.getContext('2d');
+    let centerX, centerY, radius;
+
+    const SCORE_COLLECTION = "telling_time_game";
+    const HIGH_SCORE_DOC_ID = "highScore";
+
+    // --- Firebase Initialization and Auth ---
+    async function initializeFirebase() {
+        if (Object.keys(firebaseConfig).length === 0) {
+            console.error("Firebase configuration not available. Running game without persistent score.");
+            isFirebaseReady = false;
+            return;
+        }
+
+        try {
+            setLogLevel('Debug');
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            if (initialAuthToken) {
+                await signInWithCustomToken(auth, initialAuthToken);
+            } else {
+                await signInAnonymously(auth);
+            }
+            
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    isFirebaseReady = true;
+                    console.log("User authenticated and Firebase ready.");
+                    loadHighScoreListener();
+                } else {
+                    userId = crypto.randomUUID(); 
+                    isFirebaseReady = false;
+                    console.log("Auth state changed, user signed out or error.");
+                }
+            });
+
+        } catch (error) {
+            console.error("Firebase Initialization/Auth error:", error);
+            isFirebaseReady = false;
+        }
+    }
+
+    // --- Firestore Operations ---
+    function getHighScoreDocRef() {
+        if (!userId || !db) return null;
+        const path = `/artifacts/${appId}/users/${userId}/${SCORE_COLLECTION}`;
+        return doc(collection(db, path), HIGH_SCORE_DOC_ID);
+    }
+
+    function loadHighScoreListener() {
+        const docRef = getHighScoreDocRef();
+        if (!docRef) return;
+
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                window.highScore = data.highScoreValue || 0;
+                document.getElementById('highScore').innerText = window.highScore;
+                console.log("High Score Loaded:", window.highScore);
+            } else {
+                window.highScore = 0;
+                document.getElementById('highScore').innerText = 0;
+                setDoc(docRef, { highScoreValue: 0 }).catch(e => console.error("Error creating score doc:", e));
+            }
+        }, (error) => {
+            console.error("Error setting up high score listener:", error);
+        });
+    }
+
+    async function updateHighScore(newScore) {
+        if (!isFirebaseReady || !userId) {
+            console.warn("Firebase not ready or userId missing. Cannot save score.");
+            return;
+        }
+        if (newScore > window.highScore) {
+            const docRef = getHighScoreDocRef();
+            if (!docRef) return;
+
+            try {
+                await setDoc(docRef, { highScoreValue: newScore }, { merge: true });
+                window.highScore = newScore;
+                document.getElementById('highScore').innerText = newScore;
+                console.log("High score updated to:", newScore);
+            } catch (e) {
+                console.error("Error updating high score:", e);
+            }
+        }
+    }
+
+    // --- Clock Drawing Logic ---
+
+    function drawClock() {
+        window.ctx.clearRect(0, 0, window.canvas.width, window.canvas.height);
+        window.ctx.translate(centerX, centerY);
+
+        // Draw outer circle
+        window.ctx.beginPath();
+        window.ctx.arc(0, 0, radius - 5, 0, 2 * Math.PI);
+        window.ctx.fillStyle = '#fefefe';
+        window.ctx.fill();
+        window.ctx.strokeStyle = '#10b981'; /* આકર્ષક લીલી બોર્ડર */
+        window.ctx.lineWidth = 5;
+        window.ctx.stroke();
+
+        // Draw center dot
+        window.ctx.beginPath();
+        window.ctx.arc(0, 0, 8, 0, 2 * Math.PI);
+        window.ctx.fillStyle = '#f87171'; /* લાલ કેન્દ્ર */
+        window.ctx.fill();
+
+        // Draw minute markings (60 points for every minute/second)
+        for (let i = 0; i < 60; i++) {
+            const angle = (i / 60) * 2 * Math.PI;
+            
+            // 5-minute marks (larger, darker)
+            if (i % 5 === 0) { 
+                const len = 10;
+                const startX = Math.cos(angle) * (radius - 15);
+                const startY = Math.sin(angle) * (radius - 15);
+                const endX = Math.cos(angle) * (radius - 5 - len);
+                const endY = Math.sin(angle) * (radius - 5 - len);
+
+                window.ctx.beginPath();
+                window.ctx.lineWidth = 4; // જાડી લાઇન
+                window.ctx.strokeStyle = '#1e3a8a'; // ઘેરો વાદળી
+                window.ctx.moveTo(startX, startY);
+                window.ctx.lineTo(endX, endY);
+                window.ctx.stroke();
+            } else { // 1-minute marks (smaller, lighter)
+                const len = 5;
+                const startX = Math.cos(angle) * (radius - 10);
+                const startY = Math.sin(angle) * (radius - 10);
+                const endX = Math.cos(angle) * (radius - 5 - len);
+                const endY = Math.sin(angle) * (radius - 5 - len);
+
+                window.ctx.beginPath();
+                window.ctx.lineWidth = 2; // પાતળી લાઇન
+                window.ctx.strokeStyle = '#9ca3af'; // આછો ગ્રે
+                window.ctx.moveTo(startX, startY);
+                window.ctx.lineTo(endX, endY);
+                window.ctx.stroke();
+            }
+        }
+
+        // Draw numbers (1 to 12)
+        window.ctx.font = radius * 0.15 + "px 'Inter', sans-serif";
+        window.ctx.textBaseline = "middle";
+        window.ctx.textAlign = "center";
+        window.ctx.fillStyle = '#1e3a8a';
+        for (let num = 1; num <= 12; num++) {
+            const ang = (num / 12) * 2 * Math.PI;
+            const x = Math.cos(ang - Math.PI / 2) * (radius * 0.80);
+            const y = Math.sin(ang - Math.PI / 2) * (radius * 0.80);
+            window.ctx.fillText(num.toString(), x, y);
+        }
+        
+        // --- Draw Hands based on the currentHour/currentMinute (The time to be guessed) ---
+        
+        // Minute hand angle
+        const minuteAngle = (currentMinute / 60) * (2 * Math.PI) - (Math.PI / 2);
+        
+        // Hour hand angle (moves continuously)
+        const hourForAngle = currentHour % 12; 
+        const hourAngle = (hourForAngle / 12 + currentMinute / (60 * 12)) * (2 * Math.PI) - (Math.PI / 2);
+
+        // Draw Hour hand (Thicker and shorter) - કલાકનો કાંટો
+        drawHand(hourAngle, radius * 0.45, 8, '#1e3a8a');
+
+        // Draw Minute hand (Thinner and longer) - મિનિટનો કાંટો
+        drawHand(minuteAngle, radius * 0.70, 5, '#f87171');
+
+        window.ctx.translate(-centerX, -centerY);
+    }
+
+    function drawHand(angle, length, width, color) {
+        window.ctx.beginPath();
+        window.ctx.lineWidth = width;
+        window.ctx.strokeStyle = color;
+        window.ctx.lineCap = "round";
+        window.ctx.moveTo(0, 0);
+        window.ctx.lineTo(Math.cos(angle) * length, Math.sin(angle) * length);
+        window.ctx.stroke();
+    }
+    
+    // --- Input Formatting Helper ---
+    window.formatTimeInput = function(input) {
+        let value = input.value.replace(/\D/g, ''); // તમામ નોન-ડિજિટ દૂર કરો
+        let cursor = input.selectionStart;
+
+        if (value.length >= 2) {
+            // પ્રથમ બે અંકો પછી કોલોન દાખલ કરો (HH)
+            value = value.substring(0, 2) + ':' + value.substring(2);
+            
+            // 5 અક્ષરો સુધી ટ્રંકેટ કરો (HH:MM)
+            value = value.substring(0, 5);
+
+            // વેલ્યુ અપડેટ કરો
+            input.value = value;
+            
+            // જરૂર જણાય તો કર્સર પોઝિશન એડજસ્ટ કરો
+            if (cursor === 2 && value.length > 2) {
+                input.setSelectionRange(3, 3);
+            } else {
+                input.setSelectionRange(cursor, cursor);
+            }
+        } else {
+            // જો 2 કરતા ઓછા ડિજિટ હોય, તો માત્ર ડિજિટ રાખો
+            input.value = value;
+        }
+    };
+
+    // --- Time Normalization Helper ---
+    function normalizeTime(timeString) {
+        const parts = timeString.split(':');
+        if (parts.length !== 2) return null;
+        
+        let [h, m] = parts.map(p => parseInt(p.trim(), 10));
+
+        // Validation for 12-hour clock (1 to 12) - 12-કલાકની ઘડિયાળ માટે માન્યતા (1 થી 12)
+        if (isNaN(h) || isNaN(m) || h < 1 || h > 12 || m < 0 || m > 59) {
+            return null; // અમાન્ય સમય ફોર્મેટ/રેન્જ
+        }
+        
+        // Ensure 2 digits for both (e.g., 3:5 becomes 03:05) - બંને માટે 2 અંકોની ખાતરી કરો
+        const normalizedH = String(h).padStart(2, '0');
+        const normalizedM = String(m).padStart(2, '0');
+        
+        return `${normalizedH}:${normalizedM}`;
+    }
+
+
+    // --- Game Flow Functions ---
+
+    // Function to generate and display a new random time - નવો રેન્ડમ સમય જનરેટ કરવા અને પ્રદર્શિત કરવા માટેનું કાર્ય
+    window.startNewRound = function() {
+        document.getElementById('timeInput').value = '';
+        document.getElementById('feedback-box').style.opacity = '0';
+        document.getElementById('feedback-box').className = '';
+        
+        // Generate random time in 5-minute increments - 5-મિનિટના વધારામાં રેન્ડમ સમય જનરેટ કરો
+        // નોંધ: 5-મિનિટના વધારામાં ક્વિઝ રાખવામાં આવે છે, પરંતુ ઘડિયાળની નિશાનીઓ દરેક મિનિટ માટે છે.
+        const randomHour = Math.floor(Math.random() * 12) + 1; // 1-12
+        const randomMinute = Math.floor(Math.random() * 12) * 5; // 0, 5, 10, ... 55
+        
+        // Store the drawing time (used for drawClock) - ડ્રોઇંગ સમય સ્ટોર કરો
+        currentHour = randomHour; 
+        currentMinute = randomMinute;
+        
+        // Format the correct time as HH:MM string (e.g., 03:05, 11:30) - સાચા સમયને HH:MM સ્ટ્રિંગ તરીકે ફોર્મેટ કરો
+        window.currentCorrectTime = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+        
+        console.log("Correct Time (HH:MM):", window.currentCorrectTime);
+        
+        // Redraw clock with the new random time - નવા રેન્ડમ સમય સાથે ઘડિયાળ ફરીથી દોરો
+        drawClock();
+    }
+    
+    // Function to check user's input - યુઝરના ઇનપુટને તપાસવા માટેનું કાર્ય
+    window.checkTime = function() {
+        const timeInput = document.getElementById('timeInput');
+        const userInput = timeInput.value.trim();
+        const feedbackBox = document.getElementById('feedback-box');
+        
+        if (!userInput) {
+            feedbackBox.innerText = 'કૃપા કરીને સમય દાખલ કરો.';
+            feedbackBox.className = 'wrong';
+            feedbackBox.style.opacity = '1';
+            return;
+        }
+        
+        // Normalize user input to ensure it matches the 12-hour format - 12-કલાકના ફોર્મેટ સાથે મેચ કરવા માટે યુઝર ઇનપુટને નોર્મલાઇઝ કરો
+        const normalizedInput = normalizeTime(userInput);
+        
+        // If normalization failed (e.g. 13:00, 00:00, or bad format) - જો નોર્મલાઇઝેશન નિષ્ફળ જાય
+        if (!normalizedInput) {
+            feedbackBox.innerText = 'કૃપા કરીને 1 થી 12 કલાકની વચ્ચેનો માન્ય HH:MM સમય દાખલ કરો.';
+            feedbackBox.className = 'wrong';
+            feedbackBox.style.opacity = '1';
+            return;
+        }
+        
+        // The correct time is already in normalized HH:MM (12-hour) format - સાચો સમય પહેલેથી જ નોર્મલાઇઝ્ડ ફોર્મેટમાં છે
+        const normalizedCorrectTime = window.currentCorrectTime; 
+        
+        console.log("User Input (Normalized):", normalizedInput);
+        console.log("Correct Answer:", normalizedCorrectTime);
+
+        if (normalizedInput === normalizedCorrectTime) {
+            window.score++;
+            document.getElementById('currentScore').innerText = window.score;
+            feedbackBox.innerHTML = 'સાચો જવાબ! 🌟🎉';
+            feedbackBox.className = 'correct';
+            feedbackBox.style.opacity = '1';
+            
+            updateHighScore(window.score);
+            
+            // Start a new round after a short delay - થોડા વિલંબ પછી નવો રાઉન્ડ શરૂ કરો
+            setTimeout(window.startNewRound, 1500);
+        } else {
+            // Wrong answer, reset score - ખોટો જવાબ, સ્કોર રીસેટ કરો
+            const displayTime = window.currentCorrectTime;
+            window.score = 0;
+            document.getElementById('currentScore').innerText = window.score;
+            feedbackBox.innerHTML = `ખોટો જવાબ. ❌ સાચો સમય: ${displayTime}`;
+            feedbackBox.className = 'wrong';
+            feedbackBox.style.opacity = '1';
+
+            // Start a new round after a short delay - થોડા વિલંબ પછી નવો રાઉન્ડ શરૂ કરો
+            setTimeout(window.startNewRound, 3000);
+        }
+    }
+
+    // --- Responsive Setup ---
+    function resizeCanvas() {
+        const containerWidth = document.getElementById('game-container').clientWidth;
+        const size = Math.min(containerWidth * 0.9, 350); 
+        window.canvas.width = size;
+        window.canvas.height = size;
+        
+        centerX = window.canvas.width / 2;
+        centerY = window.canvas.height / 2;
+        radius = window.canvas.width / 2;
+
+        if (window.currentCorrectTime) {
+            drawClock(); 
+        }
+    }
+    
+    window.onload = function() {
+        initializeFirebase();
+        resizeCanvas();
+        window.startNewRound();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+</script>
+</body>
+</html>
