@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>સરળ બાદબાકી - Subtraction Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            color: #667eea;
+            font-size: 2.5em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #764ba2;
+            font-size: 1.2em;
+        }
+
+        .question-area {
+            background: #f8f9fa;
+            border: 5px solid #667eea;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .animals-display {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            font-size: 3em;
+        }
+
+        .animal {
+            animation: bounce 0.5s ease;
+            transition: all 0.3s ease;
+        }
+
+        .animal.crossed {
+            position: relative;
+            opacity: 0.3;
+            transform: scale(0.8);
+        }
+
+        .animal.crossed::after {
+            content: '✗';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .equation {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .answer-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .answer-input {
+            font-size: 3em;
+            width: 120px;
+            text-align: center;
+            border: 4px solid #667eea;
+            border-radius: 15px;
+            padding: 15px;
+            font-weight: bold;
+            color: #333;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .answer-input:focus {
+            border-color: #f5576c;
+            box-shadow: 0 0 20px rgba(245, 87, 108, 0.4);
+            transform: scale(1.05);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.3em;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            display: none;
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .feedback {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 3px solid #28a745;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 3px solid #dc3545;
+        }
+
+        .completion-screen {
+            display: none;
+            text-align: center;
+        }
+
+        .completion-screen h2 {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .final-score {
+            font-size: 2em;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        .stars {
+            font-size: 4em;
+            margin: 20px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+            }
+
+            .title {
+                font-size: 1.8em;
+            }
+
+            .animals-display {
+                font-size: 2em;
+            }
+
+            .equation {
+                font-size: 2em;
+            }
+
+            .answer-input {
+                font-size: 2em;
+                width: 100px;
+            }
+
+            .btn {
+                padding: 12px 25px;
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1 class="title">🐾 સરળ બાદબાકી 🐾</h1>
+            <p class="subtitle">PENGURANGAN DENGAN GAMBAR</p>
+            <p class="subtitle" style="font-size: 0.9em; margin-top: 5px; color: #555;">Created by: Rajesh Barochia</p>
+        </div>
+
+        <div id="gameArea">
+            <div class="question-area">
+                <div class="animals-display" id="animalsDisplay"></div>
+                <div class="equation" id="equation"></div>
+                
+                <div class="answer-section">
+                    <input type="number" class="answer-input" id="answerInput" placeholder="?" min="0" max="20">
+                    <div class="button-group">
+                        <button class="btn btn-submit" id="submitBtn">જવાબ આપો</button>
+                        <button class="btn btn-next" id="nextBtn">આગલો પ્રશ્ન</button>
+                    </div>
+                </div>
+
+                <div class="feedback" id="feedback"></div>
+            </div>
+        </div>
+
+        <div class="completion-screen hidden" id="completionScreen">
+            <h2>🎉 અભિનંદન! 🎉</h2>
+            <div class="stars" id="starsDisplay"></div>
+            <p class="final-score">તમારો સ્કોર: <span id="finalScore"></span> / <span id="totalQuestions"></span></p>
+            <p class="final-score">ટકાવારી: <span id="percentage"></span>%</p>
+            <button class="btn btn-restart" id="restartBtn">ફરીથી રમો</button>
+        </div>
+    </div>
+
+    <script>
+        // પ્રાણીઓની સૂચી
+        const animals = ['🦦', '🦥', '🐢', '🐑', '🐍', '🐜', '🐦', '🐼', '🐨', '🐵', '🐭', '🐰', '🦊', '🐯', '🐸', '🐷'];
+
+        // ગેમ વેરિએબલ્સ
+        let currentQuestionNumber = 0;
+        let correctAnswers = 0;
+        let incorrectAnswers = 0;
+        let totalQuestions = 10;
+        let currentProblem = null;
+
+        // DOM Elements
+        const animalsDisplay = document.getElementById('animalsDisplay');
+        const equation = document.getElementById('equation');
+        const answerInput = document.getElementById('answerInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const feedback = document.getElementById('feedback');
+        const gameArea = document.getElementById('gameArea');
+        const completionScreen = document.getElementById('completionScreen');
+        const restartBtn = document.getElementById('restartBtn');
+
+        // નવો પ્રશ્ન બનાવો
+        function generateQuestion() {
+            // રેન્ડમ પ્રાણી પસંદ કરો
+            const animal = animals[Math.floor(Math.random() * animals.length)];
+            
+            // રેન્ડમ નંબર બનાવો (5 થી 10 વચ્ચે)
+            const num1 = Math.floor(Math.random() * 6) + 5;
+            
+            // બાદબાકી માટે નંબર (1 થી num1-1 વચ્ચે)
+            const num2 = Math.floor(Math.random() * (num1 - 1)) + 1;
+            
+            const answer = num1 - num2;
+
+            currentProblem = {
+                animal: animal,
+                num1: num1,
+                num2: num2,
+                answer: answer
+            };
+
+            displayQuestion();
+        }
+
+        // પ્રશ્ન દર્શાવો
+        function displayQuestion() {
+            currentQuestionNumber++;
+
+            // પ્રાણીઓ દર્શાવો
+            animalsDisplay.innerHTML = '';
+            for (let i = 0; i < currentProblem.num1; i++) {
+                const animalSpan = document.createElement('span');
+                animalSpan.className = 'animal';
+                animalSpan.textContent = currentProblem.animal;
+                
+                // જે પ્રાણીઓ બાદ થાય છે તેમને ક્રોસ કરો
+                if (i >= currentProblem.answer) {
+                    setTimeout(() => {
+                        animalSpan.classList.add('crossed');
+                    }, (i - currentProblem.answer + 1) * 200);
+                }
+                
+                animalsDisplay.appendChild(animalSpan);
+            }
+
+            // સમીકરણ બતાવો
+            equation.textContent = `${currentProblem.num1} - ${currentProblem.num2} = ?`;
+
+            // રીસેટ કરો
+            answerInput.value = '';
+            answerInput.disabled = false;
+            submitBtn.style.display = 'inline-block';
+            nextBtn.style.display = 'none';
+            feedback.style.display = 'none';
+            answerInput.focus();
+        }
+
+        // જવાબ તપાસો
+        function checkAnswer() {
+            const userAnswer = parseInt(answerInput.value);
+
+            if (isNaN(userAnswer)) {
+                alert('કૃપા કરીને એક નંબર દાખલ કરો!');
+                return;
+            }
+
+            answerInput.disabled = true;
+            submitBtn.style.display = 'none';
+            nextBtn.style.display = 'inline-block';
+            feedback.style.display = 'block';
+
+            if (userAnswer === currentProblem.answer) {
+                correctAnswers++;
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '🎉 સાચું! શાબાશ! 🎉<br>જવાબ છે: ' + currentProblem.answer;
+                playSound('correct');
+            } else {
+                incorrectAnswers++;
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '😔 ખોટું! ફરીથી પ્રયાસ કરો<br>સાચો જવાબ છે: ' + currentProblem.answer;
+                playSound('incorrect');
+            }
+
+            // છેલ્લો પ્રશ્ન હતો કે નહીં તે તપાસો
+            if (currentQuestionNumber >= totalQuestions) {
+                setTimeout(showCompletion, 2000);
+            }
+        }
+
+        // સાઉન્ડ ઇફેક્ટ (બીપ સાઉન્ડ)
+        function playSound(type) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            if (type === 'correct') {
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+            } else {
+                oscillator.frequency.value = 200;
+                oscillator.type = 'sawtooth';
+            }
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        // પૂર્ણતા સ્ક્રીન બતાવો
+        function showCompletion() {
+            gameArea.classList.add('hidden');
+            completionScreen.classList.remove('hidden');
+
+            const percentage = Math.round((correctAnswers / totalQuestions) * 100);
+            
+            document.getElementById('finalScore').textContent = correctAnswers;
+            document.getElementById('totalQuestions').textContent = totalQuestions;
+            document.getElementById('percentage').textContent = percentage;
+
+            // સ્ટાર્સ બતાવો
+            let stars = '';
+            if (percentage >= 90) {
+                stars = '⭐⭐⭐';
+            } else if (percentage >= 70) {
+                stars = '⭐⭐';
+            } else if (percentage >= 50) {
+                stars = '⭐';
+            } else {
+                stars = '💪 ફરી પ્રયાસ કરો!';
+            }
+            document.getElementById('starsDisplay').textContent = stars;
+        }
+
+        // ગેમ રીસ્ટાર્ટ કરો
+        function restartGame() {
+            currentQuestionNumber = 0;
+            correctAnswers = 0;
+            incorrectAnswers = 0;
+
+            gameArea.classList.remove('hidden');
+            completionScreen.classList.add('hidden');
+
+            generateQuestion();
+        }
+
+        // ઇવેન્ટ લિસનર્સ
+        submitBtn.addEventListener('click', checkAnswer);
+        
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionNumber < totalQuestions) {
+                generateQuestion();
+            }
+        });
+
+        restartBtn.addEventListener('click', restartGame);
+
+        // એન્ટર કી પર જવાબ સબમિટ કરો
+        answerInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !answerInput.disabled) {
+                checkAnswer();
+            }
+        });
+
+        // ગેમ શરૂ કરો
+        generateQuestion();
+    </script>
+</body>
+</html>
