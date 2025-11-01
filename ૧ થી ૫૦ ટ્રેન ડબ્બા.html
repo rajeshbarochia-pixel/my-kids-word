@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Write the Missing Numbers ૧-૫૦</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        .credit {
+            text-align: center;
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+
+
+        .train-section {
+            margin-bottom: 20px;
+        }
+
+        .train-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .locomotive {
+            font-size: 3em;
+            animation: chug 2s infinite;
+        }
+
+        @keyframes chug {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
+        }
+
+        .train-car {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #FFE5B4 0%, #FFD700 100%);
+            border: 3px solid #FF6B6B;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        }
+
+        .train-car.connector::before {
+            content: '➖';
+            position: absolute;
+            left: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .train-car:first-child.connector::before {
+            display: none;
+        }
+
+        .train-car:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .train-car.filled {
+            background: linear-gradient(135deg, #A8E6CF 0%, #81C784 100%);
+            border-color: #4CAF50;
+        }
+
+        .train-car.correct {
+            background: linear-gradient(135deg, #C8E6C9 0%, #66BB6A 100%);
+            border-color: #2E7D32;
+            animation: bounce 0.5s;
+        }
+
+        .train-car.incorrect {
+            background: linear-gradient(135deg, #FFCDD2 0%, #EF5350 100%);
+            border-color: #C62828;
+            animation: shake 0.5s;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .number-display {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .number-input {
+            width: 50px;
+            height: 40px;
+            font-size: 1.5em;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background: white;
+        }
+
+        .number-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .number-input.correct {
+            border-color: #4caf50;
+            background: #e8f5e9;
+        }
+
+        .number-input.incorrect {
+            border-color: #f44336;
+            background: #ffebee;
+        }
+
+        .feedback-icon {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 1.5em;
+            animation: pop 0.5s ease;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            color: white;
+        }
+
+        .btn-check {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
+        .btn-hint {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+        }
+
+        .btn-new {
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5em;
+            animation: celebrate 1s ease;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes celebrate {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); }
+            50% { transform: translate(-50%, -50%) scale(1.2) rotate(180deg); }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.5em; }
+            .train-car { width: 60px; height: 60px; }
+            .number-display { font-size: 1.3em; }
+            .number-input { width: 45px; height: 35px; font-size: 1.3em; }
+            .locomotive { font-size: 2em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Write the Missing Numbers ૧-૫૦</h1>
+        <p class="subtitle">ખાલી ડબ્બામાં સાચા નંબર લખો</p>
+        <p class="credit">Created by: Rajesh Barochia</p>
+        
+        <div id="trainContainer"></div>
+
+        <div class="control-buttons">
+            <button class="btn btn-check" onclick="checkAnswers()">તપાસો</button>
+            <button class="btn btn-hint" onclick="showHint()">મદદ</button>
+            <button class="btn btn-reset" onclick="resetGame()">ફરીથી પ્રયાસ કરો</button>
+            <button class="btn btn-new" onclick="newGame()">નવી રમત</button>
+        </div>
+    </div>
+
+    <script>
+        const gujaratiNumbers = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'];
+        
+        function toGujarati(num) {
+            return String(num).split('').map(digit => gujaratiNumbers[parseInt(digit)]).join('');
+        }
+
+        const trainData = [
+            [1, 2, null, null, 5, null],
+            [null, 8, null, null, 11, null, null],
+            [14, null, null, 17, null, null, 20],
+            [null, 22, null, null, null, 26, null],
+            [null, null, null, 31, null, null, null],
+            [35, null, 37, null, null, 40, null],
+            [null, null, null, 45, null, null, 48],
+            [null, null]
+        ];
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function generateRandomTrainData() {
+            // Create array of numbers 1-50
+            let allNumbers = Array.from({length: 50}, (_, i) => i + 1);
+            
+            // Randomly select 23 numbers to show (50 - 27 empty = 23 filled)
+            let shuffled = shuffleArray([...allNumbers]);
+            let visibleNumbers = shuffled.slice(0, 23).sort((a, b) => a - b);
+            
+            // Create train data structure
+            let newTrainData = [];
+            let visibleIndex = 0;
+            
+            for (let i = 1; i <= 50; i++) {
+                if (visibleNumbers.includes(i)) {
+                    // This number will be visible
+                    if (!newTrainData[newTrainData.length - 1] || 
+                        newTrainData[newTrainData.length - 1].length >= 7) {
+                        newTrainData.push([]);
+                    }
+                    newTrainData[newTrainData.length - 1].push(i);
+                } else {
+                    // This number will be empty (null)
+                    if (!newTrainData[newTrainData.length - 1] || 
+                        newTrainData[newTrainData.length - 1].length >= 7) {
+                        newTrainData.push([]);
+                    }
+                    newTrainData[newTrainData.length - 1].push(null);
+                }
+            }
+            
+            return newTrainData;
+        }
+
+        const answers = {};
+        let score = 0;
+        let correctCount = 0;
+        let currentTrainData = [];
+
+        function generateTrains() {
+            currentTrainData = generateRandomTrainData();
+            const container = document.getElementById('trainContainer');
+            container.innerHTML = '';
+
+            let currentNumber = 1;
+
+            currentTrainData.forEach((row, rowIndex) => {
+                const trainRow = document.createElement('div');
+                trainRow.className = 'train-row';
+
+                if (rowIndex === 0) {
+                    const loco = document.createElement('div');
+                    loco.className = 'locomotive';
+                    loco.textContent = '🚂';
+                    trainRow.appendChild(loco);
+                }
+
+                row.forEach((value, colIndex) => {
+                    const trainCar = document.createElement('div');
+                    trainCar.className = 'train-car connector';
+                    trainCar.id = `car-${rowIndex}-${colIndex}`;
+
+                    if (value !== null) {
+                        trainCar.classList.add('filled');
+                        const numDisplay = document.createElement('div');
+                        numDisplay.className = 'number-display';
+                        numDisplay.textContent = toGujarati(value);
+                        trainCar.appendChild(numDisplay);
+                    } else {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.className = 'number-input';
+                        input.id = `input-${currentNumber}`;
+                        input.dataset.answer = currentNumber;
+                        input.placeholder = '?';
+                        input.inputMode = 'numeric';
+                        
+                        // Auto-convert English to Gujarati numerals
+                        input.addEventListener('input', function(e) {
+                            let value = e.target.value;
+                            // Convert English digits to Gujarati
+                            value = value.replace(/[0-9]/g, function(digit) {
+                                return gujaratiNumbers[parseInt(digit)];
+                            });
+                            // Remove non-numeric characters
+                            value = value.replace(/[^૦-૯]/g, '');
+                            e.target.value = value;
+                        });
+                        
+                        trainCar.appendChild(input);
+                    }
+
+                    trainRow.appendChild(trainCar);
+                    currentNumber++;
+                });
+
+                container.appendChild(trainRow);
+            });
+        }
+
+        function checkAnswers() {
+            score = 0;
+            correctCount = 0;
+            const inputs = document.querySelectorAll('.number-input');
+
+            inputs.forEach(input => {
+                const userAnswer = input.value.trim();
+                const correctAnswer = parseInt(input.dataset.answer);
+                
+                // Convert Gujarati numerals to English for comparison
+                let convertedAnswer;
+                if (/^[૦-૯]+$/.test(userAnswer)) {
+                    // If Gujarati numerals
+                    convertedAnswer = parseInt(userAnswer.split('').map(char => 
+                        gujaratiNumbers.indexOf(char)).join(''));
+                } else {
+                    // If English numerals
+                    convertedAnswer = parseInt(userAnswer);
+                }
+                
+                const car = input.closest('.train-car');
+
+                const existingFeedback = car.querySelector('.feedback-icon');
+                if (existingFeedback) existingFeedback.remove();
+
+                input.classList.remove('correct', 'incorrect');
+                car.classList.remove('correct', 'incorrect');
+
+                if (convertedAnswer === correctAnswer) {
+                    input.classList.add('correct');
+                    car.classList.add('correct');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'feedback-icon';
+                    feedback.textContent = '✅';
+                    car.appendChild(feedback);
+                    score += 10;
+                    correctCount++;
+                } else if (input.value !== '') {
+                    input.classList.add('incorrect');
+                    car.classList.add('incorrect');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'feedback-icon';
+                    feedback.textContent = '❌';
+                    car.appendChild(feedback);
+                }
+            });
+
+            if (correctCount === inputs.length) {
+                showCelebration();
+            }
+        }
+
+        function showHint() {
+            const inputs = document.querySelectorAll('.number-input');
+            const emptyInputs = Array.from(inputs).filter(input => input.value === '');
+            
+            if (emptyInputs.length > 0) {
+                const randomInput = emptyInputs[Math.floor(Math.random() * emptyInputs.length)];
+                randomInput.value = toGujarati(randomInput.dataset.answer);
+                randomInput.classList.add('correct');
+                randomInput.closest('.train-car').classList.add('correct');
+                
+                const car = randomInput.closest('.train-car');
+                const feedback = document.createElement('div');
+                feedback.className = 'feedback-icon';
+                feedback.textContent = '💡';
+                car.appendChild(feedback);
+            }
+        }
+
+        function resetGame() {
+            const inputs = document.querySelectorAll('.number-input');
+            inputs.forEach(input => {
+                input.value = '';
+                input.classList.remove('correct', 'incorrect');
+                const car = input.closest('.train-car');
+                car.classList.remove('correct', 'incorrect');
+                const feedback = car.querySelector('.feedback-icon');
+                if (feedback) feedback.remove();
+            });
+
+            score = 0;
+            correctCount = 0;
+        }
+        
+        function newGame() {
+            generateTrains();
+            score = 0;
+            correctCount = 0;
+        }
+
+        function showCelebration() {
+            const celebration = document.createElement('div');
+            celebration.className = 'celebration';
+            celebration.textContent = '🎉';
+            document.body.appendChild(celebration);
+            setTimeout(() => celebration.remove(), 1000);
+        }
+
+        // Initialize game
+        generateTrains();
+    </script>
+</body>
+</html>
