@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગુણાકાર શીખો</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .emoji {
+            font-size: 3em;
+            margin: 20px 0;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            color: white;
+            font-size: 1.2em;
+        }
+        
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .score-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .score-value {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        
+        .question-box {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            padding: 40px 20px;
+            border-radius: 20px;
+            margin: 30px 0;
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            transition: all 0.5s;
+        }
+        
+        .question-box.correct-answer {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        
+        .question-box.wrong-answer {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+        
+        .number {
+            color: #e74c3c;
+            font-size: 1.2em;
+        }
+        
+        .question-box.correct-answer .number,
+        .question-box.wrong-answer .number {
+            color: white;
+        }
+        
+        input[type="number"] {
+            width: 120px;
+            padding: 10px 15px;
+            font-size: 2em;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s;
+            background: white;
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
+        }
+        
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type="number"]:focus {
+            border-color: #f5576c;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+        
+        input[type="number"]:disabled {
+            background: #f0f0f0;
+            cursor: not-allowed;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            font-size: 1.8em;
+            font-weight: bold;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .creator {
+            margin-top: 30px;
+            padding: 15px;
+            font-size: 1.1em;
+            color: #667eea;
+            font-weight: 600;
+            opacity: 0.8;
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            animation: confetti-fall 3s linear;
+        }
+        
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.1) rotate(5deg); }
+            75% { transform: scale(1.1) rotate(-5deg); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 ગુણાકાર શીખો 🎯</h1>
+        <div class="emoji" id="emoji">🤔</div>
+        
+        <div class="score-board">
+            <div class="score-item">
+                <span class="score-label">સાચા</span>
+                <span class="score-value" id="correct">0</span>
+            </div>
+            <div class="score-item">
+                <span class="score-label">ખોટા</span>
+                <span class="score-value" id="incorrect">0</span>
+            </div>
+            <div class="score-item">
+                <span class="score-label">કુલ</span>
+                <span class="score-value" id="total">0</span>
+            </div>
+        </div>
+        
+        <div class="question-box" id="questionBox">
+            <span class="number" id="num1">5</span> 
+            × 
+            <span class="number" id="num2">7</span> 
+            = 
+            <input type="number" id="answer" inputmode="numeric" pattern="[0-9]*">
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <div class="creator">Created by: Rajesh Barochia</div>
+    </div>
+
+    <script>
+        let num1, num2, correctAnswer;
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let totalCount = 0;
+        let isAnswerChecked = false;
+        let typingTimer;
+        let attemptCount = 0;
+        
+        const questionBox = document.getElementById('questionBox');
+        const answerEl = document.getElementById('answer');
+        const feedbackEl = document.getElementById('feedback');
+        const emojiEl = document.getElementById('emoji');
+        const correctEl = document.getElementById('correct');
+        const incorrectEl = document.getElementById('incorrect');
+        const totalEl = document.getElementById('total');
+        const num1El = document.getElementById('num1');
+        const num2El = document.getElementById('num2');
+        
+        function generateQuestion() {
+            num1 = Math.floor(Math.random() * 10) + 1;
+            num2 = Math.floor(Math.random() * 10) + 1;
+            correctAnswer = num1 * num2;
+            
+            num1El.textContent = num1;
+            num2El.textContent = num2;
+            answerEl.value = '';
+            answerEl.disabled = false;
+            feedbackEl.textContent = '';
+            emojiEl.textContent = '🤔';
+            questionBox.className = 'question-box';
+            isAnswerChecked = false;
+            attemptCount = 0;
+            
+            // ફોકસ કરો
+            setTimeout(() => {
+                answerEl.focus();
+            }, 100);
+        }
+        
+        function checkAnswer() {
+            if (isAnswerChecked) return;
+            
+            const userAnswer = parseInt(answerEl.value);
+            
+            if (isNaN(userAnswer) || answerEl.value === '') {
+                return;
+            }
+            
+            attemptCount++;
+            
+            if (userAnswer === correctAnswer) {
+                // સાચો જવાબ
+                isAnswerChecked = true;
+                
+                if (totalCount === 0 || attemptCount === 1) {
+                    totalCount++;
+                    totalEl.textContent = totalCount;
+                }
+                
+                correctCount++;
+                correctEl.textContent = correctCount;
+                feedbackEl.textContent = attemptCount === 1 ? '🎉 વાહ! પ્રથમ પ્રયાસમાં સાચું!' : '✅ બરાબર! શાબાશ!';
+                emojiEl.textContent = '🎉';
+                questionBox.className = 'question-box correct-answer';
+                questionBox.style.animation = 'celebrate 0.5s';
+                answerEl.disabled = true;
+                createConfetti();
+                
+                // 3 સેકન્ડ પછી નવો પ્રશ્ન
+                setTimeout(() => {
+                    generateQuestion();
+                }, 3000);
+                
+            } else {
+                // ખોટો જવાબ
+                if (attemptCount === 1) {
+                    // પ્રથમ પ્રયાસ - ફરી પ્રયાસ કરવાની તક
+                    incorrectCount++;
+                    incorrectEl.textContent = incorrectCount;
+                    totalCount++;
+                    totalEl.textContent = totalCount;
+                    
+                    feedbackEl.textContent = '❌ ફરી પ્રયાસ કરો!';
+                    emojiEl.textContent = '🤔';
+                    questionBox.className = 'question-box wrong-answer';
+                    questionBox.style.animation = 'shake 0.5s';
+                    
+                    // 1.5 સેકન્ડ પછી જવાબ સાફ કરો અને ફરી લખવાની તક આપો
+                    setTimeout(() => {
+                        answerEl.value = '';
+                        questionBox.className = 'question-box';
+                        feedbackEl.textContent = 'ફરી વિચારો... 💭';
+                        answerEl.focus();
+                    }, 1500);
+                    
+                } else {
+                    // બીજો પ્રયાસ - સાચો જવાબ બતાવો
+                    isAnswerChecked = true;
+                    feedbackEl.textContent = `સાચો જવાબ: ${correctAnswer}`;
+                    emojiEl.textContent = '😅';
+                    questionBox.className = 'question-box wrong-answer';
+                    answerEl.disabled = true;
+                    
+                    // 3 સેકન્ડ પછી નવો પ્રશ્ન
+                    setTimeout(() => {
+                        generateQuestion();
+                    }, 3000);
+                }
+            }
+        }
+        
+        function createConfetti() {
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 30);
+            }
+        }
+        
+        // જ્યારે પણ જવાબ બદલાય ત્યારે ટાઈમર શરૂ કરો
+        answerEl.addEventListener('input', () => {
+            // જૂનો ટાઈમર રદ કરો
+            clearTimeout(typingTimer);
+            
+            // જો જવાબ ખાલી હોય તો ચેક ન કરો
+            if (answerEl.value === '' || isAnswerChecked) {
+                return;
+            }
+            
+            // 2 સેકન્ડ પછી જવાબ ચેક કરો
+            typingTimer = setTimeout(() => {
+                checkAnswer();
+            }, 2000);
+        });
+        
+        // પ્રથમ પ્રશ્ન જનરેટ કરો
+        generateQuestion();
+    </script>
+</body>
+</html>
