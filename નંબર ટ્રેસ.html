@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>નંબર ટ્રેસિંગ ગેમ - 1 થી 10</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #F3F4F6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .close-btn, .emoji-btn {
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+        }
+        
+        .progress-bar {
+            flex: 1;
+            height: 12px;
+            background-color: #D1D5DB;
+            border-radius: 20px;
+            margin: 0 20px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #10B981;
+            transition: width 0.3s;
+            width: 0%;
+        }
+        
+        .instruction {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .sound-btn {
+            font-size: 32px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .sound-btn:active {
+            transform: scale(0.9);
+        }
+        
+        .instruction-text {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .game-area {
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            transition: background-color 0.5s;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+        }
+        
+        .number-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 280px;
+            font-weight: bold;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        canvas {
+            position: relative;
+            cursor: crosshair;
+            touch-action: none;
+            border: 3px solid transparent;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .start-indicator {
+            position: absolute;
+            top: 25%;
+            left: 25%;
+            width: 48px;
+            height: 48px;
+            background-color: rgba(156, 163, 175, 0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            pointer-events: none;
+        }
+        
+        .balls-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            width: 180px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .soccer-ball {
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            border: 3px solid black;
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .ball-pentagon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background-color: black;
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+        }
+        
+        .ball-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: black;
+            border-radius: 50%;
+        }
+        
+        .ball-dot:nth-child(2) { top: 3px; left: 3px; }
+        .ball-dot:nth-child(3) { top: 3px; right: 3px; }
+        .ball-dot:nth-child(4) { bottom: 3px; left: 3px; }
+        .ball-dot:nth-child(5) { bottom: 3px; right: 3px; }
+        
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .progress-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            transition: color 0.3s;
+        }
+        
+        .progress-incomplete {
+            color: #EF4444;
+        }
+        
+        .progress-partial {
+            color: #F59E0B;
+        }
+        
+        .progress-complete {
+            color: #10B981;
+        }
+        
+        .reset-btn {
+            padding: 12px 30px;
+            background-color: #3B82F6;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 0 10px;
+        }
+        
+        .reset-btn:hover {
+            background-color: #2563EB;
+        }
+        
+        .success-btn {
+            background-color: #10B981;
+        }
+        
+        .success-btn:hover {
+            background-color: #059669;
+        }
+        
+        .instructions-text {
+            text-align: center;
+            margin-top: 30px;
+            color: #6B7280;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .instructions-text p {
+            margin-bottom: 10px;
+        }
+        
+        .celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            animation: celebrate 1s ease-out;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        @keyframes celebrate {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0;
+            }
+        }
+        
+        .completion-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s;
+        }
+        
+        .completion-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            animation: slideUp 0.5s;
+        }
+        
+        .completion-content h2 {
+            font-size: 32px;
+            color: #10B981;
+            margin-bottom: 20px;
+        }
+        
+        .completion-content p {
+            font-size: 18px;
+            color: #6B7280;
+            margin-bottom: 20px;
+        }
+        
+        .completion-emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        .restart-btn {
+            padding: 15px 40px;
+            background-color: #10B981;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .restart-btn:hover {
+            background-color: #059669;
+        }
+        
+        .creator-name {
+            text-align: center;
+            margin-top: 20px;
+            color: #9CA3AF;
+            font-size: 14px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .error-feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #EF4444;
+            color: white;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            animation: shake 0.5s;
+            z-index: 1500;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            25% { transform: translate(-50%, -50%) rotate(-5deg); }
+            75% { transform: translate(-50%, -50%) rotate(5deg); }
+        }
+        
+        .canvas-error {
+            animation: errorPulse 0.5s;
+        }
+        
+        @keyframes errorPulse {
+            0%, 100% { 
+                border: 3px solid transparent;
+            }
+            50% { 
+                border: 3px solid #EF4444;
+                box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="close-btn" onclick="window.location.reload()">✕</button>
+            <div class="progress-bar">
+                <div class="progress-fill" id="headerProgress"></div>
+            </div>
+            <button class="emoji-btn">😊</button>
+        </div>
+        
+        <div class="instruction">
+            <button class="sound-btn" onclick="speakNumber()">🔊</button>
+            <div class="instruction-text" id="instructionText">આંગળીથી નંબર 1 ટ્રેસ કરો</div>
+        </div>
+        
+        <div class="game-area" id="gameArea">
+            <div class="canvas-container">
+                <div class="number-guide" id="numberGuide">1</div>
+                <canvas id="drawCanvas" width="350" height="350"></canvas>
+                <div class="start-indicator" id="startIndicator">✓</div>
+            </div>
+            <div class="balls-container" id="ballsContainer"></div>
+        </div>
+        
+        <div class="controls">
+            <div class="progress-text" id="progressText">પ્રગતિ: 0%</div>
+            <button class="reset-btn" onclick="clearCanvas()">ફરીથી પ્રયાસ કરો</button>
+            <button class="reset-btn success-btn" onclick="nextNumber()">આગળ વધો ➜</button>
+        </div>
+        
+        <div class="instructions-text">            
+            <p>🔊 બટન દબાવો નંબર સાંભળવા માટે</p>
+        </div>
+        
+        <div class="creator-name">
+            બનાવનાર: Rajesh Barochia
+        </div>
+    </div>
+    
+    <!-- Completion Modal -->
+    <div id="completionModal" style="display: none;">
+        <div class="completion-modal">
+            <div class="completion-content">
+                <div class="completion-emoji">🎉🏆🎊</div>
+                <h2>શાબાશ!</h2>
+                <p>તમે 1 થી 10 સુધીના બધા નંબરો પૂરા કર્યા!</p>
+                <p>તમે ખૂબ સારું કર્યું!</p>
+                <button class="restart-btn" onclick="restartGame()">ફરીથી રમો</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const colors = [
+            { color: '#EF4444', bg: '#FEE2E2' },  // Red
+            { color: '#F97316', bg: '#FFEDD5' },  // Orange
+            { color: '#F59E0B', bg: '#FEF3C7' },  // Amber
+            { color: '#10B981', bg: '#D1FAE5' },  // Green
+            { color: '#3B82F6', bg: '#DBEAFE' },  // Blue
+            { color: '#6366F1', bg: '#E0E7FF' },  // Indigo
+            { color: '#8B5CF6', bg: '#EDE9FE' },  // Violet
+            { color: '#EC4899', bg: '#FCE7F3' },  // Pink
+            { color: '#14B8A6', bg: '#CCFBF1' },  // Teal
+            { color: '#F43F5E', bg: '#FFE4E6' }   // Rose
+        ];
+        
+        // Gujarati number words
+        const gujaratiNumbers = [
+            'એક', 'બે', 'ત્રણ', 'ચાર', 'પાંચ', 
+            'છ', 'સાત', 'આઠ', 'નવ', 'દસ'
+        ];
+        
+        // Generate random sequence of numbers 1-10
+        let numberSequence = [];
+        function generateRandomSequence() {
+            numberSequence = [];
+            for (let i = 1; i <= 10; i++) {
+                numberSequence.push(i);
+            }
+            // Shuffle array
+            for (let i = numberSequence.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [numberSequence[i], numberSequence[j]] = [numberSequence[j], numberSequence[i]];
+            }
+        }
+        
+        let currentIndex = 0;
+        let isDrawing = false;
+        let pathLength = 0;
+        let progress = 0;
+        let lastX = null;
+        let lastY = null;
+        let drawingTimer = null;
+        
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameArea = document.getElementById('gameArea');
+        const numberGuide = document.getElementById('numberGuide');
+        const instructionText = document.getElementById('instructionText');
+        const progressText = document.getElementById('progressText');
+        const headerProgress = document.getElementById('headerProgress');
+        const startIndicator = document.getElementById('startIndicator');
+        const ballsContainer = document.getElementById('ballsContainer');
+        
+        // Hidden canvas for number detection
+        let detectionCanvas = null;
+        let detectionCtx = null;
+        let coverageCanvas = null;
+        let coverageCtx = null;
+        let requiredCoverage = 0.5; // 50% coverage required (more lenient)
+        let drawnPoints = []; // Track all drawn points
+        
+        function createDetectionCanvas() {
+            detectionCanvas = document.createElement('canvas');
+            detectionCanvas.width = 350;
+            detectionCanvas.height = 350;
+            detectionCtx = detectionCanvas.getContext('2d');
+            
+            // Canvas to track what has been drawn
+            coverageCanvas = document.createElement('canvas');
+            coverageCanvas.width = 350;
+            coverageCanvas.height = 350;
+            coverageCtx = coverageCanvas.getContext('2d');
+        }
+        
+        function updateDetectionCanvas() {
+            // Clear detection canvas
+            detectionCtx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
+            
+            // Draw the number on detection canvas
+            const currentNumber = numberSequence[currentIndex];
+            detectionCtx.font = 'bold 280px Arial';
+            detectionCtx.fillStyle = '#000000';
+            detectionCtx.textAlign = 'center';
+            detectionCtx.textBaseline = 'middle';
+            detectionCtx.fillText(currentNumber, detectionCanvas.width / 2, detectionCanvas.height / 2);
+            
+            // Clear coverage canvas
+            coverageCtx.clearRect(0, 0, coverageCanvas.width, coverageCanvas.height);
+        }
+        
+        function calculateCoverage() {
+            // Get pixels from both canvases
+            const numberData = detectionCtx.getImageData(0, 0, detectionCanvas.width, detectionCanvas.height).data;
+            const drawnData = coverageCtx.getImageData(0, 0, coverageCanvas.width, coverageCanvas.height).data;
+            
+            let totalNumberPixels = 0;
+            let coveredPixels = 0;
+            
+            // Check each pixel
+            for (let i = 0; i < numberData.length; i += 4) {
+                // If there's a number pixel (alpha > 0)
+                if (numberData[i + 3] > 0) {
+                    totalNumberPixels++;
+                    // Check if this pixel was drawn on
+                    if (drawnData[i + 3] > 0) {
+                        coveredPixels++;
+                    }
+                }
+            }
+            
+            return totalNumberPixels > 0 ? coveredPixels / totalNumberPixels : 0;
+        }
+        
+        function checkShapeValidity() {
+            // Divide canvas into a grid and check coverage across regions
+            const gridSize = 5; // 5x5 grid
+            const cellWidth = detectionCanvas.width / gridSize;
+            const cellHeight = detectionCanvas.height / gridSize;
+            
+            let regionsWithNumber = 0;
+            let regionsWithDrawing = 0;
+            let matchingRegions = 0;
+            
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    const x = col * cellWidth;
+                    const y = row * cellHeight;
+                    
+                    // Check if this region has number pixels
+                    const numberRegion = detectionCtx.getImageData(x, y, cellWidth, cellHeight).data;
+                    const drawnRegion = coverageCtx.getImageData(x, y, cellWidth, cellHeight).data;
+                    
+                    let hasNumber = false;
+                    let hasDrawing = false;
+                    
+                    for (let i = 3; i < numberRegion.length; i += 4) {
+                        if (numberRegion[i] > 0) {
+                            hasNumber = true;
+                            break;
+                        }
+                    }
+                    
+                    for (let i = 3; i < drawnRegion.length; i += 4) {
+                        if (drawnRegion[i] > 0) {
+                            hasDrawing = true;
+                            break;
+                        }
+                    }
+                    
+                    if (hasNumber) regionsWithNumber++;
+                    if (hasDrawing) regionsWithDrawing++;
+                    if (hasNumber && hasDrawing) matchingRegions++;
+                }
+            }
+            
+            // If most regions with the number also have drawing, shape is valid
+            const shapeMatch = regionsWithNumber > 0 ? matchingRegions / regionsWithNumber : 0;
+            const baseCoverage = calculateCoverage();
+            
+            // Accept if either:
+            // 1. Good shape match (covered most key regions) - even with lower pixel coverage
+            // 2. Or decent overall coverage
+            return (shapeMatch >= 0.65 && baseCoverage >= 0.35) || baseCoverage >= 0.5;
+        }
+        
+        function showError(message) {
+            // Play error sound
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(message);
+                utterance.lang = 'gu-IN';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+            
+            // Show error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-feedback';
+            errorDiv.textContent = '❌ ' + message;
+            document.body.appendChild(errorDiv);
+            
+            // Add error animation to canvas
+            canvas.classList.add('canvas-error');
+            
+            setTimeout(() => {
+                errorDiv.remove();
+                canvas.classList.remove('canvas-error');
+            }, 2000);
+        }
+        
+        // Text-to-Speech function for Gujarati
+        function speakNumber() {
+            const currentNumber = numberSequence[currentIndex];
+            const gujaratiWord = gujaratiNumbers[currentNumber - 1];
+            
+            // Use Web Speech API
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(gujaratiWord);
+                utterance.lang = 'gu-IN'; // Gujarati
+                utterance.rate = 0.8; // Slower for clarity
+                utterance.pitch = 1.2; // Slightly higher pitch
+                window.speechSynthesis.speak(utterance);
+            }
+            
+            // Visual feedback
+            const soundBtn = document.querySelector('.sound-btn');
+            soundBtn.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                soundBtn.style.transform = 'scale(1)';
+            }, 200);
+        }
+        
+        function isOnNumber(x, y) {
+            // Check if coordinates are within canvas bounds
+            if (x < 0 || x >= detectionCanvas.width || y < 0 || y >= detectionCanvas.height) {
+                return false;
+            }
+            
+            // Get pixel data at the position (with some tolerance area around the point)
+            const tolerance = 25; // Pixels around the point to check
+            
+            for (let dx = -tolerance; dx <= tolerance; dx += 5) {
+                for (let dy = -tolerance; dy <= tolerance; dy += 5) {
+                    const checkX = Math.floor(x + dx);
+                    const checkY = Math.floor(y + dy);
+                    
+                    if (checkX >= 0 && checkX < detectionCanvas.width && 
+                        checkY >= 0 && checkY < detectionCanvas.height) {
+                        const pixelData = detectionCtx.getImageData(checkX, checkY, 1, 1).data;
+                        // If alpha channel is not transparent, we're on the number
+                        if (pixelData[3] > 0) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        function updateGame() {
+            const currentNumber = numberSequence[currentIndex];
+            const colorData = colors[currentNumber - 1];
+            
+            gameArea.style.backgroundColor = colorData.bg;
+            numberGuide.textContent = currentNumber;
+            numberGuide.style.color = colorData.color;
+            instructionText.textContent = `આંગળીથી નંબર ${currentNumber} (${gujaratiNumbers[currentNumber - 1]}) ટ્રેસ કરો`;
+            headerProgress.style.width = ((currentIndex / 10) * 100) + '%';
+            
+            // Update detection canvas
+            updateDetectionCanvas();
+            
+            // Render soccer balls
+            ballsContainer.innerHTML = '';
+            for (let i = 0; i < currentNumber; i++) {
+                const ball = document.createElement('div');
+                ball.className = 'soccer-ball';
+                ball.innerHTML = `
+                    <div class="ball-pentagon"></div>
+                    <div class="ball-dot"></div>
+                    <div class="ball-dot"></div>
+                    <div class="ball-dot"></div>
+                    <div class="ball-dot"></div>
+                `;
+                ballsContainer.appendChild(ball);
+            }
+            
+            // Speak number automatically
+            setTimeout(() => speakNumber(), 300);
+        }
+        
+        function getCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            }
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+        
+        function startDrawing(e) {
+            e.preventDefault();
+            const coords = getCoordinates(e);
+            
+            if (!isOnNumber(coords.x, coords.y)) {
+                // Visual feedback for invalid area
+                canvas.style.cursor = 'not-allowed';
+                setTimeout(() => {
+                    canvas.style.cursor = 'crosshair';
+                }, 200);
+                return;
+            }
+            
+            isDrawing = true;
+            startIndicator.style.display = 'none';
+            lastX = coords.x;
+            lastY = coords.y;
+            drawnPoints = [coords]; // Start tracking points
+            
+            if (drawingTimer) {
+                clearTimeout(drawingTimer);
+            }
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            
+            const coords = getCoordinates(e);
+            const currentNumber = numberSequence[currentIndex];
+            const colorData = colors[currentNumber - 1];
+            
+            if (!isOnNumber(coords.x, coords.y)) {
+                // Stop drawing if moved outside number area
+                return;
+            }
+            
+            // Track this point
+            drawnPoints.push(coords);
+            
+            // Draw on main canvas
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(coords.x, coords.y);
+            ctx.strokeStyle = colorData.color;
+            ctx.lineWidth = 20;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+            
+            // Also draw on coverage canvas for tracking
+            coverageCtx.beginPath();
+            coverageCtx.moveTo(lastX, lastY);
+            coverageCtx.lineTo(coords.x, coords.y);
+            coverageCtx.strokeStyle = '#000000';
+            coverageCtx.lineWidth = 20;
+            coverageCtx.lineCap = 'round';
+            coverageCtx.lineJoin = 'round';
+            coverageCtx.stroke();
+            
+            lastX = coords.x;
+            lastY = coords.y;
+            
+            pathLength++;
+            
+            // Check shape validity in real-time
+            const isValid = checkShapeValidity();
+            const coverage = calculateCoverage();
+            
+            // Show combined score
+            if (isValid) {
+                progress = 100;
+            } else {
+                progress = Math.min(95, coverage * 150); // Show progress but cap at 95 until valid
+            }
+            
+            progressText.textContent = `પ્રગતિ: ${Math.round(progress)}%`;
+            
+            // Update progress color based on validity
+            progressText.className = 'progress-text';
+            if (isValid) {
+                progressText.classList.add('progress-complete');
+            } else if (coverage >= 0.25) {
+                progressText.classList.add('progress-partial');
+            } else {
+                progressText.classList.add('progress-incomplete');
+            }
+        }
+        
+        function stopDrawing() {
+            if (!isDrawing) return;
+            
+            // Allow 2 seconds before auto-checking completion
+            drawingTimer = setTimeout(() => {
+                const isValidShape = checkShapeValidity();
+                const coverage = calculateCoverage();
+                
+                if (isValidShape) {
+                    // Success! Shape matches the number
+                    celebrate();
+                    setTimeout(() => {
+                        nextNumber();
+                    }, 1000);
+                } else if (coverage > 0.2 || drawnPoints.length > 20) {
+                    // Some effort but shape doesn't match
+                    showError('નંબરના આકાર જેવું બનાવો!');
+                    isDrawing = false;
+                } else {
+                    // Very little drawn
+                    showError('નંબર ટ્રેસ કરો!');
+                    isDrawing = false;
+                }
+            }, 2000);
+        }
+        
+        function celebrate() {
+            const celebration = document.createElement('div');
+            celebration.className = 'celebration';
+            celebration.textContent = '🎉';
+            document.body.appendChild(celebration);
+            
+            // Play success sound
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance('વાહ! સરસ!');
+                utterance.lang = 'gu-IN';
+                window.speechSynthesis.speak(utterance);
+            }
+            
+            setTimeout(() => {
+                celebration.remove();
+            }, 1000);
+        }
+        
+        function nextNumber() {
+            // Check shape validity before allowing to proceed
+            const isValidShape = checkShapeValidity();
+            
+            if (!isValidShape && pathLength > 0) {
+                showError('નંબરના આકાર જેવું બનાવો!');
+                return;
+            }
+            
+            currentIndex++;
+            if (currentIndex >= 10) {
+                // Game complete - show modal
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance('બધા નંબર પૂરા થયા! તમે ખૂબ સારું કર્યું!');
+                    utterance.lang = 'gu-IN';
+                    window.speechSynthesis.speak(utterance);
+                }
+                setTimeout(() => {
+                    document.getElementById('completionModal').style.display = 'block';
+                }, 1000);
+            } else {
+                clearCanvas();
+                updateGame();
+            }
+        }
+        
+        function restartGame() {
+            document.getElementById('completionModal').style.display = 'none';
+            currentIndex = 0;
+            generateRandomSequence();
+            clearCanvas();
+            updateGame();
+        }
+        
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            coverageCtx.clearRect(0, 0, coverageCanvas.width, coverageCanvas.height);
+            pathLength = 0;
+            progress = 0;
+            isDrawing = false;
+            lastX = null;
+            lastY = null;
+            drawnPoints = [];
+            progressText.textContent = 'પ્રગતિ: 0%';
+            progressText.className = 'progress-text';
+            startIndicator.style.display = 'flex';
+            if (drawingTimer) {
+                clearTimeout(drawingTimer);
+                drawingTimer = null;
+            }
+        }
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+        
+        // Touch events
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+        
+        // Initialize
+        createDetectionCanvas();
+        generateRandomSequence();
+        updateGame();
+    </script>
+</body>
+</html>
