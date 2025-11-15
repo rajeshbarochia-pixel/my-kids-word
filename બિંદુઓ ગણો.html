@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>બિંદુઓ ગણો - Counting Dots Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+            transition: transform 0.2s;
+        }
+
+        .close-btn:hover {
+            transform: scale(1.1);
+            color: #333;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin: 0 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .hint-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .hint-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .instruction {
+            text-align: center;
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .sound-icon {
+            display: inline-block;
+            margin-right: 10px;
+            font-size: 24px;
+        }
+
+        .dots-container {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 8px;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 15px;
+        }
+
+        .dot {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .dot.filled {
+            background: #2196F3;
+            border-color: #1976D2;
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
+        }
+
+        .options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .option-btn {
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: #e0e0e0;
+            color: #333;
+            transition: all 0.3s ease;
+            min-width: 100px;
+        }
+
+        .option-btn:hover:not(.correct):not(.wrong) {
+            background: #d0d0d0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .option-btn.correct {
+            background: #4CAF50;
+            color: white;
+            animation: correctPulse 0.5s ease;
+        }
+
+        .option-btn.wrong {
+            background: #f44336;
+            color: white;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .feedback {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            min-height: 40px;
+            margin-bottom: 20px;
+        }
+
+        .feedback.correct {
+            color: #4CAF50;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .feedback.wrong {
+            color: #f44336;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .next-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .next-btn.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .score-display {
+            text-align: center;
+            font-size: 18px;
+            color: #666;
+            margin-top: 15px;
+        }
+
+        .game-over {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .game-over h2 {
+            font-size: 36px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .game-over p {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .restart-btn {
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .creator-credit {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #e0e0e0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .creator-credit strong {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        @media (max-width: 480px) {
+            .dots-container {
+                gap: 5px;
+                padding: 15px;
+            }
+
+            .option-btn {
+                padding: 15px 30px;
+                font-size: 20px;
+                min-width: 80px;
+            }
+
+            .instruction {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="close-btn" onclick="closeGame()">✕</button>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="hint-btn">💡</div>
+        </div>
+
+        <div id="gameArea">
+            <div class="instruction">
+                <span class="sound-icon">🔊</span>
+                <span>બિંદુઓ ગણો અને સાચો નંબર પસંદ કરો.</span>
+            </div>
+
+            <div class="dots-container" id="dotsContainer"></div>
+
+            <div class="feedback" id="feedback"></div>
+
+            <div class="options" id="options"></div>
+
+            <button class="next-btn" id="nextBtn" onclick="nextQuestion()">આગળ વધો</button>
+
+            <div class="score-display" id="scoreDisplay">સ્કોર: <span id="score">0</span> / <span id="total">0</span></div>
+        </div>
+        
+        <div class="creator-credit">
+            Created by: <strong>Rajesh Barochia</strong>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = 0;
+        let score = 0;
+        const totalQuestions = 10;
+        let correctAnswer = 0;
+        let answered = false;
+
+        const possibleCounts = [10, 15, 20, 25, 30, 35, 40, 45, 50];
+
+        function initGame() {
+            currentQuestion = 0;
+            score = 0;
+            answered = false;
+            
+            // Restore the original game HTML structure
+            const gameArea = document.getElementById('gameArea');
+            gameArea.innerHTML = `
+                <div class="instruction">
+                    <span class="sound-icon">🔊</span>
+                    <span>બિંદુઓ ગણો અને સાચો નંબર પસંદ કરો.</span>
+                </div>
+
+                <div class="dots-container" id="dotsContainer"></div>
+
+                <div class="feedback" id="feedback"></div>
+
+                <div class="options" id="options"></div>
+
+                <button class="next-btn" id="nextBtn" onclick="nextQuestion()">આગળ વધો</button>
+
+                <div class="score-display" id="scoreDisplay">સ્કોર: <span id="score">0</span> / <span id="total">0</span></div>
+            `;
+            
+            // Reset progress bar
+            updateProgress();
+            updateScore();
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (currentQuestion >= totalQuestions) {
+                showGameOver();
+                return;
+            }
+
+            answered = false;
+            const feedbackElement = document.getElementById('feedback');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            if (feedbackElement) {
+                feedbackElement.textContent = '';
+                feedbackElement.className = 'feedback';
+            }
+            
+            if (nextBtn) {
+                nextBtn.classList.remove('show');
+            }
+
+            // Generate random number of filled dots
+            correctAnswer = possibleCounts[Math.floor(Math.random() * possibleCounts.length)];
+            
+            // Create dots
+            createDots(correctAnswer);
+            
+            // Create options
+            createOptions(correctAnswer);
+            
+            // Update progress
+            updateProgress();
+        }
+
+        function createDots(filledCount) {
+            const container = document.getElementById('dotsContainer');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 100; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                if (i < filledCount) {
+                    dot.classList.add('filled');
+                }
+                container.appendChild(dot);
+            }
+        }
+
+        function createOptions(correct) {
+            const optionsContainer = document.getElementById('options');
+            if (!optionsContainer) return;
+            
+            optionsContainer.innerHTML = '';
+            
+            // Generate 3 unique options including the correct answer
+            let options = [correct];
+            
+            while (options.length < 3) {
+                let option;
+                const diff = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+                const direction = Math.random() < 0.5 ? -1 : 1;
+                
+                if (correct <= 20) {
+                    option = correct + (direction * diff * 5);
+                } else {
+                    option = correct + (direction * diff * 10);
+                }
+                
+                // Ensure option is in valid range and not duplicate
+                if (option >= 10 && option <= 50 && !options.includes(option)) {
+                    options.push(option);
+                }
+            }
+            
+            // Shuffle options
+            options.sort(() => Math.random() - 0.5);
+            
+            // Create buttons
+            options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option;
+                btn.onclick = () => checkAnswer(option, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, btn) {
+            if (answered) return;
+            
+            answered = true;
+            const allButtons = document.querySelectorAll('.option-btn');
+            const feedbackElement = document.getElementById('feedback');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            if (selected === correctAnswer) {
+                btn.classList.add('correct');
+                if (feedbackElement) {
+                    feedbackElement.textContent = '✓ સાચું!';
+                    feedbackElement.className = 'feedback correct';
+                }
+                score++;
+                updateScore();
+            } else {
+                btn.classList.add('wrong');
+                if (feedbackElement) {
+                    feedbackElement.textContent = '✗ ખોટું! સાચો જવાબ છે ' + correctAnswer;
+                    feedbackElement.className = 'feedback wrong';
+                }
+                
+                // Highlight correct answer
+                allButtons.forEach(button => {
+                    if (parseInt(button.textContent) === correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+            
+            // Disable all buttons
+            allButtons.forEach(button => {
+                button.style.pointerEvents = 'none';
+            });
+            
+            // Show next button
+            if (nextBtn) {
+                nextBtn.classList.add('show');
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            loadQuestion();
+        }
+
+        function updateProgress() {
+            const progressFill = document.getElementById('progressFill');
+            if (!progressFill) return;
+            
+            const progress = (currentQuestion / totalQuestions) * 100;
+            progressFill.style.width = progress + '%';
+        }
+
+        function updateScore() {
+            const scoreElement = document.getElementById('score');
+            const totalElement = document.getElementById('total');
+            
+            if (scoreElement && totalElement) {
+                scoreElement.textContent = score;
+                totalElement.textContent = currentQuestion;
+            }
+        }
+
+        function showGameOver() {
+            const gameArea = document.getElementById('gameArea');
+            const percentage = Math.round((score / totalQuestions) * 100);
+            
+            let message = '';
+            if (percentage >= 80) {
+                message = 'શાનદાર! તમે બહુ સારું કર્યું! 🎉';
+            } else if (percentage >= 60) {
+                message = 'સારું! થોડી વધુ પ્રેક્ટિસ કરો. 👍';
+            } else {
+                message = 'ચાલુ રાખો! તમે સુધારી શકો છો. 💪';
+            }
+            
+            gameArea.innerHTML = `
+                <div class="game-over">
+                    <h2>રમત પૂરી થઈ!</h2>
+                    <p>તમારો સ્કોર: ${score} / ${totalQuestions}</p>
+                    <p>${percentage}% સાચા જવાબો</p>
+                    <p>${message}</p>
+                    <button class="restart-btn" onclick="initGame()">ફરી રમો</button>
+                </div>
+            `;
+        }
+
+        function closeGame() {
+            if (confirm('શું તમે ખરેખર રમત બંધ કરવા માંગો છો?')) {
+                window.close();
+            }
+        }
+
+        // Initialize game on load
+        initGame();
+    </script>
+</body>
+</html>
