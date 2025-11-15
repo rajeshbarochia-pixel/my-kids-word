@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>અક્ષર ગોઠવો - Spell the Animal Names</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Noto Sans Gujarati', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 12px;
+            width: 98vw;
+            height: 98vh;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 1em;
+            color: #333;
+            line-height: 1.2;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 8px;
+            background: #ffe4e1;
+            padding: 6px;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.65em;
+            color: #666;
+            line-height: 1.2;
+        }
+
+        .score-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #f5576c;
+            line-height: 1.2;
+        }
+
+        .question-area {
+            text-align: center;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        .animal-emoji {
+            font-size: 4em;
+            margin-bottom: 8px;
+        }
+
+        .animal-name-hint {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .drop-zones {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .drop-box {
+            width: 70px;
+            height: 70px;
+            border: 3px dashed #ccc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f9f9f9;
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        .drop-box.drag-over {
+            border-color: #ffc107;
+            background: #fff8e1;
+            transform: scale(1.05);
+        }
+
+        .drop-box.filled {
+            background: white;
+            border-color: #2196F3;
+            border-style: solid;
+        }
+
+        .drop-box.correct {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .drop-box.wrong {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .letter-pool {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            flex: 1;
+            align-content: center;
+            overflow-y: auto;
+        }
+
+        .letter-tile {
+            width: 70px;
+            height: 70px;
+            background: white;
+            border: 2px solid #2196F3;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: move;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .letter-tile:active {
+            transform: scale(0.95);
+        }
+
+        .letter-tile.dragging {
+            opacity: 0.5;
+        }
+
+        .letter-tile.used {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .letter-tile.selected {
+            border-color: #ffc107;
+            background: #fff8e1;
+            transform: scale(1.1);
+        }
+
+        .check-button {
+            padding: 12px 30px;
+            font-size: 1em;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+            display: none;
+        }
+
+        .check-button:active {
+            background: #218838;
+            transform: scale(0.95);
+        }
+
+        .check-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: bold;
+            min-height: 30px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .feedback.correct {
+            color: #28a745;
+        }
+
+        .feedback.wrong {
+            color: #dc3545;
+        }
+
+        .game-over {
+            display: none;
+            text-align: center;
+            flex: 1;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .game-over.show {
+            display: flex;
+        }
+
+        .game-over h2 {
+            font-size: 1.8em;
+            color: #f5576c;
+            margin-bottom: 15px;
+        }
+
+        .final-score {
+            font-size: 1.4em;
+            margin: 10px 0;
+        }
+
+        .restart-button {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            background: #f5576c;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .restart-button:active {
+            background: #e04656;
+            transform: scale(0.95);
+        }
+
+        .creator {
+            text-align: center;
+            color: #666;
+            font-size: 0.65em;
+            flex-shrink: 0;
+        }
+
+        @media (max-height: 600px) {
+            .animal-emoji {
+                font-size: 3em;
+            }
+            
+            .drop-box, .letter-tile {
+                width: 55px;
+                height: 60px;
+                font-size: 1.5em;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .game-container {
+                max-width: 700px;
+                max-height: 800px;
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.3em;
+            }
+
+            .animal-emoji {
+                font-size: 6em;
+            }
+
+            .drop-box, .letter-tile {
+                width: 85px;
+                height: 85px;
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🔊 અક્ષર ગોઠવો - પ્રાણીનું નામ લખો</h1>
+        </div>
+
+        <div class="score-board">
+            <div class="score-item">
+                <div class="score-label">સ્કોર / Score</div>
+                <div class="score-value" id="score">0</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">પ્રશ્ન / Question</div>
+                <div class="score-value" id="question-number">1/10</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">સર્વશ્રેષ્ઠ / Best</div>
+                <div class="score-value" id="best-score">0</div>
+            </div>
+        </div>
+
+        <div id="game-area">
+            <div class="question-area">
+                <div class="animal-emoji" id="animal-emoji">🐘</div>
+                <div class="animal-name-hint" id="hint">અક્ષરો ભરો - ઓટોમેટિક તપાસશે</div>
+            </div>
+
+            <div class="drop-zones" id="drop-zones">
+                <!-- Drop boxes will be created here -->
+            </div>
+
+            <div class="feedback" id="feedback"></div>
+
+            <div class="letter-pool" id="letter-pool">
+                <!-- Letter tiles will be created here -->
+            </div>
+
+            <button class="check-button" id="check-button" onclick="checkAnswer()">
+                તપાસો / Check
+            </button>
+        </div>
+
+        <div class="game-over" id="game-over">
+            <h2>🎉 રમત પૂર્ણ! 🎉</h2>
+            <div class="final-score">
+                તમારો સ્કોર: <span id="final-score"></span>/10
+            </div>
+            <div class="final-score">
+                <span id="performance-message"></span>
+            </div>
+            <button class="restart-button" onclick="restartGame()">ફરી રમો / Play Again</button>
+        </div>
+
+        <div class="creator">Created by: Rajesh Barochia</div>
+    </div>
+
+    <script>
+        const animals = [
+            { name: 'હા થી', syllables: ['હા', 'થી'], emoji: '🐘', hint: '2 અક્ષર' },
+            { name: 'વા ઘ', syllables: ['વા', 'ઘ'], emoji: '🐯', hint: '2 અક્ષર' },
+            { name: 'સિં હ', syllables: ['સિં', 'હ'], emoji: '🦁', hint: '2 અક્ષર' },
+            { name: 'બિ લા ડી', syllables: ['બિ', 'લા', 'ડી'], emoji: '🐈', hint: '3 અક્ષર' },
+            { name: 'ઘો ડો', syllables: ['ઘો', 'ડો'], emoji: '🐎', hint: '2 અક્ષર' },
+            { name: 'કૂ ત રો', syllables: ['કૂ', 'ત', 'રો'], emoji: '🐕', hint: '3 અક્ષર' },
+            { name: 'ગા ય', syllables: ['ગા', 'ય'], emoji: '🐄', hint: '2 અક્ષર' },
+            { name: 'ઘે ટું', syllables: ['ઘે', 'ટું'], emoji: '🐑', hint: '2 અક્ષર' },
+            { name: 'હ રણ', syllables: ['હ', 'રણ'], emoji: '🦌', hint: '2 અક્ષર' },
+            { name: 'સ સ લું', syllables: ['સ', 'સ', 'લું'], emoji: '🐇', hint: '3 અક્ષર' }
+        ];
+
+        let score = 0;
+        let currentQuestion = 1;
+        let totalQuestions = 10;
+        let currentAnimal = null;
+        let userAnswer = [];
+        let draggedLetter = null;
+        let selectedLetter = null;
+        let selectedDropBox = null;
+        let isChecking = false;
+        let bestScore = localStorage.getItem('bestScoreSpelling') || 0;
+        let usedAnimals = [];
+
+        document.getElementById('best-score').textContent = bestScore;
+
+        function getRandomAnimal() {
+            let animal;
+            do {
+                animal = animals[Math.floor(Math.random() * animals.length)];
+            } while (usedAnimals.includes(animal.name) && usedAnimals.length < animals.length);
+            
+            usedAnimals.push(animal.name);
+            return animal;
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function loadQuestion() {
+            isChecking = false;
+            currentAnimal = getRandomAnimal();
+            userAnswer = new Array(currentAnimal.syllables.length).fill(null);
+            selectedLetter = null;
+            selectedDropBox = null;
+
+            document.getElementById('animal-emoji').textContent = currentAnimal.emoji;
+            document.getElementById('hint').textContent = `${currentAnimal.hint} - ઓટોમેટિક તપાસશે`;
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('feedback').className = 'feedback';
+
+            // Create drop zones
+            const dropZonesContainer = document.getElementById('drop-zones');
+            dropZonesContainer.innerHTML = '';
+            
+            for (let i = 0; i < currentAnimal.syllables.length; i++) {
+                const dropBox = document.createElement('div');
+                dropBox.className = 'drop-box';
+                dropBox.id = `drop-${i}`;
+                dropBox.dataset.index = i;
+                
+                // Drag events
+                dropBox.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!isChecking && draggedLetter) {
+                        dropBox.classList.add('drag-over');
+                    }
+                });
+
+                dropBox.addEventListener('dragleave', () => {
+                    dropBox.classList.remove('drag-over');
+                });
+
+                dropBox.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropBox.classList.remove('drag-over');
+                    if (draggedLetter && !isChecking) {
+                        placeLetter(i, draggedLetter.textContent, draggedLetter.dataset.id);
+                    }
+                });
+
+                // Click to select
+                dropBox.addEventListener('click', () => {
+                    if (isChecking) return;
+                    
+                    if (selectedLetter && !userAnswer[i]) {
+                        placeLetter(i, selectedLetter.textContent, selectedLetter.dataset.id);
+                        selectedLetter = null;
+                    } else if (userAnswer[i]) {
+                        // Remove letter from box
+                        removeLetter(i);
+                    }
+                });
+
+                dropZonesContainer.appendChild(dropBox);
+            }
+
+            // Create letter pool
+            const letterPool = document.getElementById('letter-pool');
+            letterPool.innerHTML = '';
+            
+            const correctSyllables = [...currentAnimal.syllables];
+            const extraSyllables = [];
+            
+            // Add some random extra syllables
+            const allSyllables = ['અ', 'આ', 'ઇ', 'ઉ', 'એ', 'ઓ', 'ક', 'ખ', 'ગ', 'ચ', 'છ', 'જ', 'ટ', 'ડ', 'ત', 'થ', 'દ', 'ન', 'પ', 'બ', 'મ', 'ય', 'ર', 'લ', 'વ', 'શ', 'સ', 'હ', 'ળ', 'કા', 'ખા', 'ગા', 'ચા', 'જા', 'ટા', 'ડા', 'તા', 'દા', 'ના', 'પા', 'મા', 'યા', 'રા', 'લા', 'વા', 'સા', 'હા', 'કી', 'ગી', 'ચી', 'જી', 'ડી', 'તી', 'દી', 'ની', 'બી', 'મી', 'રી', 'લી', 'શી', 'હી', 'કો', 'ગો', 'જો', 'ટો', 'ડો', 'તો', 'દો', 'નો', 'પો', 'બો', 'મો', 'યો', 'રો', 'લો', 'વો', 'સો', 'હો'];
+            
+            for (let i = 0; i < 2; i++) {
+                const randomSyllable = allSyllables[Math.floor(Math.random() * allSyllables.length)];
+                if (!correctSyllables.includes(randomSyllable)) {
+                    extraSyllables.push(randomSyllable);
+                }
+            }
+            
+            const allTiles = shuffleArray([...correctSyllables, ...extraSyllables]);
+            
+            allTiles.forEach((syllable, index) => {
+                const tile = document.createElement('div');
+                tile.className = 'letter-tile';
+                tile.textContent = syllable;
+                tile.draggable = true;
+                tile.dataset.id = `tile-${index}`;
+                
+                // Drag events
+                tile.addEventListener('dragstart', (e) => {
+                    if (isChecking) return;
+                    draggedLetter = tile;
+                    tile.classList.add('dragging');
+                });
+
+                tile.addEventListener('dragend', () => {
+                    tile.classList.remove('dragging');
+                    draggedLetter = null;
+                });
+
+                // Click to select
+                tile.addEventListener('click', () => {
+                    if (isChecking || tile.classList.contains('used')) return;
+                    
+                    // Deselect all
+                    document.querySelectorAll('.letter-tile').forEach(t => t.classList.remove('selected'));
+                    
+                    if (selectedLetter === tile) {
+                        selectedLetter = null;
+                    } else {
+                        selectedLetter = tile;
+                        tile.classList.add('selected');
+                    }
+                });
+
+                letterPool.appendChild(tile);
+            });
+        }
+
+        function placeLetter(boxIndex, letter, tileId) {
+            if (userAnswer[boxIndex]) return;
+            
+            userAnswer[boxIndex] = letter;
+            const dropBox = document.getElementById(`drop-${boxIndex}`);
+            dropBox.textContent = letter;
+            dropBox.classList.add('filled');
+            
+            const tile = document.querySelector(`[data-id="${tileId}"]`);
+            if (tile) {
+                tile.classList.add('used');
+                tile.classList.remove('selected');
+            }
+
+            // Auto-check when all boxes are filled
+            if (!userAnswer.includes(null) && !isChecking) {
+                setTimeout(() => {
+                    if (!isChecking) {
+                        checkAnswer();
+                    }
+                }, 500);
+            }
+        }
+
+        function removeLetter(boxIndex) {
+            const letter = userAnswer[boxIndex];
+            userAnswer[boxIndex] = null;
+            
+            const dropBox = document.getElementById(`drop-${boxIndex}`);
+            dropBox.textContent = '';
+            dropBox.classList.remove('filled', 'correct', 'wrong');
+            
+            // Re-enable tile
+            const tiles = document.querySelectorAll('.letter-tile');
+            tiles.forEach(tile => {
+                if (tile.textContent === letter && tile.classList.contains('used')) {
+                    tile.classList.remove('used');
+                    return;
+                }
+            });
+        }
+
+        function checkAnswer() {
+            isChecking = true;
+            const userWord = userAnswer.join('');
+            const correctWord = currentAnimal.syllables.join('');
+            
+            let allCorrect = true;
+            
+            for (let i = 0; i < currentAnimal.syllables.length; i++) {
+                const dropBox = document.getElementById(`drop-${i}`);
+                if (userAnswer[i] === currentAnimal.syllables[i]) {
+                    dropBox.classList.add('correct');
+                } else {
+                    dropBox.classList.add('wrong');
+                    allCorrect = false;
+                }
+            }
+
+            if (allCorrect) {
+                score++;
+                document.getElementById('score').textContent = score;
+                document.getElementById('feedback').textContent = '✓ સાચું! શાબાશ!';
+                document.getElementById('feedback').className = 'feedback correct';
+            } else {
+                const correctName = currentAnimal.name.replace(/ /g, '');
+                document.getElementById('feedback').textContent = `✗ ખોટું! સાચું સ્પેલિંગ: ${correctName}`;
+                document.getElementById('feedback').className = 'feedback wrong';
+            }
+
+            if (currentQuestion < totalQuestions) {
+                setTimeout(() => {
+                    currentQuestion++;
+                    document.getElementById('question-number').textContent = `${currentQuestion}/${totalQuestions}`;
+                    loadQuestion();
+                }, 2500);
+            } else {
+                setTimeout(endGame, 2500);
+            }
+        }
+
+        function endGame() {
+            document.getElementById('game-area').style.display = 'none';
+            document.getElementById('game-over').classList.add('show');
+            document.getElementById('final-score').textContent = score;
+
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('bestScoreSpelling', bestScore);
+                document.getElementById('best-score').textContent = bestScore;
+            }
+
+            let message = '';
+            if (score === 10) {
+                message = '🌟 પરફેક્ટ! તમે અદ્ભુત છો!';
+            } else if (score >= 8) {
+                message = '👏 ખૂબ સારું!';
+            } else if (score >= 6) {
+                message = '😊 સારું!';
+            } else if (score >= 4) {
+                message = '💪 સારો પ્રયાસ!';
+            } else {
+                message = '🎯 ફરી પ્રયાસ કરો!';
+            }
+            
+            document.getElementById('performance-message').textContent = message;
+        }
+
+        function restartGame() {
+            score = 0;
+            currentQuestion = 1;
+            usedAnimals = [];
+            
+            document.getElementById('score').textContent = score;
+            document.getElementById('question-number').textContent = `${currentQuestion}/${totalQuestions}`;
+            
+            document.getElementById('game-area').style.display = 'block';
+            document.getElementById('game-over').classList.remove('show');
+            
+            loadQuestion();
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>
