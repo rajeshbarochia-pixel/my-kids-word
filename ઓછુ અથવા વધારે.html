@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greater Than / Less Than Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .credit {
+            text-align: center;
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .question-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            padding: 40px;
+            background: #f5f5f5;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            min-height: 250px;
+            flex-wrap: wrap;
+        }
+
+        .group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            max-width: 200px;
+        }
+
+        .emoji {
+            font-size: 2.5em;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .symbol-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .symbol-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-size: 2em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            min-width: 100px;
+        }
+
+        .symbol-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .symbol-btn:active {
+            transform: scale(0.95);
+        }
+
+        .feedback {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 20px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pop 0.5s ease;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .feedback.correct {
+            color: #4caf50;
+        }
+
+        .feedback.incorrect {
+            color: #f44336;
+        }
+
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 35px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .completion-screen {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .completion-screen h2 {
+            color: #4caf50;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .completion-screen .score-display {
+            font-size: 3em;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8em;
+            animation: celebrate 1s ease;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes celebrate {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); }
+            50% { transform: translate(-50%, -50%) scale(1.2) rotate(180deg); }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8em; }
+            .emoji { font-size: 2em; }
+            .symbol-btn { font-size: 1.5em; padding: 12px 25px; }
+            .question-container { padding: 20px; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GREATER THAN / LESS THAN</h1>
+        <p class="subtitle">Count the objects and choose the correct symbol (> or <)</p>
+        <p class="credit">Created by: Rajesh Barochia</p>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar">0 / 12</div>
+        </div>
+
+        <div id="gameArea">
+            <div class="feedback" id="feedback"></div>
+
+            <div class="question-container" id="questionContainer">
+                <div class="group" id="leftGroup"></div>
+                <div class="symbol-buttons">
+                    <button class="symbol-btn" onclick="checkAnswer('>')">&gt;</button>
+                    <button class="symbol-btn" onclick="checkAnswer('<')">&lt;</button>
+                </div>
+                <div class="group" id="rightGroup"></div>
+            </div>
+
+            <div class="control-buttons">
+                <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()" disabled>આગળ વધો</button>
+                <button class="btn btn-reset" onclick="restartGame()">નવેસરથી શરૂ કરો</button>
+            </div>
+        </div>
+
+        <div id="completionScreen" class="completion-screen hidden">
+            <h2>અભિનંદન! 🎉</h2>
+            <div class="score-display">
+                <span id="finalScore">0</span> / 12
+            </div>
+            <p style="font-size: 1.2em; color: #666; margin-bottom: 30px;">તમે બધા પ્રશ્નો પૂર્ણ કર્યા!</p>
+            <button class="btn btn-reset" onclick="restartGame()">ફરીથી રમો</button>
+        </div>
+    </div>
+
+    <script>
+        const emojis = ['🚌', '🏀', '✏️', '🎒', '🍩', '💡', '🧸', '⏰', '🧮', '📚', '🔔', '🍎', '✂️', '🍦', '🍭', '🚗', '🍾', '⚽', '🎨', '🎮'];
+        
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let correctAnswers = 0;
+        let answered = false;
+
+        function generateQuestions() {
+            questions = [];
+            const usedEmojis = new Set();
+            
+            for (let i = 0; i < 12; i++) {
+                let emoji1, emoji2;
+                do {
+                    emoji1 = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji2 = emojis[Math.floor(Math.random() * emojis.length)];
+                } while (emoji1 === emoji2 || usedEmojis.has(emoji1 + emoji2));
+                
+                usedEmojis.add(emoji1 + emoji2);
+                
+                const count1 = Math.floor(Math.random() * 8) + 2;
+                let count2;
+                do {
+                    count2 = Math.floor(Math.random() * 8) + 2;
+                } while (count1 === count2);
+                
+                questions.push({
+                    emoji1: emoji1,
+                    count1: count1,
+                    emoji2: emoji2,
+                    count2: count2,
+                    correct: count1 > count2 ? '>' : '<'
+                });
+            }
+        }
+
+        function displayQuestion() {
+            const question = questions[currentQuestionIndex];
+            const leftGroup = document.getElementById('leftGroup');
+            const rightGroup = document.getElementById('rightGroup');
+            
+            leftGroup.innerHTML = '';
+            rightGroup.innerHTML = '';
+            
+            for (let i = 0; i < question.count1; i++) {
+                const emoji = document.createElement('span');
+                emoji.className = 'emoji';
+                emoji.textContent = question.emoji1;
+                emoji.style.animationDelay = `${i * 0.05}s`;
+                leftGroup.appendChild(emoji);
+            }
+            
+            for (let i = 0; i < question.count2; i++) {
+                const emoji = document.createElement('span');
+                emoji.className = 'emoji';
+                emoji.textContent = question.emoji2;
+                emoji.style.animationDelay = `${i * 0.05}s`;
+                rightGroup.appendChild(emoji);
+            }
+            
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const percentage = (currentQuestionIndex / questions.length) * 100;
+            progressBar.style.width = percentage + '%';
+            progressBar.textContent = `${currentQuestionIndex} / ${questions.length}`;
+        }
+
+        function checkAnswer(userAnswer) {
+            if (answered) return;
+            
+            answered = true;
+            const question = questions[currentQuestionIndex];
+            const feedback = document.getElementById('feedback');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            if (userAnswer === question.correct) {
+                feedback.textContent = '✅ સાચું!';
+                feedback.className = 'feedback correct';
+                correctAnswers++;
+            } else {
+                feedback.textContent = '❌ ખોટું!';
+                feedback.className = 'feedback incorrect';
+            }
+            
+            nextBtn.disabled = false;
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            answered = false;
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('nextBtn').disabled = true;
+            
+            if (currentQuestionIndex < questions.length) {
+                displayQuestion();
+            } else {
+                showCompletionScreen();
+            }
+        }
+
+        function showCompletionScreen() {
+            document.getElementById('gameArea').classList.add('hidden');
+            document.getElementById('completionScreen').classList.remove('hidden');
+            document.getElementById('finalScore').textContent = correctAnswers;
+            
+            if (correctAnswers === questions.length) {
+                showCelebration();
+            }
+        }
+
+        function showCelebration() {
+            const celebration = document.createElement('div');
+            celebration.className = 'celebration';
+            celebration.textContent = '🎉';
+            document.body.appendChild(celebration);
+            setTimeout(() => celebration.remove(), 1000);
+        }
+
+        function restartGame() {
+            currentQuestionIndex = 0;
+            correctAnswers = 0;
+            answered = false;
+            
+            document.getElementById('gameArea').classList.remove('hidden');
+            document.getElementById('completionScreen').classList.add('hidden');
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('nextBtn').disabled = true;
+            
+            generateQuestions();
+            displayQuestion();
+        }
+
+        // Initialize game
+        generateQuestions();
+        displayQuestion();
+    </script>
+</body>
+</html>
