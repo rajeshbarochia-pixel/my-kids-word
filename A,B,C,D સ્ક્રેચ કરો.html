@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>સ્ક્રેચ કરો અને શીખો: A B C D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans Gujarati', 'Shruti', sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        h1 {
+            color: #f5576c;
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .creator {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .instruction {
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 30px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        #letterCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 8em;
+            font-weight: bold;
+            color: #f5576c;
+            font-family: 'Arial Black', sans-serif;
+        }
+
+        #scratchCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 75%;
+        }
+
+        .success-message {
+            color: #4caf50;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .new-letter-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.3em;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .new-letter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .new-letter-btn:active {
+            transform: translateY(0);
+        }
+
+        .speaker-btn {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+            margin-top: 15px;
+        }
+
+        .speaker-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.6);
+        }
+
+        .speaker-btn:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            margin-top: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .celebrating {
+            animation: celebrate 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>સ્ક્રેચ કરો અને શીખો: A B C D</h1>
+        <p class="creator">Created by: Rajesh Barochia</p>
+        <p class="instruction">કેનવાસને સ્ક્રેચ કરો અને છુપાયેલ અક્ષર ઓળખો!!</p>
+        
+        <div class="canvas-container">
+            <div class="canvas-wrapper">
+                <div id="letterCanvas"></div>
+                <canvas id="scratchCanvas"></canvas>
+            </div>
+        </div>
+        
+        <div class="success-message" id="successMessage"></div>
+        
+        <button class="new-letter-btn" onclick="resetGame()">નવો અક્ષર</button>
+        <button class="speaker-btn" onclick="speakLetter()" id="speakerBtn" style="display: none;">
+            🔊 ફરીથી સાંભળો
+        </button>
+        
+        <div class="stats" id="stats">કુલ અક્ષરો ઓળખ્યા: 0</div>
+    </div>
+
+    <script>
+        const englishLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+        const letterNames = ['એ', 'બી', 'સી', 'ડી', 'ઈ', 'એફ', 'જી', 'એચ', 'આઈ', 'જે', 'કે', 'એલ', 'એમ', 'એન', 'ઓ', 'પી', 'ક્યુ', 'આર', 'એસ', 'ટી', 'યુ', 'વી', 'ડબલ્યુ', 'એક્સ', 'વાય', 'ઝેડ'];
+        let currentLetter;
+        let currentLetterName;
+        let currentLetterIndex;
+        let canvas, ctx;
+        let isDrawing = false;
+        let scratchedPercentage = 0;
+        let gameCompleted = false;
+        let totalLetters = 0;
+        let speechSynthesis = window.speechSynthesis;
+
+        function initGame() {
+            canvas = document.getElementById('scratchCanvas');
+            const container = canvas.parentElement;
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+            ctx = canvas.getContext('2d');
+            
+            resetGame();
+            
+            // Mouse events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', scratch);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+            
+            // Touch events
+            canvas.addEventListener('touchstart', handleTouchStart);
+            canvas.addEventListener('touchmove', handleTouchMove);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function speakLetter() {
+            if ('speechSynthesis' in window) {
+                // Cancel any ongoing speech
+                speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(currentLetter);
+                utterance.lang = 'en-US'; // English language
+                utterance.rate = 0.7; // Slower for clarity
+                utterance.pitch = 1.2; // Higher pitch for children
+                
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function resetGame() {
+            gameCompleted = false;
+            scratchedPercentage = 0;
+            
+            // Select random letter
+            currentLetterIndex = Math.floor(Math.random() * englishLetters.length);
+            currentLetter = englishLetters[currentLetterIndex];
+            currentLetterName = letterNames[currentLetterIndex];
+            
+            // Display letter
+            document.getElementById('letterCanvas').textContent = currentLetter;
+            
+            // Clear success message
+            document.getElementById('successMessage').textContent = '';
+            
+            // Hide speaker button
+            document.getElementById('speakerBtn').style.display = 'none';
+            
+            // Reset canvas - IMPORTANT: Reset composite operation first
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Clear any previous content
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw scratch layer with gradient
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#f093fb');
+            gradient.addColorStop(0.5, '#f5576c');
+            gradient.addColorStop(1, '#f093fb');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add pattern with stars
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 3;
+            for (let i = 0; i < 20; i++) {
+                ctx.beginPath();
+                ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                ctx.stroke();
+            }
+            
+            // Add some circles
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            for (let i = 0; i < 10; i++) {
+                ctx.beginPath();
+                ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 30, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            scratch(e);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            isDrawing = true;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            scratchAt(x, y);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!isDrawing) return;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            scratchAt(x, y);
+        }
+
+        function scratch(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            scratchAt(x, y);
+        }
+
+        function scratchAt(x, y) {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(x, y, 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            checkScratchPercentage();
+        }
+
+        function checkScratchPercentage() {
+            if (gameCompleted) return;
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imageData.data;
+            let transparentPixels = 0;
+            
+            for (let i = 3; i < pixels.length; i += 4) {
+                if (pixels[i] < 128) {
+                    transparentPixels++;
+                }
+            }
+            
+            scratchedPercentage = (transparentPixels / (pixels.length / 4)) * 100;
+            
+            if (scratchedPercentage > 50 && !gameCompleted) {
+                gameCompleted = true;
+                totalLetters++;
+                showSuccess();
+            }
+        }
+
+        function showSuccess() {
+            const successMsg = document.getElementById('successMessage');
+            successMsg.textContent = `સફળ! છુપાયેલ અક્ષર છે: ${currentLetter} (${currentLetterName})`;
+            successMsg.classList.add('celebrating');
+            
+            document.getElementById('stats').textContent = `કુલ અક્ષરો ઓળખ્યા: ${totalLetters}`;
+            
+            // Show speaker button
+            document.getElementById('speakerBtn').style.display = 'inline-block';
+            
+            // Speak the letter
+            speakLetter();
+            
+            setTimeout(() => {
+                successMsg.classList.remove('celebrating');
+            }, 500);
+            
+            // Clear the scratch canvas completely
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        window.onload = initGame;
+        window.onresize = () => {
+            const container = canvas.parentElement;
+            const oldWidth = canvas.width;
+            const oldHeight = canvas.height;
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+            
+            if (!gameCompleted && scratchedPercentage < 50) {
+                resetGame();
+            }
+        };
+    </script>
+</body>
+</html>
