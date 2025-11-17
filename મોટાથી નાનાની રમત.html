@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ઊંચાઈ ગોઠવણી રમત: મોટાથી નાના</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* કસ્ટમ ફોન્ટ અને સામાન્ય સ્ટાઇલ */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans Gujarati', 'Inter', sans-serif;
+            background-color: #f7f9fb;
+            color: #1f2937;
+        }
+
+        .game-item-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end; 
+            cursor: grab;
+            transition: transform 0.1s ease-in-out;
+            touch-action: none;
+            flex-shrink: 0; 
+            position: relative; 
+        }
+
+        .game-item-container:active {
+            cursor: grabbing;
+        }
+
+        /* ડ્રેગિંગ દરમિયાન પડછાયો */
+        .dragging {
+            opacity: 0.7;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transform: scale(1.1); 
+        }
+
+        #sort-area {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            min-height: 200px;
+            align-items: flex-end;
+            border: 2px dashed #9ca3af;
+            border-radius: 8px;
+            padding: 16px;
+            background-color: #ffffff;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        #sort-area.drag-over {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        /* મેસેજ બોક્સ માટે કસ્ટમ CSS (માત્ર ભૂલ સંદેશ માટે) */
+        #message-box {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        /* SVG સ્ટાઇલિંગ */
+        .game-item-svg {
+            position: absolute;
+            bottom: 0; 
+            width: 100%;
+            height: 100%;
+            max-height: 180px; 
+        }
+        
+        .pen-body { fill: #2563eb; } 
+        .pen-cap { fill: #60a5fa; } 
+        .pen-tip { fill: #1f2937; } 
+
+        .crayon-body { fill: #facc15; } 
+        .crayon-tip { fill: #ef4444; } 
+        .crayon-wrapper { fill: #a3a3a3; } 
+
+        .marker-body { fill: #ef4444; } 
+        .marker-cap { fill: #b91c1c; } 
+        .marker-tip { fill: #1f2937; } 
+
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-2 text-blue-600" id="game-title">મોટાથી નાના ક્રમની રમત</h1>
+        <p class="text-center text-gray-600" id="game-description">વસ્તુઓને ઊંચાઈના ક્રમમાં **મોટાથી નાના** ક્રમમાં ડાબેથી જમણે ગોઠવવા માટે ખેંચો અને છોડો.</p>
+
+        <!-- કાયમી બનાવનારનું નામ -->
+        <p class="text-center text-sm text-gray-500 mb-4">Created by: Rajesh barochia</p>
+
+        <!-- ઇનલાઇન સફળતા સંદેશ વિસ્તાર -->
+        <div id="success-notification" class="text-center mb-4 hidden">
+             <p class="text-xl font-bold text-green-600 p-3 rounded-lg bg-green-50">અભિનંદન! તમારો ક્રમ **મોટાથી નાના** પ્રમાણે સંપૂર્ણપણે સાચો છે!</p>
+        </div>
+
+        <!-- સોર્ટિંગ વિસ્તાર (એક જ લાઇન) -->
+        <div id="sort-area" class="shadow-lg rounded-xl border border-gray-200 gap-3">
+            <!-- ગેમની વસ્તુઓ અહીં JS દ્વારા લોડ થશે -->
+        </div>
+
+        <!-- બટન અને સંદેશ વિસ્તાર -->
+        <div class="text-center mt-8 space-x-4">
+            <button id="check-button" onclick="checkOrder()" class="px-8 py-3 bg-green-500 text-white font-bold rounded-full shadow-lg hover:bg-green-600 transition duration-200 focus:outline-none focus:ring-4 focus:ring-green-300 transform hover:scale-105">
+                ચકાસણી કરો
+            </button>
+            <button id="next-game-button" onclick="loadNextGame()" class="px-8 py-3 bg-blue-500 text-white font-bold rounded-full shadow-lg hover:bg-blue-600 transition duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 transform hover:scale-105 hidden">
+                આગલી ગેમ
+            </button>
+        </div>
+
+    </div>
+
+    <!-- મેસેજ બોક્સ (માત્ર ભૂલ સંદેશ માટે) -->
+    <div id="overlay" class="fixed inset-0 bg-black opacity-0 hidden z-40 transition-opacity duration-300" onclick="hideMessage()"></div>
+    <div id="message-box" class="fixed hidden p-6 bg-white rounded-lg z-50 transition-opacity duration-300 border-t-4 border-red-500 w-11/12 max-w-sm">
+        <h3 id="message-title" class="text-xl font-bold mb-3 text-center"></h3>
+        <p id="message-text" class="text-gray-700 text-center mb-4"></p>
+        <button onclick="hideMessage()" class="w-full py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600">
+            બરાબર
+        </button>
+    </div>
+
+    <script type="module">
+        // Game configuration objects - DESCENDING ORDER ONLY
+        const allGameSets = {
+            pens: {
+                items: [
+                    { id: 'pen-1', height: '180px', order: 1, type: 'pen' }, 
+                    { id: 'pen-2', height: '160px', order: 2, type: 'pen' },
+                    { id: 'pen-3', height: '140px', order: 3, type: 'pen' },
+                    { id: 'pen-4', height: '120px', order: 4, type: 'pen' },
+                    { id: 'pen-5', height: '100px', order: 5, type: 'pen' },
+                    { id: 'pen-6', height: '80px', order: 6, type: 'pen' },
+                ],
+                name: 'પેન',
+            },
+            crayons: {
+                items: [
+                    { id: 'crayon-1', height: '140px', order: 1, type: 'crayon' },
+                    { id: 'crayon-2', height: '125px', order: 2, type: 'crayon' },
+                    { id: 'crayon-3', height: '110px', order: 3, type: 'crayon' },
+                    { id: 'crayon-4', height: '95px', order: 4, type: 'crayon' },
+                    { id: 'crayon-5', height: '80px', order: 5, type: 'crayon' },
+                    { id: 'crayon-6', height: '65px', order: 6, type: 'crayon' },
+                ],
+                name: 'મીણિયા કલર',
+            },
+            markers: {
+                items: [
+                    { id: 'marker-1', height: '165px', order: 1, type: 'marker' }, 
+                    { id: 'marker-2', height: '145px', order: 2, type: 'marker' },
+                    { id: 'marker-3', height: '125px', order: 3, type: 'marker' },
+                    { id: 'marker-4', height: '105px', order: 4, type: 'marker' },
+                    { id: 'marker-5', height: '85px', order: 5, type: 'marker' },
+                    { id: 'marker-6', height: '65px', order: 6, type: 'marker' },
+                ],
+                name: 'માર્કર પેન',
+            }
+        };
+
+        const gameTypes = Object.keys(allGameSets);
+        let currentGameTypeIndex = 0; 
+        let currentSet = {}; 
+
+        const sortArea = document.getElementById('sort-area');
+        const checkButton = document.getElementById('check-button');
+        const nextGameButton = document.getElementById('next-game-button');
+        const successNotification = document.getElementById('success-notification');
+        let draggedId = null;
+        
+        // =================================================================
+        // SVG રેન્ડરિંગ કાર્યો (DESCENDING)
+        // =================================================================
+
+        function getPenSVG(height) {
+            const containerHeight = 192; 
+            const itemHeight = parseFloat(height); 
+            const yOffset = containerHeight - itemHeight; 
+            const originalHeight = 180;
+            const scaleFactor = itemHeight / originalHeight;
+            const originalCapHeight = 40;
+            const originalBodyHeight = 140; 
+            const capHeight = originalCapHeight * scaleFactor;
+            const bodyHeight = originalBodyHeight * scaleFactor;
+            const yCap = yOffset; 
+            const yBody = yCap + capHeight; 
+            const yTip = yCap + capHeight + bodyHeight; 
+            return `
+                <svg class="game-item-svg" viewBox="0 0 40 ${containerHeight}" preserveAspectRatio="xMidYMax meet">
+                    <rect class="pen-body" x="10" y="${yBody}" width="20" height="${bodyHeight}" rx="5" ry="5"/>
+                    <rect class="pen-cap" x="10" y="${yCap}" width="20" height="${capHeight}" rx="5" ry="5"/>
+                    <circle class="pen-tip" cx="20" cy="${yTip - (5 * scaleFactor)}" r="${3 * scaleFactor}"/> 
+                </svg>
+            `;
+        }
+
+        function getCrayonSVG(height) {
+            const containerHeight = 192; 
+            const itemHeight = parseFloat(height);
+            const yOffset = containerHeight - itemHeight; 
+            const originalHeight = 140;
+            const scaleFactor = itemHeight / originalHeight;
+            const originalTipHeight = 30;
+            const originalWrapperHeight = 40;
+            const originalBodyHeight = 70;
+            const tipHeight = originalTipHeight * scaleFactor;
+            const wrapperHeight = originalWrapperHeight * scaleFactor;
+            const bodyHeight = originalBodyHeight * scaleFactor;
+            const yTipStart = yOffset;
+            const yTipEnd = yTipStart + tipHeight;
+            const yBodyStart = yTipEnd;
+            const yWrapperStart = yBodyStart + bodyHeight;
+            return `
+                <svg class="game-item-svg" viewBox="0 0 40 ${containerHeight}" preserveAspectRatio="xMidYMax meet">
+                    <polygon class="crayon-tip" points="20,${yTipStart} 30,${yTipEnd} 10,${yTipEnd}"/>
+                    <rect class="crayon-body" x="10" y="${yBodyStart}" width="20" height="${bodyHeight}" />
+                    <rect class="crayon-wrapper" x="10" y="${yWrapperStart}" width="20" height="${wrapperHeight}" />
+                </svg>
+            `;
+        }
+        
+        function getMarkerSVG(height) {
+            const containerHeight = 192; 
+            const itemHeight = parseFloat(height); 
+            const yOffset = containerHeight - itemHeight; 
+            const originalHeight = 165; 
+            const scaleFactor = itemHeight / originalHeight;
+            const originalCapHeight = 35; 
+            const originalBodyHeight = 130; 
+            const capHeight = originalCapHeight * scaleFactor;
+            const bodyHeight = originalBodyHeight * scaleFactor;
+            const yCap = yOffset; 
+            const yBody = yCap + capHeight; 
+            const yTip = yCap + capHeight + bodyHeight; 
+            return `
+                <svg class="game-item-svg" viewBox="0 0 40 ${containerHeight}" preserveAspectRatio="xMidYMax meet">
+                    <rect class="marker-body" x="10" y="${yBody}" width="20" height="${bodyHeight}" rx="3" ry="3"/>
+                    <rect class="marker-cap" x="10" y="${yCap}" width="20" height="${capHeight}" rx="3" ry="3"/>
+                    <polygon class="marker-tip" points="20,${yTip} 24,${yTip-5} 16,${yTip-5}"/>
+                </svg>
+            `;
+        }
+
+        // =================================================================
+        // HTML ઘટકો બનાવવાનું કાર્ય
+        // =================================================================
+
+        function createGameItemElement(item) {
+            const itemEl = document.createElement('div');
+            itemEl.id = `item-${item.id}`;
+            itemEl.classList.add('game-item-container', 'w-12', 'h-48', 'relative', 'p-1', 'select-none'); 
+            itemEl.setAttribute('draggable', 'true');
+            itemEl.setAttribute('data-order', item.order);
+            itemEl.setAttribute('data-height', item.height); 
+
+            let svgHTML = '';
+            switch (item.type) {
+                case 'pen':
+                    svgHTML = getPenSVG(item.height);
+                    break;
+                case 'crayon':
+                    svgHTML = getCrayonSVG(item.height);
+                    break;
+                case 'marker': 
+                    svgHTML = getMarkerSVG(item.height);
+                    break;
+                default:
+                    svgHTML = `<div class="w-full h-full bg-gray-300 flex items-center justify-center text-xs">?</div>`;
+            }
+            itemEl.innerHTML = svgHTML;
+
+            // Drag and Touch Listeners (અપરિવર્તિત છે)
+            itemEl.addEventListener('dragstart', (e) => {
+                draggedId = itemEl.id;
+                e.dataTransfer.setData('text/plain', draggedId);
+                setTimeout(() => {
+                    itemEl.classList.add('dragging');
+                }, 0);
+            });
+
+            itemEl.addEventListener('dragend', () => {
+                itemEl.classList.remove('dragging');
+            });
+
+            itemEl.addEventListener('touchstart', (e) => {
+                e.preventDefault(); 
+                draggedId = itemEl.id;
+                itemEl.classList.add('dragging');
+                
+                const touch = e.touches[0];
+                let currentEl = itemEl;
+
+                function moveHandler(e) {
+                    const moveTouch = e.touches[0];
+                    currentEl.style.position = 'fixed';
+                    currentEl.style.zIndex = 1000;
+                    currentEl.style.left = `${moveTouch.clientX - currentEl.offsetWidth / 2}px`; 
+                    currentEl.style.top = `${moveTouch.clientY - currentEl.offsetHeight / 2}px`;
+                    currentEl.style.transform = 'scale(1.1)';
+
+                    const afterElement = getDragAfterElement(sortArea, moveTouch.clientX);
+                    if (afterElement == null) {
+                        sortArea.appendChild(currentEl);
+                    } else {
+                        sortArea.insertBefore(currentEl, afterElement);
+                    }
+                }
+
+                function endHandler() {
+                    currentEl.style.position = '';
+                    currentEl.style.left = '';
+                    currentEl.style.top = '';
+                    currentEl.style.transform = '';
+                    currentEl.style.zIndex = '';
+                    itemEl.classList.remove('dragging');
+                    document.removeEventListener('touchmove', moveHandler);
+                    document.removeEventListener('touchend', endHandler);
+                }
+
+                document.addEventListener('touchmove', moveHandler, { passive: false });
+                document.addEventListener('touchend', endHandler, { once: true });
+            });
+
+            return itemEl;
+        }
+
+        // =================================================================
+        // ડ્રેગ/ડ્રોપ લોજિક (અપરિવર્તિત છે)
+        // =================================================================
+
+        function getDragAfterElement(container, x) {
+            const draggableElements = [...container.querySelectorAll('.game-item-container:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const rect = child.getBoundingClientRect();
+                const center = rect.left + rect.width / 2;
+                const offset = x - center;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        sortArea.addEventListener('dragover', e => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(sortArea, e.clientX);
+            const dragged = document.getElementById(draggedId);
+            
+            sortArea.classList.add('drag-over');
+
+            if (dragged) {
+                if (afterElement == null) {
+                    sortArea.appendChild(dragged);
+                } else {
+                    sortArea.insertBefore(dragged, afterElement);
+                }
+            }
+        });
+        
+        sortArea.addEventListener('dragleave', () => {
+            sortArea.classList.remove('drag-over');
+        });
+        
+        sortArea.addEventListener('drop', e => {
+            e.preventDefault();
+            sortArea.classList.remove('drag-over');
+        });
+        
+        // =================================================================
+        // ગેમ લોજિક
+        // =================================================================
+
+        window.checkOrder = function() {
+            const itemsInOrder = Array.from(sortArea.querySelectorAll('.game-item-container'));
+            let isCorrect = true;
+            
+            successNotification.classList.add('hidden');
+
+            if (itemsInOrder.length !== 6) { 
+                showMessage('અપૂર્ણ!', 'કૃપા કરીને ખાતરી કરો કે બધી **છ** વસ્તુઓ લાઈનમાં ગોઠવાયેલી છે.', 'red');
+                return;
+            }
+
+            for (let i = 0; i < itemsInOrder.length; i++) {
+                const actualOrder = parseInt(itemsInOrder[i].getAttribute('data-order'));
+                const expectedOrder = i + 1;
+
+                if (actualOrder !== expectedOrder) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+
+            if (isCorrect) {
+                successNotification.classList.remove('hidden');
+
+                checkButton.disabled = true;
+                checkButton.classList.replace('bg-green-500', 'bg-gray-400');
+                nextGameButton.classList.remove('hidden'); 
+            } else {
+                showMessage('ફરી પ્રયાસ કરો.', 'ક્રમ સાચો નથી. ખાતરી કરો કે વસ્તુઓ **મોટાથી નાના** ક્રમમાં ડાબેથી જમણે ગોઠવાયેલી છે.', 'red');
+            }
+        }
+
+        function showMessage(title, message, type) {
+            const messageBox = document.getElementById('message-box');
+            const overlay = document.getElementById('overlay');
+
+            document.getElementById('message-title').textContent = title;
+            document.getElementById('message-text').innerHTML = message;
+            
+            messageBox.classList.remove('border-green-500', 'border-red-500', 'border-blue-500');
+            if (type === 'red') {
+                messageBox.classList.add('border-red-500');
+            } else {
+                 messageBox.classList.add('border-blue-500');
+            }
+
+            messageBox.classList.remove('hidden', 'opacity-0');
+            overlay.classList.remove('hidden', 'opacity-0');
+            setTimeout(() => {
+                messageBox.classList.add('opacity-100');
+                overlay.classList.add('opacity-50');
+            }, 10);
+        }
+
+        window.hideMessage = function() {
+            const messageBox = document.getElementById('message-box');
+            const overlay = document.getElementById('overlay');
+            
+            messageBox.classList.remove('opacity-100');
+            overlay.classList.remove('opacity-50');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+                overlay.classList.add('hidden');
+            }, 300);
+        }
+
+        // =================================================================
+        // ગેમ લોડિંગ અને રીસેટ લોજિક
+        // =================================================================
+
+        window.loadNextGame = function() {
+            currentGameTypeIndex = (currentGameTypeIndex + 1) % gameTypes.length; 
+            if (currentGameTypeIndex === 0) {
+                 showMessage('રમત સમાપ્ત!', 'તમે આ બધી ગેમ સફળતાપૂર્વક પૂર્ણ કરી છે. ફરીથી રમવા માટે "બરાબર" દબાવો.', 'blue');
+            }
+            initGame();
+        }
+
+        function initGame() {
+            sortArea.innerHTML = ''; 
+            checkButton.disabled = false;
+            checkButton.classList.replace('bg-gray-400', 'bg-green-500');
+            nextGameButton.classList.add('hidden'); 
+            
+            successNotification.classList.add('hidden');
+
+            const currentType = gameTypes[currentGameTypeIndex];
+            currentSet = allGameSets[currentType];
+
+            document.getElementById('game-title').textContent = `${currentSet.name} ગોઠવણી રમત (મોટાથી નાના)`;
+            document.getElementById('game-description').textContent = `છ ${currentSet.name}ને ઊંચાઈના ક્રમમાં **મોટાથી નાના** ક્રમમાં ડાબેથી જમણે ગોઠવવા માટે ખેંચો અને છોડો.`;
+
+
+            const items = currentSet.items;
+            const shuffledItems = [...items].sort(() => Math.random() - 0.5); 
+            
+            shuffledItems.forEach(item => {
+                sortArea.appendChild(createGameItemElement(item));
+            });
+        }
+        
+        window.onload = initGame;
+    </script>
+</body>
+</html>
