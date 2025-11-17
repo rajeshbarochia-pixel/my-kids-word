@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>વધારે કે ઓછું પક્ષી ગણતરીની રમત</title>
+    <!-- Tailwind CSS for styling --><script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* કસ્ટમ સ્ટાઇલિંગ */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background-color: #e0f7fa; /* આછો વાદળી બેકગ્રાઉન્ડ */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 768px;
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        /* પ્રશ્ન કાર્ડનું સ્ટાઇલિંગ */
+        .question-card {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 1rem 0;
+            margin-bottom: 1rem;
+            min-height: 200px; /* કાર્ડની ઊંચાઈ જાળવવા માટે */
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0; /* JS માં ધીમે ધીમે દેખાશે */
+        }
+
+        .group-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 45%;
+            padding: 0.5rem;
+            border-radius: 12px;
+            border: 2px solid #ccc;
+            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            min-height: 150px; /* ટચ માટે પૂરતી જગ્યા */
+            cursor: pointer;
+        }
+
+        .group-box:hover:not(.disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* જ્યારે જવાબ અપાઈ જાય ત્યારે ક્લિક બંધ કરવા માટે */
+        .group-box.disabled {
+            pointer-events: none;
+            cursor: default;
+        }
+
+        .image-display { /* ઇમોજી ડિસ્પ્લે કન્ટેનર */
+            line-height: 1.2;
+            text-align: center;
+            height: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px; /* ગેપ જાળવ્યો */
+            /* ખાતરી કરો કે ઇમોજીસ કલરમાં રેન્ડર થાય */
+            font-family: "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", "Apple Color Emoji", sans-serif;
+        }
+        
+        .emoji-item { /* ઇમોજીસ માટે કસ્ટમ સ્ટાઇલ */
+            font-size: 40px; /* ઇમોજીનું કદ (મોબાઇલ માટે) */
+            line-height: 1; /* લાઇન સ્પેસિંગ */
+            width: 40px; /* ફ્લેક્સ માટે સમાન પહોળાઈ */
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* પ્રશ્નનો ક્રમાંક */
+        .question-number {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #00bcd4;
+        }
+
+
+        .group-box.correct-answer {
+            background-color: #c8e6c9; /* સાચો જવાબ - આછો લીલો */
+            border: 3px solid #4caf50;
+            animation: pulse-correct 0.5s ease-in-out;
+        }
+        
+        .group-box.wrong-answer {
+            background-color: #ffcdd2; /* ખોટો જવાબ - આછો લાલ */
+            border: 3px solid #f44336;
+        }
+        
+        @keyframes pulse-correct {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        /* મોબાઇલ એડજસ્ટમેન્ટ */
+        @media (max-width: 640px) {
+            .image-display { /* મોબાઇલ માટે પણ મોટી સાઈઝ */
+                gap: 5px;
+            }
+            .emoji-item {
+                font-size: 35px; /* મોબાઇલ માટે થોડું નાનું કદ */
+                width: 35px;
+                height: 35px;
+            }
+            .question-card {
+                flex-direction: column;
+                padding: 0.5rem 0;
+            }
+            .group-box {
+                width: 100%;
+                margin: 0.5rem 0;
+                min-height: 100px;
+            }
+        }
+        
+        /* ડેસ્કટોપ માટે વધુ મોટી સાઈઝ (ઓપ્શનલ) */
+        @media (min-width: 769px) {
+            .emoji-item {
+                font-size: 50px; /* ડેસ્કટોપ માટે મોટું કદ */
+                width: 50px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="game-container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6 border-b pb-3">વધારે કે ઓછું? પક્ષી ગણતરીની રમત</h1>
+        
+        <p class="text-lg text-center text-gray-600 mb-6 font-semibold">સૂચના: જે જૂથમાં **વધારે પક્ષીઓ** હોય તેના પર ક્લિક કરો.</p>
+
+        <!-- સંદેશ/સ્થિતિ દર્શાવવા માટેનું ક્ષેત્ર --><div id="message-box" class="text-center p-4 rounded-lg text-white font-bold mb-6 transition duration-300" style="background-color: #3b82f6;">
+            નવી રમત શરૂ કરવા માટે નીચેનું બટન દબાવો.
+        </div>
+
+        <!-- પ્રશ્ન કન્ટેનર (ફક્ત એક પ્રશ્ન અહીં દેખાશે) --><div id="questions-container" class="space-y-4">
+            <!-- પ્રશ્ન અહીં JS દ્વારા ઉમેરવામાં આવશે --></div>
+
+        <!-- નિયંત્રણ બટનો --><div class="flex justify-center mt-8 space-x-4">
+            <button id="new-game-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 transform hover:scale-105">
+                નવી રમત (૪ પ્રશ્નો)
+            </button>
+        </div>
+        
+        <div class="text-center mt-8 text-sm text-gray-500">
+            Created by: Rajesh barochia
+        </div>
+
+    </div>
+
+    <script>
+        // ગ્લોબલ વેરિએબલ્સ
+        let gameData = []; // બધા ૪ પ્રશ્નોનો ડેટા
+        let totalQuestions = 4; // કુલ પ્રશ્નો
+        let currentQuestionIndex = 0; // હાલનો પ્રશ્ન ક્રમાંક (0 થી 3)
+        let correctAnswersCount = 0; // સાચા જવાબોની સંખ્યા
+
+        // DOM એલિમેન્ટ્સ
+        const questionsContainerEl = document.getElementById('questions-container');
+        const messageBox = document.getElementById('message-box');
+        const newGameBtn = document.getElementById('new-game-btn');
+
+        // વિવિધ પક્ષીઓના ઇમોજીસનો સંગ્રહ
+        const birdEmojis = [
+            '🐦', // Bird
+            '🦉', // Owl
+            '🦆', // Duck
+            '🦅', // Eagle
+            '🐧', // Penguin
+            '🦚', // Peacock
+            '🦢', // Swan
+            '🦜', // Parrot
+            '🕊️', // Dove
+            '🐓'  // Rooster
+        ];
+        
+        // ગુજરાતી અંકોનું મેપિંગ
+        const gujaratiNumerals = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'];
+
+
+        // ===================================
+        // યુટિલિટી ફંક્શન્સ
+        // ===================================
+
+        /**
+         * અંગ્રેજી અંકને ગુજરાતી અંકમાં રૂપાંતરિત કરે છે.
+         */
+        function toGujarati(num) {
+            if (num === null || num === undefined) return '';
+            const numStr = String(num); 
+            // માત્ર અંકો માટે જ રૂપાંતરણ કરો
+            return numStr.split('').map(char => {
+                const digit = parseInt(char);
+                return isNaN(digit) ? char : gujaratiNumerals[digit];
+            }).join('');
+        }
+
+        /**
+         * રેન્ડમ નંબર મેળવો (ન્યૂનતમ અને મહત્તમ વચ્ચે)
+         */
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /**
+         * સંદેશ બોક્સમાં સંદેશ પ્રદર્શિત કરે છે.
+         */
+        function showMessage(msg, color) {
+            messageBox.textContent = msg;
+            messageBox.style.backgroundColor = color;
+        }
+
+        // ===================================
+        // રમતની લોજિક
+        // ===================================
+
+        /**
+         * એક પ્રશ્ન માટે રેન્ડમ ડેટા જનરેટ કરે છે.
+         */
+        function generateQuestion(emoji) {
+            let count1;
+            let count2;
+            
+            // તફાવત 1 કે 2 રાખવા માટેની લોજિક
+            do {
+                // 1. count1 ને 1 થી 10 ની રેન્જમાં જનરેટ કરો
+                count1 = getRandomInt(1, 10);
+                
+                // 2. તફાવત 1 કે 2 માંથી પસંદ કરો
+                const difference = getRandomInt(1, 2);
+
+                // 3. રેન્ડમલી count2 ને count1 થી વધારે કે ઓછો નક્કી કરો
+                if (Math.random() < 0.5) {
+                    count2 = count1 + difference;
+                } else {
+                    count2 = count1 - difference;
+                }
+
+                // 4. count2 ની રેન્જ [1, 10] માં જાળવવાની ખાતરી કરો
+                // જો count2 રેન્જની બહાર જાય તો વિરુદ્ધ ઓપરેશન કરો જેથી count1 અને count2 બંને [1, 10] માં રહે.
+                if (count2 < 1 || count2 > 10) {
+                    if (count2 < 1) { // count2 0 અથવા નકારાત્મક હોય (count1 નાનો હતો)
+                         // count2 ને count1 થી મોટો બનાવો, જેથી તે 10 ની અંદર રહેવાની વધુ શક્યતા છે.
+                        count2 = count1 + difference; 
+                    } else { // count2 > 10 હોય (count1 મોટો હતો)
+                        // count2 ને count1 થી નાનો બનાવો, જેથી તે 1 ની ઉપર રહેવાની વધુ શક્યતા છે.
+                        count2 = count1 - difference; 
+                    }
+                }
+                
+                // અહીં ફરી એક વખત ખાતરી કરવાની જરૂર છે કે અંતિમ સંખ્યાઓ રેન્જમાં છે.
+            } while (count1 === count2 || count1 < 1 || count1 > 10 || count2 < 1 || count2 > 10); 
+            // ખાતરી કરો કે સંખ્યાઓ અલગ છે અને રેન્જ [1, 10] માં છે
+
+            
+            // ઇમોજીસનો HTML સ્ટ્રિંગ બનાવો
+            const generateEmojiHtml = (count, item) => {
+                let html = '';
+                // 4x3 ગ્રીડ માટે, ઇમોજીસને વધુ સારી રીતે ગોઠવવા માટે
+                for (let i = 0; i < count; i++) {
+                    // <span> માં ઇમોજી
+                    html += `<span class="emoji-item">${item}</span>`;
+                }
+                return html;
+            };
+
+            const group1Html = generateEmojiHtml(count1, emoji);
+            const group2Html = generateEmojiHtml(count2, emoji);
+
+            const greaterCount = Math.max(count1, count2);
+
+            let groups = [
+                { id: 0, display: group1Html, count: count1 },
+                { id: 1, display: group2Html, count: count2 }
+            ];
+            
+            // 50% શક્યતા છે કે જૂથોની પોઝિશન બદલાઈ જાય
+            if (Math.random() > 0.5) {
+                groups.reverse();
+            }
+            
+            // નવો સાચો જવાબ ઇન્ડેક્સ (પોઝિશનના આધારે)
+            const newCorrectIndex = groups.findIndex(g => g.count === greaterCount);
+
+            return {
+                groups: groups.map(g => g.display),
+                correctIndex: newCorrectIndex,
+                counts: groups.map(g => g.count),
+            };
+        }
+
+        /**
+         * ગેમનું સેટઅપ કરે છે અને પ્રશ્નોને દર્શાવે છે.
+         */
+        function setupGame() {
+            gameData = [];
+            currentQuestionIndex = 0;
+            correctAnswersCount = 0;
+            
+            // 1. ઇમોજીસને શફલ કરો
+            const shuffledEmojis = [...birdEmojis].sort(() => Math.random() - 0.5);
+            
+            // 2. પ્રશ્નોની સંખ્યા જેટલા અનોખા ઇમોજીસ પસંદ કરો અને પ્રશ્ન ડેટા જનરેટ કરો
+            const uniqueEmojis = shuffledEmojis.slice(0, totalQuestions);
+            for (let i = 0; i < totalQuestions; i++) {
+                if (i >= uniqueEmojis.length) break; 
+                const emoji = uniqueEmojis[i]; 
+                const question = generateQuestion(emoji);
+                gameData.push(question);
+            }
+
+            // 3. પ્રથમ પ્રશ્ન રેન્ડર કરો
+            renderCurrentQuestion();
+            showMessage(`નવી રમત શરૂ! ${toGujarati(gameData.length)} પ્રશ્નોના વધારે પક્ષીઓ ધરાવતા જૂથ પર ક્લિક કરો.`, '#3b82f6');
+        }
+
+        /**
+         * હાલના પ્રશ્નને DOM માં રેન્ડર કરે છે.
+         */
+        function renderCurrentQuestion() {
+            questionsContainerEl.innerHTML = '';
+            
+            if (currentQuestionIndex >= gameData.length) {
+                endGame();
+                return;
+            }
+
+            const question = gameData[currentQuestionIndex];
+            const index = currentQuestionIndex;
+
+            const card = document.createElement('div');
+            card.className = 'question-card rounded-xl border-2 border-gray-200 transition duration-300';
+            card.setAttribute('data-index', index);
+            card.style.opacity = '0'; // શરૂઆતમાં છુપાવવું
+            
+            // પ્રશ્ન ક્રમાંક
+            const qNum = document.createElement('div');
+            qNum.className = 'question-number';
+            qNum.textContent = `${toGujarati(index + 1)} / ${toGujarati(gameData.length)}`;
+            card.appendChild(qNum);
+
+            // ગ્રુપ 1
+            const group1 = createGroupBox(question.groups[0], index, 0);
+            // ગ્રુપ 2
+            const group2 = createGroupBox(question.groups[1], index, 1);
+
+            card.appendChild(group1);
+            card.appendChild(group2);
+            questionsContainerEl.appendChild(card);
+            
+            // એનિમેશન: ધીમે ધીમે દેખાય
+            setTimeout(() => {
+                card.style.opacity = '1';
+            }, 10);
+        }
+
+        /**
+         * ઇમોજીસનું જૂથ બોક્સ બનાવે છે.
+         */
+        function createGroupBox(contentHtml, qIndex, gIndex) {
+            const box = document.createElement('div');
+            box.className = 'group-box flex-grow';
+            box.setAttribute('data-group-index', gIndex);
+            
+            const display = document.createElement('div');
+            display.className = 'image-display'; // ઇમોજી ડિસ્પ્લે કન્ટેનર
+            display.innerHTML = contentHtml; // સીધું HTML સ્ટ્રિંગ ઉમેરો
+            
+            box.appendChild(display);
+
+            // ઇવેન્ટ લિસનર
+            box.addEventListener('click', () => handleSelection(qIndex, gIndex, box));
+
+            return box;
+        }
+
+        /**
+         * જ્યારે બાળક કોઈ જૂથ પસંદ કરે છે અને જવાબ ચકાસે છે.
+         */
+        function handleSelection(qIndex, gIndex, clickedBox) {
+            // ખાતરી કરો કે ક્લિક હાલના પ્રશ્ન માટે જ છે
+            if (qIndex !== currentQuestionIndex) return; 
+
+            const questionData = gameData[qIndex];
+            const correctGIndex = questionData.correctIndex;
+            const isCorrect = gIndex === correctGIndex;
+
+            // કાર્ડમાંના બધા બોક્સને disabled કરો
+            const questionCard = clickedBox.closest('.question-card');
+            questionCard.querySelectorAll('.group-box').forEach(box => {
+                box.classList.add('disabled');
+            });
+            
+            // પ્રતિભાવ (Feedback)
+            if (isCorrect) {
+                correctAnswersCount++;
+                clickedBox.classList.add('correct-answer');
+                showMessage(`સાચો જવાબ! 👏 👍`, '#4caf50'); // લીલો
+            } else {
+                clickedBox.classList.add('wrong-answer');
+                
+                // સાચો જવાબ કયો હતો તે બતાવો
+                questionCard.querySelector(`[data-group-index="${correctGIndex}"]`).classList.add('correct-answer');
+                
+                showMessage(`ખોટો જવાબ! 😔 સાચો જવાબ લીલા રંગમાં દર્શાવેલ છે.`, '#f44336'); // લાલ
+            }
+
+            // 1.5 સેકન્ડ પછી નેક્સ્ટ પ્રશ્ન પર જાઓ
+            currentQuestionIndex++;
+            setTimeout(() => {
+                // પ્રશ્ન કાર્ડને અદ્રશ્ય કરો
+                questionCard.style.opacity = '0'; 
+                // અદ્રશ્ય થયા પછી નવો પ્રશ્ન રેન્ડર કરો
+                setTimeout(renderCurrentQuestion, 300); // 300ms પછી નવો પ્રશ્ન લોડ કરો
+            }, 1500);
+        }
+
+        /**
+         * રમત સમાપ્ત થાય ત્યારે અંતિમ સ્કોર દર્શાવે છે.
+         */
+        function endGame() {
+            questionsContainerEl.innerHTML = '';
+            
+            let finalMessage;
+            let finalColor;
+
+            if (correctAnswersCount === gameData.length) {
+                 finalMessage = `👌🏽 🎉 અભિનંદન! તમે બધા જ પ્રશ્નોના સાચા જવાબ આપ્યા (${toGujarati(correctAnswersCount)}/${toGujarati(gameData.length)})!`;
+                 finalColor = '#10b981';
+            } else {
+                 finalMessage = `શાબાશ! રમત સમાપ્ત. તમારો સ્કોર: ${toGujarati(correctAnswersCount)}/${toGujarati(gameData.length)}. ફરી પ્રયાસ કરો.`;
+                 finalColor = '#ff9800';
+            }
+            showMessage(finalMessage, finalColor);
+        }
+
+
+        // ===================================
+        // ઇવેન્ટ લિસનર્સ અને પ્રારંભિક સેટઅપ
+        // ===================================
+
+        // રમત શરૂઆત
+        newGameBtn.addEventListener('click', setupGame);
+        
+        // પ્રારંભિક રમત સેટઅપ
+        window.onload = function() {
+            setupGame();
+        };
+    </script>
+</body>
+</html>
