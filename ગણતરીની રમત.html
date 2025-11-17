@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગણતરીની રમત</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Define global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // FIX: Replaced 'initialAuthToken' with '__initial_auth_token' to access the global variable correctly.
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth;
+        let userId = 'loading'; // Default loading state
+
+        async function initializeFirebase() {
+            try {
+                // Set Firestore log level for debugging
+                setLogLevel('debug');
+                
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase Auth Ready. User ID:", userId);
+                        // Game initialization should happen after auth is ready
+                        window.db = db;
+                        window.auth = auth;
+                        window.userId = userId;
+                        window.game.initGame();
+                    } else {
+                        // This might happen if anonymous sign-in fails, use a fallback random ID
+                        userId = crypto.randomUUID(); 
+                        console.log("Firebase Auth Ready (Anonymous Fallback). User ID:", userId);
+                        window.db = db;
+                        window.auth = auth;
+                        window.userId = userId;
+                        window.game.initGame();
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                // Fallback to starting the game immediately if Firebase setup is critical
+                window.game.initGame();
+            }
+        }
+
+        initializeFirebase();
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans Gujarati', 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .game-card {
+            max-width: 420px;
+            width: 100%;
+        }
+        .item-display {
+            font-size: 2.5rem; /* Larger for better visibility */
+            line-height: 1.5;
+            word-break: break-all;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px; /* Spacing between items */
+            min-height: 150px;
+        }
+        .emoji-item {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        .emoji-item:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container" class="game-card bg-white p-6 md:p-8 rounded-xl shadow-2xl border-t-8 border-indigo-600">
+    <!-- Updated Title and added Creator line -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-center text-indigo-800">ગણતરીની રમત</h1>
+        <p class="text-sm text-center text-gray-500 mt-1">બનાવનાર: રાજેશ બરોચિયા</p>
+    </div>
+    
+    <!-- Scoreboard ONLY (User ID/Name removed) -->
+    <div class="flex justify-center items-center mb-6 p-3 bg-indigo-50 rounded-lg shadow-inner">
+        <p class="text-xl font-semibold text-indigo-700">સ્કોર: <span id="score-display" class="font-bold text-2xl text-indigo-900">0</span></p>
+    </div>
+
+    <!-- Game Prompt -->
+    <div class="mb-6">
+        <p id="game-prompt" class="text-lg text-center text-gray-700 font-medium">લોડ કરી રહ્યું છે...</p>
+    </div>
+
+    <!-- Item Display Area -->
+    <div id="item-display" class="item-display bg-gray-100 p-4 rounded-lg border-2 border-dashed border-gray-300 mb-6">
+        <!-- Emojis will be inserted here -->
+    </div>
+
+    <!-- User Input and Check Button -->
+    <div class="flex flex-col gap-4">
+        <!-- Input now triggers the debounced check on input event -->
+        <input type="number" id="user-input" placeholder="તમારો જવાબ દાખલ કરો" 
+               class="w-full p-3 border-2 border-indigo-300 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-center text-xl"
+               oninput="game.debouncedCheck()">
+        
+        <!-- Button is disabled and only serves as a visual indicator -->
+        <button id="check-button" disabled 
+                class="w-full bg-indigo-400 text-white py-3 rounded-lg text-lg font-semibold shadow-md transition duration-150 ease-in-out">
+            જવાબ આપો (ઓટોમેટિક)
+        </button>
+    </div>
+
+    <!-- Inline Feedback Display (Replaced the modal) -->
+    <div id="inline-feedback-container" class="min-h-12 mt-4 transition-all duration-300 ease-in-out">
+        <p id="feedback-text" class="text-center font-bold text-xl"></p>
+    </div>
+
+</div>
+
+<script>
+    /**
+     * Debounce function utility to limit how often a function is called.
+     * @param {Function} func - The function to call.
+     * @param {number} delay - The delay in milliseconds.
+     */
+    function debounce(func, delay) {
+        let timeoutId;
+        return function(...args) {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                // Check if the input value is present before calling the function
+                const inputValue = document.getElementById('user-input').value.trim();
+                if (inputValue !== '') {
+                    func.apply(this, args);
+                }
+            }, delay);
+        };
+    }
+
+    // Global game object to hold all logic and state
+    const game = {
+        score: 0,
+        targetCount: 0,
+        emojis: [
+            { emoji: '🍎', name: 'સફરજન' },
+            { emoji: '⭐', name: 'તારો' },
+            { emoji: '🚗', name: 'કાર' },
+            { emoji: '📚', name: 'પુસ્તક' },
+            { emoji: '🍦', name: 'આઇસક્રીમ' }
+        ],
+        currentObject: {},
+        minCount: 3,
+        maxCount: 12,
+        feedbackTimeoutId: null, // Timer ID for automatic progression (setTimeout ID)
+        
+        // Will hold the debounced version of checkAnswer
+        debouncedCheck: null, 
+        
+        // DOM Elements
+        scoreDisplay: document.getElementById('score-display'),
+        itemDisplay: document.getElementById('item-display'),
+        gamePrompt: document.getElementById('game-prompt'),
+        userInput: document.getElementById('user-input'),
+        feedbackText: document.getElementById('feedback-text'),
+        checkButton: document.getElementById('check-button'),
+        inlineFeedbackContainer: document.getElementById('inline-feedback-container'),
+
+        initGame() {
+            this.score = 0;
+            this.updateScoreDisplay();
+            this.startNewRound();
+            
+            // Initialize the debounced function for automatic checking (1000ms pause)
+            this.debouncedCheck = debounce(this.checkAnswer.bind(this), 1000);
+        },
+
+        updateScoreDisplay() {
+            this.scoreDisplay.textContent = this.score;
+        },
+
+        startNewRound() {
+            // 1. Select a random object
+            const randomIndex = Math.floor(Math.random() * this.emojis.length);
+            this.currentObject = this.emojis[randomIndex];
+
+            // 2. Generate a random count
+            this.targetCount = Math.floor(Math.random() * (this.maxCount - this.minCount + 1)) + this.minCount;
+
+            // 3. Update the prompt (in Gujarati)
+            this.gamePrompt.innerHTML = `તમે નીચેની સ્ક્રીન પર કેટલા <span class="text-indigo-700 font-extrabold">${this.currentObject.name}</span> જુઓ છો?`;
+
+            // 4. Update the display area
+            this.itemDisplay.innerHTML = ''; // Clear previous items
+            
+            // Create a collection of items (emojis)
+            const itemHTML = Array(this.targetCount).fill().map(() => 
+                `<span class="emoji-item">${this.currentObject.emoji}</span>`
+            ).join('');
+            
+            this.itemDisplay.innerHTML = itemHTML;
+            
+            // 5. Clear the input
+            this.userInput.value = '';
+            this.userInput.focus();
+        },
+
+        checkAnswer() {
+            const userAnswer = parseInt(this.userInput.value.trim());
+
+            // Prevent checking if input is empty/NaN, or if the input is currently disabled (meaning feedback is showing)
+            if (isNaN(userAnswer) || this.userInput.value.trim() === '' || this.userInput.disabled) {
+                return;
+            }
+            
+            if (userAnswer === this.targetCount) {
+                this.score++;
+                this.updateScoreDisplay();
+                this.showFeedback("🎉 સાચો જવાબ!", 'text-green-800', 'bg-green-200');
+            } else {
+                this.showFeedback(`😞 ખોટો જવાબ. સાચો જવાબ છે: ${this.targetCount}`, 'text-red-800', 'bg-red-200');
+            }
+        },
+
+        showFeedback(message, textColor, bgColor) {
+            // Apply dynamic colors and content for inline feedback
+            this.inlineFeedbackContainer.className = `min-h-12 mt-4 p-3 rounded-lg ${bgColor} shadow-md transition-all duration-300 ease-in-out block`;
+            this.feedbackText.className = `text-center font-bold text-xl ${textColor}`;
+            this.feedbackText.textContent = message;
+            
+            // Disable input/button temporarily to prevent multiple submissions
+            this.userInput.disabled = true;
+            this.checkButton.disabled = true;
+
+            // --- AUTOMATIC PROGRESSION LOGIC (2.5 second delay) ---
+            if (this.feedbackTimeoutId) {
+                clearTimeout(this.feedbackTimeoutId);
+            }
+            this.feedbackTimeoutId = setTimeout(() => {
+                this.hideFeedback(); // Start next round after 2.5 seconds
+            }, 2500); 
+        },
+
+        hideFeedback() {
+            // Clear feedback display
+            this.feedbackText.textContent = '';
+            this.inlineFeedbackContainer.className = `min-h-12 mt-4 transition-all duration-300 ease-in-out`;
+            
+            this.userInput.disabled = false;
+            this.checkButton.disabled = false;
+            this.startNewRound();
+        }
+    };
+    
+    // Attach game object to window for global access (needed for inline events and Firebase callback)
+    window.game = game;
+    
+    // If Firebase setup is bypassed or takes too long, ensure game starts
+    if (window.userId === 'loading') {
+        setTimeout(() => {
+            if (window.userId === 'loading') {
+                window.game.initGame();
+            }
+        }, 3000);
+    }
+
+</script>
+
+</body>
+</html>
