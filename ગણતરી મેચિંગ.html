@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગણતરી મેચિંગ રમત</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* કસ્ટમ ફોન્ટ અને સામાન્ય સ્ટાઇલ */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans Gujarati', 'Inter', sans-serif;
+            background-color: #f7f9fb;
+            color: #1f2937;
+            /* નીચેના બેનર માટે જગ્યા રાખો */
+            padding-bottom: 5rem; 
+        }
+
+        /*
+         * ડ્રોપ ઝોન સ્ટાઇલ: નાની સ્ક્રીન પર ફ્લેક્સિબલ બનાવવા માટે
+         */
+        .drop-zone {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e0f2fe; /* Light Blue */
+            border-radius: 12px;
+            min-height: 100px; /* નાની સ્ક્રીન માટે થોડું નાનું */
+            width: 100%; /* નાની સ્ક્રીન માટે સંપૂર્ણ પહોળાઈ */
+            max-width: 120px; /* મોટા સ્ક્રીન માટે મહત્તમ પહોળાઈ */
+            transition: all 0.2s;
+            cursor: default;
+            flex-grow: 1;
+            margin: 4px; /* ગેપ માટે */
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ડ્રેગિંગ ઓવર */
+        .drop-zone.drag-over {
+            border: 3px dashed #3b82f6;
+            background-color: #bfdbfe; 
+        }
+
+        /* સાચો મેચ - વિઝ્યુઅલ ફીડબેક */
+        .drop-zone.correct-match {
+            border: 3px solid #10b981; /* Green */
+            background-color: #d1fae5; /* Light Green */
+            animation: pulse-green 0.5s ease;
+        }
+
+        /* ખોટો મેચ - વિઝ્યુઅલ ફીડબેક */
+        .drop-zone.incorrect-match {
+            border: 3px solid #ef4444; /* Red */
+            background-color: #fee2e2; /* Light Red */
+            animation: shake-red 0.5s ease;
+        }
+        
+        @keyframes pulse-green {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake-red {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        /*
+         * સંખ્યા કાર્ડ સ્ટાઇલ
+         */
+        .number-card {
+            width: 70px; /* નાની સ્ક્રીન માટે થોડું નાનું */
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 2.2rem; /* ફોન્ટ સાઇઝ એડજસ્ટમેન્ટ */
+            font-weight: 700;
+            cursor: grab;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+            transition: transform 0.1s ease-in-out, box-shadow 0.2s;
+            touch-action: none;
+            position: relative;
+            margin: 4px; /* ગેપ માટે */
+        }
+        
+        /* મીડિયા ક્વેરી: મોટા સ્ક્રીન માટે સાઇઝ વધારો */
+        @media (min-width: 640px) {
+            .drop-zone {
+                min-height: 120px;
+                max-width: 140px; 
+            }
+            .number-card {
+                width: 80px; 
+                height: 100px;
+                font-size: 2.5rem;
+            }
+        }
+
+
+        .number-card.dragging {
+            opacity: 0.8;
+            transform: scale(1.1) rotate(2deg);
+            z-index: 100;
+            position: fixed; /* For touch dragging */
+        }
+
+        /* SVG for Dice Dots */
+        .dice-dot {
+            fill: #2563eb;
+            r: 8; 
+        }
+        
+        /* કન્ટેનરને રિસ્પોન્સિવ બનાવો */
+        #drop-container, #drag-container {
+            display: flex; /* ખાતરી કરો કે flex ચાલુ છે */
+            flex-wrap: wrap; /* નાની સ્ક્રીન પર લપેટી (wrap) દો */
+            justify-content: center;
+            gap: 4px; /* CSS માં ગેપ સેટ કર્યો છે, તેથી margin ઓછો કરી શકાય */
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 100%; /* કન્ટેનરને સંપૂર્ણપણે રિસ્પોન્સિવ બનાવો */
+        }
+        
+        /* જ્યારે કાર્ડ ડ્રોપ ઝોનની અંદર હોય ત્યારે કાર્ડ અને SVG ને યોગ્ય રીતે સંચાલિત કરવા માટે */
+        .drop-zone .number-card {
+            position: absolute;
+            z-index: 5; 
+            margin: 0;
+        }
+        .drop-zone svg {
+            opacity: 0.3; 
+            transition: opacity 0.3s;
+        }
+        .drop-zone:has(.number-card) svg {
+            opacity: 0.3; 
+        }
+
+        /* * નવી મેસેજ બેનર સ્ટાઇલ (મોડલને બદલે)
+         * - બોક્સ દૂર કર્યું, નીચેની કિનારી પર ફિક્સ કર્યું.
+         */
+        #message-box {
+            bottom: 0;
+            left: 0;
+            right: 0;
+            /* છુપાયેલ સ્થિતિ: નીચે સ્લાઇડ કરો */
+            transform: translateY(100%); 
+            transition: transform 0.5s ease-out;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            z-index: 50;
+        }
+        #message-box.show {
+            /* દૃશ્યમાન સ્થિતિ: ઉપર સ્લાઇડ કરો */
+            transform: translateY(0); 
+        }
+        
+        /* મેસેજ બેનરના રંગો */
+        #message-box.bg-success {
+            background-color: #10b981; /* Green */
+            color: white;
+        }
+        #message-box.bg-error {
+            background-color: #ef4444; /* Red */
+            color: white;
+        }
+        #message-box.bg-info {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+        }
+        #message-box h3, #message-box p {
+            /* ખાતરી કરો કે લખાણનો રંગ વારસામાં મળે છે */
+            color: inherit; 
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-2xl md:text-3xl font-bold text-center mb-2 text-purple-700">સંખ્યા અને ગણતરીની રમત</h1>
+        
+        <!-- બનાવનાર નું નામ અને રાઉન્ડ સ્ટેટસ -->
+        <p class="text-center text-sm text-gray-500 mb-4">
+            Created by: Rajesh barochia | રાઉન્ડ: <span id="round-status">1/3</span>
+        </p>
+
+        <!-- સૂચના -->
+        <p class="text-center text-gray-600 mb-6 font-semibold" id="game-instruction">
+            સંખ્યા કાર્ડને તેની સાથે મળતા ચિત્ર (પાંસાના ટપકાં) પર ખેંચો અને છોડો.
+        </p>
+
+        <!-- ડ્રોપ ઝોન (ગણતરીના ચિત્રો) -->
+        <div id="drop-container" class="flex justify-center mb-8">
+            <!-- ચિત્રો અહીં JS દ્વારા લોડ થશે -->
+        </div>
+
+        <!-- ડ્રેગ એરિયા (સંખ્યા કાર્ડ) -->
+        <div id="drag-container" class="flex justify-center flex-wrap pt-4 border-t-2 border-gray-200">
+            <!-- સંખ્યા કાર્ડ અહીં JS દ્વારા લોડ થશે -->
+        </div>
+        
+        <!-- બટન અને સંદેશ વિસ્તાર -->
+        <div class="text-center mt-8 space-x-4">
+            <button id="check-button" onclick="checkAll()" class="px-8 py-3 bg-green-500 text-white font-bold rounded-full shadow-lg hover:bg-green-600 transition duration-200 focus:outline-none focus:ring-4 focus:ring-green-300 transform hover:scale-105">
+                બધા તપાસો
+            </button>
+            <!-- આગલો રાઉન્ડ બટન હવે છુપાયેલું જ રહેશે અને માત્ર મેસેજ બોક્સ દ્વારા લોડ થશે -->
+        </div>
+        
+        <!-- મેસેજ બોક્સ (ભૂલ/સમાપ્તિ સંદેશ માટે) - હવે તળિયે ફિક્સ બેનર તરીકે -->
+        <!-- overlay દૂર કર્યું -->
+        <div id="message-box" data-action="" class="fixed bottom-0 left-0 right-0 z-50 transform translate-y-full transition-transform duration-500 p-4 shadow-2xl">
+            <div class="max-w-xl mx-auto flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <div class="flex-grow text-center sm:text-left">
+                    <h3 id="message-title" class="text-lg font-bold"></h3>
+                    <p id="message-text" class="text-sm"></p>
+                </div>
+                <!-- બટન -->
+                <button onclick="hideMessage(true)" class="flex-shrink-0 w-full sm:w-auto px-4 py-2 bg-white text-gray-800 rounded-full hover:bg-gray-100 font-semibold text-sm shadow">
+                    બરાબર
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        const DROP_CONTAINER = document.getElementById('drop-container');
+        const DRAG_CONTAINER = document.getElementById('drag-container');
+        const CHECK_BUTTON = document.getElementById('check-button');
+        // const NEXT_GAME_BUTTON = document.getElementById('next-game-button'); // હવે આ બટનનો ઉપયોગ નહીં થાય
+        const INSTRUCTION = document.getElementById('game-instruction');
+        // OVERLAY દૂર કર્યું
+        const MESSAGE_BOX = document.getElementById('message-box');
+        const ROUND_STATUS = document.getElementById('round-status');
+        
+        // હવે 1 થી 10 સુધીના અંકોનો ઉપયોગ કરો
+        const ALL_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        const GAME_SIZE = 3; // એક સમયે 3 કાર્ડ્સ
+        const MAX_ROUNDS = 3;
+        
+        let currentNumbers = []; // વર્તમાન ગેમ માટે રેન્ડમલી પસંદ કરેલા અંકો
+        let draggedId = null;
+        let playedNumbers = new Set(); // જે અંકોનો ઉપયોગ થઈ ચૂક્યો છે તેનો ટ્રૅક રાખો
+        let currentRound = 1;
+
+        // =================================================================
+        // SVG રેન્ડરિંગ કાર્યો
+        // =================================================================
+
+        /**
+         * પાંસાના ટપકાં (Dice Dots) માટે SVG જનરેટ કરે છે.
+         * @param {number} count - ટપકાંની સંખ્યા (1 થી 10).
+         */
+        function getDiceSVG(count) {
+            let dots = [];
+            const p = (x, y) => ({ x: x, y: y }); // શૉર્ટહેન્ડ
+            
+            // 100x100 ગ્રીડ પર ટપકાંની સ્થિતિ (મધ્યબિંદુ 50, 50)
+            const positions = {
+                1: [p(50, 50)],
+                2: [p(30, 30), p(70, 70)],
+                3: [p(30, 30), p(50, 50), p(70, 70)],
+                4: [p(30, 30), p(70, 30), p(30, 70), p(70, 70)],
+                5: [p(30, 30), p(70, 30), p(30, 70), p(70, 70), p(50, 50)],
+                6: [p(30, 30), p(70, 30), p(30, 50), p(70, 50), p(30, 70), p(70, 70)],
+                7: [p(30, 30), p(70, 30), p(30, 50), p(70, 50), p(30, 70), p(70, 70), p(50, 70)],
+                8: [p(30, 30), p(70, 30), p(30, 50), p(70, 50), p(30, 70), p(70, 70), p(50, 30), p(50, 70)],
+                9: [p(30, 30), p(70, 30), p(30, 50), p(70, 50), p(30, 70), p(70, 70), p(50, 30), p(50, 50), p(50, 70)],
+                // 10 માટે પોઝિશન અપડેટ કરી
+                10: [p(20, 30), p(80, 30), p(20, 50), p(80, 50), p(20, 70), p(80, 70), p(50, 30), p(50, 70), p(50, 10), p(50, 90)],
+            };
+
+            if (positions[count]) {
+                dots = positions[count].map(p => 
+                    `<circle class="dice-dot" cx="${p.x}" cy="${p.y}" r="8"/>`
+                ).join('');
+            }
+
+            // SVG ને ડ્રોપ ઝોન કરતા થોડું નાનું બનાવવા માટે viewBox નો ઉપયોગ
+            return `<svg class="w-full h-full p-4" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                        <rect x="5" y="5" width="90" height="90" fill="none" stroke="#2563eb" stroke-width="2" rx="10"/>
+                        ${dots}
+                    </svg>`;
+        }
+        
+        // =================================================================
+        // HTML ઘટકો બનાવવાનું કાર્ય
+        // =================================================================
+        
+        /**
+         * ગણતરી ચિત્ર ડ્રોપ ઝોન બનાવે છે.
+         * @param {number} count - ચિત્રમાં દર્શાવવાની સંખ્યા (1-10).
+         */
+        function createDropZone(count) {
+            const dropZone = document.createElement('div');
+            dropZone.id = `drop-${count}`;
+            dropZone.classList.add('drop-zone', `dice-theme`); 
+            dropZone.setAttribute('data-target', count);
+
+            const svgHTML = getDiceSVG(count);
+            dropZone.innerHTML = svgHTML;
+
+            // ડ્રેગ અને ડ્રોપ ઇવેન્ટ લિસનર્સ
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+            dropZone.addEventListener('drop', handleDrop);
+            
+            return dropZone;
+        }
+
+        /**
+         * ડ્રેગેબલ સંખ્યા કાર્ડ બનાવે છે.
+         * @param {number} number - કાર્ડ પર દર્શાવવાની સંખ્યા (1-10).
+         */
+        function createNumberCard(number) {
+            const card = document.createElement('div');
+            card.id = `drag-${number}`;
+            card.classList.add('number-card');
+            card.setAttribute('draggable', 'true');
+            card.setAttribute('data-value', number);
+            card.textContent = number;
+
+            // કાર્ડને રેન્ડમ કલર આપો
+            const colors = [
+                'bg-pink-300', 'bg-yellow-300', 'bg-lime-300', 'bg-cyan-300', 'bg-indigo-300', 
+                'bg-red-300', 'bg-purple-300', 'bg-orange-300', 'bg-teal-300', 'bg-gray-300'
+            ];
+            const randomColor = colors[number % colors.length]; // નંબરના આધારે કલર
+            card.classList.add(randomColor);
+            
+            // ડ્રેગ ઇવેન્ટ લિસનર્સ
+            card.addEventListener('dragstart', (e) => {
+                draggedId = card.id;
+                e.dataTransfer.setData('text/plain', draggedId);
+                setTimeout(() => card.classList.add('dragging'), 0);
+            });
+            card.addEventListener('dragend', () => {
+                const draggedElement = document.getElementById(draggedId);
+                if (draggedElement) {
+                    draggedElement.classList.remove('dragging');
+                    // જો કાર્ડ હજુ પણ ડ્રોપ ઝોનમાં ન હોય, તો તેને ડ્રેગ કન્ટેનરમાં પાછું મોકલો
+                    if (draggedElement.parentNode.closest('.drop-zone') === null) {
+                        DRAG_CONTAINER.appendChild(draggedElement);
+                    }
+                }
+                draggedId = null;
+            });
+            
+            // ટચ ઇવેન્ટ લિસનર્સ
+            card.addEventListener('touchstart', (e) => handleTouchStart(e, card));
+
+            return card;
+        }
+
+        // =================================================================
+        // ડ્રેગ/ડ્રોપ/ટચ લોજિક
+        // =================================================================
+
+        function removeFeedback(zone) {
+            zone.classList.remove('correct-match', 'incorrect-match');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const dropZone = e.currentTarget;
+            dropZone.classList.remove('drag-over');
+            removeFeedback(dropZone); 
+
+            const draggedElement = document.getElementById(draggedId);
+            if (!draggedElement) return;
+
+            // ટચ/ડ્રેગ દરમિયાન લાગુ કરાયેલ પોઝિશન દૂર કરો
+            draggedElement.style.position = '';
+            draggedElement.style.left = '';
+            draggedElement.style.top = '';
+
+            const cardValue = parseInt(draggedElement.getAttribute('data-value'));
+            const targetValue = parseInt(dropZone.getAttribute('data-target'));
+            
+            // જો કાર્ડ સાચું હોય તો જ ડ્રોપ ઝોન પર મૂકો
+            if (cardValue === targetValue) {
+                // 1. સફળતા ફીડબેક આપો
+                dropZone.classList.add('correct-match');
+                setTimeout(() => removeFeedback(dropZone), 1000); 
+
+                // 2. પહેલાનું કાર્ડ દૂર કરો (જો હોય તો)
+                const existingCard = dropZone.querySelector('.number-card');
+                if (existingCard && existingCard !== draggedElement) {
+                    DRAG_CONTAINER.appendChild(existingCard); // જૂના કાર્ડને પાછું મોકલો
+                }
+                
+                // 3. નવા કાર્ડને મૂકો
+                dropZone.appendChild(draggedElement);
+                draggedElement.classList.remove('dragging');
+            } else {
+                // 1. ભૂલ ફીડબેક આપો
+                dropZone.classList.add('incorrect-match');
+                setTimeout(() => removeFeedback(dropZone), 1000); 
+
+                // 2. કાર્ડને પાછું ડ્રેગ કન્ટેનરમાં મોકલો
+                if (draggedElement.parentNode !== DRAG_CONTAINER) {
+                   DRAG_CONTAINER.appendChild(draggedElement);
+                }
+                draggedElement.classList.remove('dragging');
+            }
+        }
+        
+        let activeCard = null;
+        let startX, startY;
+        
+        function handleTouchStart(e, card) {
+            e.preventDefault();
+            activeCard = card;
+            draggedId = card.id;
+            card.classList.add('dragging');
+            
+            // કાર્ડની શરૂઆતની સ્થિતિ (original position) સંગ્રહિત કરો
+            const rect = card.getBoundingClientRect();
+            startX = rect.left;
+            startY = rect.top;
+
+            const offsetX = e.touches[0].clientX - rect.left;
+            const offsetY = e.touches[0].clientY - rect.top;
+            
+            // કાર્ડને body માં મૂકવું
+            document.body.appendChild(card);
+            card.style.position = 'fixed';
+            card.style.zIndex = 1000;
+            
+            function moveHandler(e) {
+                const moveTouch = e.touches[0];
+                
+                // કાર્ડને ટચ પોઝિશન પર ફેરવો
+                activeCard.style.left = `${moveTouch.clientX - offsetX}px`; 
+                activeCard.style.top = `${moveTouch.clientY - offsetY}px`;
+
+                // ડ્રોપ ઝોન હાઇલાઇટિંગ
+                const target = document.elementFromPoint(moveTouch.clientX, moveTouch.clientY);
+                document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.remove('drag-over'));
+
+                if (target && target.closest('.drop-zone')) {
+                    target.closest('.drop-zone').classList.add('drag-over');
+                }
+            }
+
+            function endHandler(e) {
+                document.removeEventListener('touchmove', moveHandler);
+                document.removeEventListener('touchend', endHandler);
+                
+                activeCard.classList.remove('dragging');
+                
+                const endTouch = e.changedTouches[0];
+                
+                // અંતિમ ટચ પોઝિશન પરના એલિમેન્ટને શોધો
+                activeCard.style.visibility = 'hidden';
+                const targetElement = document.elementFromPoint(endTouch.clientX, endTouch.clientY);
+                activeCard.style.visibility = 'visible';
+                
+                const dropZone = targetElement ? targetElement.closest('.drop-zone') : null;
+
+                document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.remove('drag-over'));
+                
+                if (dropZone) {
+                    // ડ્રોપ ઇવેન્ટની જેમ જ હેન્ડલ કરો
+                    handleDrop({ preventDefault: () => {}, currentTarget: dropZone });
+                } else {
+                    // જો કોઈ ડ્રોપ ઝોન પર ન છોડ્યું હોય, તો કાર્ડને પાછું ડ્રેગ કન્ટેનરમાં મોકલો
+                    DRAG_CONTAINER.appendChild(activeCard);
+                    activeCard.style.position = '';
+                    activeCard.style.left = '';
+                    activeCard.style.top = '';
+                }
+                activeCard = null;
+                draggedId = null;
+            }
+
+            document.addEventListener('touchmove', moveHandler, { passive: false });
+            document.addEventListener('touchend', endHandler, { once: true });
+        }
+
+
+        // =================================================================
+        // ગેમ લોજિક
+        // =================================================================
+        
+        /**
+         * કસ્ટમ મેસેજ બેનર દર્શાવે છે.
+         * @param {string} title - મેસેજનું શીર્ષક.
+         * @param {string} message - મેસેજનું લખાણ.
+         * @param {string} type - મેસેજનો પ્રકાર (green/red/blue).
+         * @param {string} action - મેસેજ બંધ થયા પછી લેવાની ક્રિયા ('next' અથવા 'restart').
+         */
+        function showMessage(title, message, type, action) {
+            document.getElementById('message-title').textContent = title;
+            document.getElementById('message-text').innerHTML = message;
+            
+            MESSAGE_BOX.setAttribute('data-action', action || ''); 
+            
+            // જૂના બેનર રંગો દૂર કરો અને નવો રંગ ઉમેરો
+            MESSAGE_BOX.classList.remove('bg-success', 'bg-error', 'bg-info'); 
+            
+            if (type === 'green') {
+                MESSAGE_BOX.classList.add('bg-success');
+            } else if (type === 'red') {
+                MESSAGE_BOX.classList.add('bg-error');
+            } else {
+                 MESSAGE_BOX.classList.add('bg-info');
+            }
+
+            // બેનરને દૃશ્યમાન કરો (CSS ટ્રાન્ઝિશન દ્વારા સ્લાઇડ અપ થશે)
+            MESSAGE_BOX.classList.add('show');
+        }
+
+        /**
+         * કસ્ટમ મેસેજ બેનર છુપાવે છે અને જો જરૂરી હોય તો ગેમ લોજિક ચલાવે છે.
+         * @param {boolean} triggerAction - શું મેસેજ બંધ થયા પછીની ક્રિયા ચલાવવી.
+         */
+        window.hideMessage = function(triggerAction) {
+            // બેનર છુપાવો (CSS ટ્રાન્ઝિશન દ્વારા સ્લાઇડ ડાઉન થશે)
+            MESSAGE_BOX.classList.remove('show');
+            
+            const action = MESSAGE_BOX.getAttribute('data-action');
+            
+            // સ્લાઇડ-ડાઉન ટ્રાન્ઝિશન પૂર્ણ થવા માટે રાહ જુઓ
+            setTimeout(() => {
+                if (triggerAction && action === 'next') {
+                    // આગલા રાઉન્ડ માટે લોડ કરો
+                    loadNextGame(false);
+                } else if (triggerAction && action === 'restart') {
+                    // ગેમ રીસેટ કરો
+                    loadNextGame(true);
+                }
+                MESSAGE_BOX.setAttribute('data-action', ''); // ક્રિયા રીસેટ કરો
+            }, 500); // 500ms એ CSS માં સેટ કરેલ transition-duration સાથે મેચ થાય છે
+        }
+
+        /**
+         * તપાસો કે બધા કાર્ડ સાચા સ્થાન પર છે કે નહીં.
+         */
+        window.checkAll = function() {
+            const dropZones = Array.from(DROP_CONTAINER.querySelectorAll('.drop-zone'));
+            
+            // પહેલા ખાતરી કરો કે બધા ડ્રોપ ઝોન ભરાઈ ગયા છે
+            const allFilled = dropZones.every(zone => zone.querySelector('.number-card'));
+            
+            if (!allFilled) {
+                // મેસેજ બંધ થયા પછી કોઈ ક્રિયા નથી
+                showMessage('અપૂર્ણ!', 'કૃપા કરીને પહેલા બધા કાર્ડને ચિત્રો પર ખેંચીને મૂકો.', 'red', ''); 
+                return;
+            }
+
+            const isCorrect = dropZones.every(zone => {
+                const card = zone.querySelector('.number-card'); 
+                const targetValue = parseInt(zone.getAttribute('data-target'));
+                const cardValue = parseInt(card.getAttribute('data-value'));
+                return targetValue === cardValue;
+            });
+
+            if (isCorrect) {
+                CHECK_BUTTON.disabled = true;
+                CHECK_BUTTON.classList.replace('bg-green-500', 'bg-gray-400');
+
+                // રાઉન્ડ સમાપ્ત
+                if (currentRound < MAX_ROUNDS) {
+                    // મેસેજ બંધ થયા પછી 'next' ક્રિયા
+                    showMessage('રાઉન્ડ ' + currentRound + ' પૂર્ણ!', 'તમારા જવાબો સાચા છે! આગલા રાઉન્ડ માટે તૈયાર થાઓ.', 'green', 'next');
+                } else {
+                    // ફાઇનલ રાઉન્ડ સમાપ્ત
+                    // મેસેજ બંધ થયા પછી 'restart' ક્રિયા
+                    showMessage('અભિનંદન!', 'તમે ત્રણેય રાઉન્ડ સફળતાપૂર્વક પૂર્ણ કર્યા છે! Created by: Rajesh barochia', 'green', 'restart');
+                }
+            } else {
+                // ખોટો જવાબ - મેસેજ બંધ થયા પછી કોઈ ક્રિયા નથી
+                showMessage('ફરી પ્રયાસ કરો.', 'તમારા કેટલાક કાર્ડ ખોટા સ્થાન પર છે. ખોટા કાર્ડને ખેંચીને પાછા મૂકો અને ફરી પ્રયાસ કરો.', 'red', '');
+            }
+        }
+        
+        /**
+         * આગલી ગેમ/રાઉન્ડ લોડ કરે છે અથવા રીસેટ કરે છે.
+         * @param {boolean} shouldRestart - જો સાચું હોય તો ગેમ સંપૂર્ણપણે રીસેટ થશે.
+         */
+        function loadNextGame(shouldRestart) {
+            if (shouldRestart) {
+                // ગેમ રીસેટ કરો
+                currentRound = 1;
+                playedNumbers = new Set();
+            } else {
+                // આગલો રાઉન્ડ લોડ કરો
+                currentRound++;
+            }
+            
+            fetchNewNumbers();
+            initGame();
+        }
+
+        /**
+         * 1 થી 10 માંથી 3 અનન્ય નંબરો પસંદ કરે છે જેનો અગાઉ ઉપયોગ થયો ન હોય.
+         */
+        function fetchNewNumbers() {
+             const availableNumbers = ALL_NUMBERS.filter(n => !playedNumbers.has(n));
+             
+             // જો ઉપલબ્ધ સંખ્યાઓ 3 કરતા ઓછી હોય, તો વપરાયેલી સંખ્યાઓમાંથી પસંદગી કરવી પડશે
+             if (availableNumbers.length < GAME_SIZE) {
+                 const allNumbersShuffled = [...ALL_NUMBERS].sort(() => Math.random() - 0.5);
+                 currentNumbers = allNumbersShuffled.slice(0, GAME_SIZE);
+                 // આદર્શ રીતે, અહીં playedNumbers ને સંપૂર્ણપણે રીસેટ કરવું જોઈએ જો બધા નંબરો વપરાઈ ગયા હોય.
+                 playedNumbers = new Set(currentNumbers); 
+                 return;
+             }
+             
+             const shuffledAvailable = availableNumbers.sort(() => Math.random() - 0.5);
+             currentNumbers = shuffledAvailable.slice(0, GAME_SIZE);
+             currentNumbers.forEach(n => playedNumbers.add(n));
+        }
+
+
+        /**
+         * ગેમ શરૂ કરો/રીસેટ કરો.
+         */
+        function initGame() {
+            DROP_CONTAINER.innerHTML = '';
+            DRAG_CONTAINER.innerHTML = '';
+            CHECK_BUTTON.disabled = false;
+            CHECK_BUTTON.classList.replace('bg-gray-400', 'bg-green-500');
+            
+            ROUND_STATUS.textContent = `${currentRound}/${MAX_ROUNDS}`;
+
+            const shuffledNumbersForDrop = [...currentNumbers].sort(() => Math.random() - 0.5);
+            
+            // 1. ડ્રોપ ઝોન લોડ કરો (ગણતરીના ચિત્રો)
+            shuffledNumbersForDrop.forEach(number => {
+                DROP_CONTAINER.appendChild(createDropZone(number));
+            });
+
+            // 2. ડ્રેગ કાર્ડ લોડ કરો (સંખ્યાઓ)
+            const shuffledNumbersForDrag = [...currentNumbers].sort(() => Math.random() - 0.5);
+            shuffledNumbersForDrag.forEach(number => {
+                DRAG_CONTAINER.appendChild(createNumberCard(number));
+            });
+            
+            // 3. સૂચના અપડેટ કરો
+            INSTRUCTION.textContent = 'સંખ્યા કાર્ડને તેની સાથે મળતા ચિત્ર (પાંસાના ટપકાં) પર ખેંચો અને છોડો.';
+        }
+        
+        // ગેમ શરૂ કરો
+        window.onload = function() {
+            fetchNewNumbers(); // પ્રથમ રાઉન્ડ માટે નંબરો પસંદ કરો
+            initGame();
+        };
+    </script>
+</body>
+</html>
