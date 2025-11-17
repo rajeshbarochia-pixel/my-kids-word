@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>જાણીતો જાદુઈ દીપાવલી દીવો</title>
+    <!-- Tailwind CSS CDN લોડ કરો -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 'Inter' ફોન્ટનો ઉપયોગ કરો -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        /* ગુજરાતી અક્ષર સાફ દેખાય તે માટે ફોન્ટ ઉમેર્યો */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #05050f; /* ઘેરો વાદળી-કાળો બેકગ્રાઉન્ડ */
+            min-height: 100vh; /* દીવાને સેન્ટર કરવા માટે */
+            transition: background-color 1s ease-in-out;
+        }
+
+        /* દીવા માટે કસ્ટમ CSS */
+        .diya-container {
+            width: 160px; /* દીવાનો આકાર વધાર્યો */
+            height: 120px;
+            position: relative;
+            margin: 40px;
+            cursor: pointer;
+            transition: transform 0.3s ease, filter 0.3s ease;
+            filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+        }
+
+        .diya-container:hover {
+            transform: scale(1.05) translateY(-5px); /* ક્લિક કરવા યોગ્ય અનુભવ કરાવવા માટે હળવો ઉછાળ */
+        }
+
+        /* દીવાનો મુખ્ય ભાગ - માટીના વાસણ જેવો, વધુ ગોળાકાર */
+        .diya-body {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(to bottom, #7a3d16, #a0522d); /* ટેરાકોટા ગ્રેડિયન્ટ */
+            border-radius: 0 0 80px 80px / 0 0 30px 30px;
+            box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.7);
+        }
+
+        /* દીવાની કિનારી/વાટકો */
+        .diya-rim {
+            position: absolute;
+            top: 55px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            height: 15px;
+            background: #8b4513; /* ઘેરો ભૂરો */
+            border-radius: 50% 50% 0 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 3px 5px rgba(255, 255, 255, 0.2);
+            z-index: 5;
+        }
+
+        /* તેલનો ઇફેક્ટ */
+        .oil-effect {
+            position: absolute;
+            top: 58px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 5px;
+            background: #4b371c; /* ઘેરા તેલનો રંગ */
+            border-radius: 50%;
+            z-index: 6;
+        }
+        
+        /* દીવાની વાટ (Wick) */
+        .wick {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 20px;
+            background-color: #333; /* વાટનો રંગ */
+            border-radius: 3px 3px 0 0;
+            z-index: 10;
+            transition: background-color 0.3s;
+        }
+
+        /* દીવો સળગે ત્યારે વાટનો રંગ */
+        .lit .wick {
+            background-color: #fff;
+            box-shadow: 0 0 5px #fff;
+        }
+
+        /* --- છટા (Halo) ઇફેક્ટ --- */
+        .diya-halo {
+            position: absolute;
+            top: 50px; 
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 50px;
+            background: radial-gradient(circle at center, rgba(255, 180, 0, 0.6) 0%, transparent 60%);
+            border-radius: 50%;
+            filter: blur(20px);
+            z-index: 15;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        /* દીવો સળગે ત્યારે છટા */
+        .lit .diya-halo {
+            opacity: 1;
+            animation: halo-pulse 2s infinite alternate;
+        }
+
+        @keyframes halo-pulse {
+            0% { transform: translate(-50%, -50%) scale(1.0); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+
+        /* જ્યોત (Flame) */
+        .flame {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 25px;
+            border-radius: 50% 50% 50% 50% / 80% 80% 20% 20%;
+            background: #ffaa00;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
+        }
+
+        /* જ્યોતની અંદરનો ભાગ */
+        .flame::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50%;
+            height: 50%;
+            background: #ffffff;
+            border-radius: 50%;
+            filter: blur(1px);
+        }
+
+        /* ઝબૂકવું (Flicker) એનિમેશન */
+        @keyframes flicker {
+            0% { box-shadow: 0 0 15px 3px rgba(255, 165, 0, 0.9), 0 -8px 20px 8px rgba(255, 255, 0, 0.7); transform: translateX(-50%) scale(1.0); }
+            33% { box-shadow: 0 0 12px 2px rgba(255, 140, 0, 0.8), 0 -7px 18px 7px rgba(255, 255, 0, 0.6); transform: translateX(-50%) scale(0.99) translateY(0.5px); }
+            66% { box-shadow: 0 0 18px 4px rgba(255, 180, 0, 1), 0 -9px 22px 9px rgba(255, 255, 0, 0.8); transform: translateX(-50%) scale(1.01) translateY(-0.5px); }
+            100% { box-shadow: 0 0 15px 3px rgba(255, 165, 0, 0.9), 0 -8px 20px 8px rgba(255, 255, 0, 0.7); transform: translateX(-50%) scale(1.0); }
+        }
+
+        /* દીવો સળગે ત્યારે જ્યોતની સ્ટાઇલ અને એનિમેશન */
+        .lit .flame {
+            opacity: 1;
+            background: radial-gradient(circle at 50% 90%, #ffeb3b 0%, #ff9800 60%, #f44336 100%);
+            animation: flicker 0.2s infinite alternate;
+        }
+
+        /* ગ્લોબલ ચમક (Ambient Glow) */
+        #global-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            pointer-events: none;
+            transition: background 1s ease-in-out;
+            z-index: 1;
+        }
+
+        /* દીવો સળગે ત્યારે ગ્લોબલ ચમક */
+        body.lit-page #global-glow {
+            background: radial-gradient(circle at center, rgba(255, 165, 0, 0.15) 0%, transparent 40%);
+        }
+
+        /* --- જાદુઈ અક્ષર (Magic Text) CSS --- */
+        #magic-text-overlay {
+            position: absolute;
+            top: 0; /* દીવાના ઉપરના ભાગથી શરૂ થાય */
+            left: 50%;
+            transform: translateX(-50%) translateY(0); /* શરૂઆતની સ્થિતિ */
+            color: #ffcc00; /* સોનેરી પીળો */
+            font-size: 3rem; /* મોટો અક્ષર */
+            opacity: 0;
+            font-family: 'Noto Sans Gujarati', sans-serif; /* ગુજરાતી અક્ષર માટે */
+            text-shadow: 0 0 10px rgba(255, 223, 0, 1), 0 0 20px rgba(255, 165, 0, 0.8);
+            z-index: 50;
+            font-weight: 700;
+            pointer-events: none;
+            transition: all 0.1s ease-out; /* ટ્રાન્ઝિશન ક્લાસ દ્વારા નિયંત્રિત થશે */
+        }
+
+        /* ઉપર ઊઠવાનો અને દેખાવાનો એનિમેશન ક્લાસ */
+        .magic-emerge {
+            opacity: 1 !important;
+            transform: translateX(-50%) translateY(-120px) !important; /* ઉપર તરફ ઊઠવું */
+            transition: all 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8 flex flex-col items-center justify-center">
+
+    <!-- ગ્લોબલ ચમક તત્વ (સૌથી પાછળ) -->
+    <div id="global-glow"></div>
+
+    <!-- એકલ દીવા કન્ટેનર (સેન્ટરમાં) - અહીં position:relative ઉમેર્યું છે -->
+    <div id="diya-single-container" class="relative flex justify-center items-center w-full z-20">
+        <!-- અહીં એકલ દીવો જનરેટ થશે (JS દ્વારા) -->
+        <!-- જાદુઈ અક્ષર ઓવરલે (Diya કન્ટેનરની સાપેક્ષ) -->
+        <div id="magic-text-overlay"></div>
+    </div>
+    
+    <!-- જાદુઈ અક્ષર પ્રગટ કરવાનો સંદેશ (દીવાની નીચે, બટનની ઉપર) -->
+    <div id="reveal-message-container" class="mt-4 h-8 flex justify-center items-center z-30">
+        <p id="reveal-message-text" class="text-xl text-yellow-400 font-extrabold opacity-0 transition-opacity duration-300"></p>
+    </div>
+
+    <!-- બટન કન્ટેનર -->
+    <div class="mt-8 z-30 flex flex-col items-center">
+        <button id="next-character-button" class="hidden px-6 py-3 bg-yellow-500 text-gray-900 font-bold rounded-full shadow-lg hover:bg-yellow-400 transition transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mb-4">
+            અક્ષર પ્રગટ કરો
+        </button>
+        <!-- યુઝર દ્વારા વિનંતી કરેલ સહી -->
+        <p class="text-xs text-yellow-500/70 mt-2">Created by : Rajesh Barochia</p>
+    </div>
+
+    <!-- મેસેજ બોક્સ (alert() ની જગ્યાએ) -->
+    <div id="message-box" class="fixed top-5 left-1/2 transform -translate-x-1/2 p-3 bg-yellow-600 text-gray-900 rounded-lg shadow-xl z-50 transition duration-300 opacity-0 pointer-events-none">
+        <p id="message-text" class="font-semibold"></p>
+    </div>
+
+    <script type="module">
+        // ફાયરબેઝ ઇમ્પોર્ટ્સ
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // એપ્લિકેશન ID અને ફાયરબેઝ કન્ફિગરેશનને સુરક્ષિત રીતે એક્સેસ કરવું
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth;
+        const SINGLE_DIYA_ID = 'main-diya-1';
+        
+        // જાદુઈ અક્ષર માટે ગ્લોબલ સ્ટેટ (ફક્ત દીવો સળગ્યો છે કે નહીં તે ટ્રૅક કરવા માટે)
+        let magicCharacterIndex = -1; 
+        // યુઝર દ્વારા વિનંતી કરાયેલ 8 ગુજરાતી મૂળાક્ષરો
+        const MAGIC_CHARACTERS = ["ના", "મા", "ગા", "જા", "દા", "રા", "સા", "વા"]; 
+
+        // મેસેજ બોક્સ બતાવવાનું ફંકશન
+        function showMessage(text) {
+            const msgBox = document.getElementById('message-box');
+            const msgText = document.getElementById('message-text');
+            msgText.textContent = text;
+            msgBox.classList.remove('opacity-0', 'pointer-events-none');
+            msgBox.classList.add('opacity-100');
+
+            setTimeout(() => {
+                msgBox.classList.remove('opacity-100');
+                msgBox.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+        
+        // અક્ષર ઓવરલેને રીસેટ કરવાનું ફંકશન
+        const resetMagicTextOverlay = () => {
+            const magicTextElement = document.getElementById('magic-text-overlay');
+            magicTextElement.classList.remove('magic-emerge');
+            // ટ્રાન્ઝિશન તરત રીસેટ કરવા માટે ઇનલાઇન સ્ટાઇલનો ઉપયોગ કરો
+            magicTextElement.style.transition = 'none'; 
+            magicTextElement.style.opacity = '0';
+            magicTextElement.style.transform = 'translateX(-50%) translateY(0)';
+            magicTextElement.textContent = ''; // સામગ્રી સાફ કરો
+            // ટ્રાન્ઝિશન પાછું સેટ કરો
+            setTimeout(() => {
+                 magicTextElement.style.transition = 'all 0.1s ease-out';
+            }, 50); 
+        };
+
+        // આગલો જાદુઈ અક્ષર ડિસ્પ્લે કરવાનું ફંકશન (હવે રેન્ડમ)
+        function displayNextMagicCharacter() {
+            const magicTextElement = document.getElementById('magic-text-overlay');
+            const nextButton = document.getElementById('next-character-button');
+            const revealMessageText = document.getElementById('reveal-message-text'); // નવું તત્વ
+            
+            // 1. રીસેટ
+            resetMagicTextOverlay(); 
+            revealMessageText.classList.add('opacity-0'); // જૂનો સંદેશ છુપાવો
+            
+            // રેન્ડમ ઇન્ડેક્સ પસંદ કરો અને અક્ષર મેળવો
+            const randomIndex = Math.floor(Math.random() * MAGIC_CHARACTERS.length);
+            const randomCharacter = MAGIC_CHARACTERS[randomIndex];
+            
+            // નવો સંદેશ બનાવો (જે દીવાની નીચે દેખાશે)
+            const revealMessage = `જાદુઈ અક્ષર '${randomCharacter}' પ્રગટ થયો!`;
+
+            // 2. અક્ષર ડિસ્પ્લે કરો
+            setTimeout(() => {
+                magicTextElement.textContent = randomCharacter;
+                magicTextElement.classList.add('magic-emerge');
+                
+                // 3. સંદેશને દીવાની નીચે બતાવો
+                revealMessageText.textContent = revealMessage;
+                revealMessageText.classList.remove('opacity-0');
+            }, 100); 
+
+            // 4. બટન ટેક્સ્ટ અપડેટ કરો
+            nextButton.textContent = "આગળનો અક્ષર પ્રગટ કરો";
+            
+            // 5. અક્ષર અને સંદેશ બંનેને 2.5 સેકન્ડ પછી છુપાવો
+            setTimeout(() => {
+                resetMagicTextOverlay();
+                revealMessageText.classList.add('opacity-0'); // સંદેશ છુપાવો
+            }, 2500);
+
+            // દીવો સળગ્યો છે તે સ્ટેટ જાળવવા માટે ઇન્ડેક્સ સેટ કરો
+            magicCharacterIndex = 0; 
+        }
+
+        // બટન ક્લિક હેન્ડલર
+        function handleNextCharacterClick() {
+            // જો દીવો બુઝાઈ ગયો હોય તો ક્લિકને અવગણો
+            if (magicCharacterIndex === -1) return;
+
+            // બટનને તરત જ ડિસએબલ કરો જેથી યુઝર વારંવાર ક્લિક ન કરી શકે
+            const nextButton = document.getElementById('next-character-button');
+            nextButton.disabled = true;
+
+            displayNextMagicCharacter();
+
+            // 3 સેકન્ડ પછી બટનને ફરીથી ઇનેબલ કરો
+            setTimeout(() => {
+                // માત્ર જો દીવો સળગતો હોય તો જ ઇનેબલ કરો
+                if (magicCharacterIndex !== -1) { 
+                    nextButton.disabled = false;
+                }
+            }, 3000); 
+        }
+
+        // દીવા ઘટક બનાવવાનું ફંકશન
+        function createDiya(id) {
+            const container = document.createElement('div');
+            container.className = 'diya-container';
+            container.id = 'diya-' + id;
+            container.setAttribute('data-id', id);
+
+            const body = document.createElement('div');
+            body.className = 'diya-body';
+
+            const rim = document.createElement('div');
+            rim.className = 'diya-rim';
+
+            const oil = document.createElement('div');
+            oil.className = 'oil-effect';
+            
+            const halo = document.createElement('div');
+            halo.className = 'diya-halo';
+
+            const wick = document.createElement('div');
+            wick.className = 'wick';
+
+            const flame = document.createElement('div');
+            flame.className = 'flame';
+
+            // બધાને કન્ટેનરમાં જોડો
+            container.appendChild(body);
+            container.appendChild(rim);
+            container.appendChild(oil);
+            container.appendChild(halo); 
+            container.appendChild(wick);
+            container.appendChild(flame);
+
+            // ક્લિક ઇવેન્ટ જોડો
+            container.addEventListener('click', () => toggleDiya(container));
+
+            return container;
+        }
+
+        // દીવાની સ્થિતિ બદલવાનું ફંકશન
+        async function toggleDiya(element) {
+            const diyaId = element.getAttribute('data-id');
+            const isCurrentlyLit = element.classList.contains('lit');
+            const isLit = !isCurrentlyLit;
+            const nextButton = document.getElementById('next-character-button');
+            const revealMessageText = document.getElementById('reveal-message-text');
+
+            element.classList.toggle('lit', isLit);
+            document.body.classList.toggle('lit-page', isLit);
+            
+            
+            if (isLit) {
+                showMessage(`દીપાવલીની હાર્દિક શુભકામનાઓ! જાદુઈ દીવો સળગ્યો. હવે અક્ષર પ્રગટ કરો.`);
+                magicCharacterIndex = 0; // દીવો સળગ્યો, બટન સક્રિય
+                nextButton.classList.remove('hidden');
+                nextButton.disabled = false;
+                nextButton.textContent = "પહેલો અક્ષર પ્રગટ કરો";
+
+            } else {
+                showMessage(`જાદુઈ દીવો બુઝાઈ ગયો.`);
+                 // બુઝાઈ ગયા પછી અક્ષર, સંદેશ અને બટનને તરત છુપાવો અને સ્ટેટ રીસેટ કરો
+                resetMagicTextOverlay();
+                revealMessageText.classList.add('opacity-0'); // સંદેશ છુપાવો
+                nextButton.classList.add('hidden');
+                nextButton.disabled = true;
+                magicCharacterIndex = -1; // દીવો બુઝાઈ ગયો, બટન નિષ્ક્રિય
+                nextButton.textContent = "અક્ષર પ્રગટ કરો";
+            }
+
+
+            if (db && auth.currentUser) {
+                const diyaRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'diyas', diyaId);
+                
+                try {
+                    // Firestore માં સ્થિતિ અપડેટ કરો
+                    await setDoc(diyaRef, { isLit: isLit, lastUpdated: new Date() }, { merge: true });
+                } catch (e) {
+                    console.error("Firestore માં દીવાની સ્થિતિ અપડેટ કરવામાં ભૂલ:", e);
+                }
+            } else {
+                console.warn("Firestore ડેટાબેઝ તૈયાર નથી અથવા યુઝર પ્રમાણિત નથી.");
+            }
+        }
+
+        // Firestore માંથી દીવાની સ્થિતિ લોડ કરવા અને લાઇવ અપડેટ સાંભળવા માટેનું ફંકશન
+        function setupDiyaListener() {
+            if (!db || !auth.currentUser) return;
+            
+            // એકલ દીવા માટેના દસ્તાવેજનો સંદર્ભ
+            const diyaRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'diyas', SINGLE_DIYA_ID);
+            const diyaElement = document.getElementById('diya-' + SINGLE_DIYA_ID);
+            const nextButton = document.getElementById('next-character-button');
+            const revealMessageText = document.getElementById('reveal-message-text');
+
+
+            // onSnapshot લિસનર સેટ કરો
+            const unsubscribe = onSnapshot(diyaRef, (diyaDoc) => {
+                const data = diyaDoc.data();
+                
+                if (diyaElement && data) {
+                    const isLit = data.isLit || false;
+                    diyaElement.classList.toggle('lit', isLit);
+                    document.body.classList.toggle('lit-page', isLit);
+                    
+                    // Firestore સ્થિતિના આધારે બટન અને સ્ટેટ મેનેજ કરો
+                    if (isLit) {
+                        if (nextButton.classList.contains('hidden')) {
+                             // જો તે દૂરથી સળગાવવામાં આવ્યો હતો, તો બટન બતાવો
+                             magicCharacterIndex = 0; 
+                             nextButton.classList.remove('hidden');
+                             nextButton.disabled = false;
+                             nextButton.textContent = "પહેલો અક્ષર પ્રગટ કરો";
+                        }
+                    } else {
+                        // દૂરથી બુઝાઈ ગયો, બધું રીસેટ કરો
+                        resetMagicTextOverlay();
+                        revealMessageText.classList.add('opacity-0'); // સંદેશ છુપાવો
+                        nextButton.classList.add('hidden');
+                        nextButton.disabled = true;
+                        magicCharacterIndex = -1;
+                    }
+                }
+            }, (error) => {
+                console.error("Firestore સ્નેપશોટ ભૂલ:", error);
+            });
+
+            // આ ખાતરી કરવા માટે કે યુઝરની સ્થિતિ હંમેશા sync માં રહે, unsubscribe ફંકશનને અહીં છોડી રહ્યા છીએ.
+        }
+
+        // પેજ લોડ થાય ત્યારે દીવો અને ફાયરબેઝ સેટઅપ કરો
+        async function initApp() {
+            const diyaContainer = document.getElementById('diya-single-container');
+            const nextButton = document.getElementById('next-character-button');
+            
+            // ફક્ત એક જ દીવો બનાવો
+            diyaContainer.prepend(createDiya(SINGLE_DIYA_ID)); // દીવાને પહેલા જોડો
+            
+            // બટન ઇવેન્ટ લિસનર જોડો
+            nextButton.addEventListener('click', handleNextCharacterClick);
+
+            if (firebaseConfig) {
+                try {
+                    setLogLevel('debug'); // ડીબગીંગ માટે લોગીંગ ચાલુ કરો
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    // પ્રમાણીકરણ (Authentication)
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        showMessage("યુઝર પ્રમાણિત.");
+                    } else {
+                        await signInAnonymously(auth);
+                        showMessage("અનામી પ્રમાણીકરણ સફળ.");
+                    }
+
+                    // પ્રમાણીકરણની સ્થિતિ બદલાય ત્યારે આ લિસનર ચાલે છે
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            // યુઝર સાઇન ઇન છે, હવે Firestore લિસનર સેટ કરો
+                            setupDiyaListener();
+                            console.log("Diya listener setup for user:", user.uid);
+                        } else {
+                            console.log("યુઝર સાઇન આઉટ છે.");
+                        }
+                    });
+
+                } catch (error) {
+                    console.error("ફાયરબેઝ સેટઅપ અથવા પ્રમાણીકરણમાં ભૂલ:", error);
+                    showMessage("ભૂલ: ડેટા લોડ થઈ શક્યો નથી.");
+                }
+            } else {
+                showMessage("ચેતવણી: Firestore કન્ફિગરેશન અનુપલબ્ધ છે. સ્થિતિ સચવાશે નહીં.");
+            }
+        }
+
+        // જ્યારે વિન્ડો લોડ થાય, ત્યારે એપ્લિકેશન શરૂ કરો
+        window.onload = initApp;
+    </script>
+</body>
+</html>
