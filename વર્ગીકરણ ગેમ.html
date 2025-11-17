@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>વર્ગીકરણ ગેમ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        body {
+            font-family: 'Noto Sans Gujarati', 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue/grey background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .game-container {
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .grid-item {
+            width: 100%;
+            aspect-ratio: 1 / 1; /* Keep items square */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f7f7f7;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s, border 0.3s;
+            overflow: hidden;
+            position: relative;
+            border: 3px solid transparent;
+        }
+        .grid-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .grid-item.selected {
+            border-color: #3b82f6; /* Blue border for selected items */
+            background-color: #e0f2fe;
+        }
+        .grid-item.correct {
+            border-color: #10b981; /* Green border for correct items */
+            background-color: #d1fae5;
+        }
+        .grid-item.incorrect {
+            border-color: #ef4444; /* Red border for incorrect items */
+            background-color: #fee2e2;
+        }
+        .item-content {
+            font-size: 60px; /* For numbers/emoji, slightly adjusted for birds/animals */
+            max-width: 90%;
+            max-height: 90%;
+            user-select: none;
+            pointer-events: none; /* Prevents text/image selection issues */
+        }
+        .feedback-box {
+            min-height: 60px;
+        }
+        /* Custom button styling */
+        .btn-check {
+            background-color: #f59e0b; /* Amber */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn-check:hover {
+            background-color: #d97706;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1 class="text-3xl font-extrabold text-gray-800 mb-1 text-center">⭐ વર્ગીકરણ ગેમ (Category Game)</h1>
+    <p class="text-xs text-gray-500 mb-6 text-center">Created by : rajesh Barochia</p>
+    
+    <div class="flex justify-between items-center mb-6 p-3 bg-gray-50 rounded-lg">
+        <span class="text-lg font-semibold text-gray-700">રાઉન્ડ: <span id="round-counter">1</span></span>
+        <span class="text-lg font-semibold text-gray-700">સાચા જવાબો: <span id="score-display">0</span></span>
+    </div>
+
+    <div class="text-center mb-8">
+        <p id="instruction" class="text-xl md:text-2xl font-bold text-indigo-700 mb-4">ટાસ્ક લોડ થઈ રહ્યો છે...</p>
+        <div id="feedback-message" class="feedback-box text-lg font-semibold mt-4"></div>
+    </div>
+
+    <div id="grid-area" class="grid grid-cols-3 gap-3 md:gap-4 p-2">
+        </div>
+
+    <div class="flex justify-center mt-8">
+        <button id="check-button" class="btn-check" disabled>જવાબ તપાસો</button>
+        <button id="next-button" class="btn-check hidden ml-4">આગળ વધો</button>
+        <button id="restart-button" class="btn-check hidden">ફરી શરૂ કરો</button>
+    </div>
+
+    <div id="end-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50 p-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl text-center max-w-sm w-full">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">ગેમ સમાપ્ત! 🏆</h2>
+            <p class="text-xl text-gray-700 mb-6">તમે <span id="final-score" class="text-indigo-600 font-extrabold">0</span> રાઉન્ડ સાચા કર્યા!</p>
+            <button onclick="startGame()" class="btn-check w-full">નવી ગેમ શરૂ કરો</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // બધા સંભવિત પ્રાણીઓ અને પક્ષીઓ માટે ઇમોજીનો ઉપયોગ કર્યો છે.
+    const ITEMS = {
+        ANIMALS: [
+            { id: 'dog', content: '🐶', type: 'animal' },
+            { id: 'croc', content: '🐊', type: 'animal' },
+            { id: 'lion', content: '🦁', type: 'animal' },
+            { id: 'bear', content: '🐻', type: 'animal' },
+            { id: 'zebra', content: '🦓', type: 'animal' },
+            { id: 'cat', content: '🐱', type: 'animal' },
+            { id: 'rabbit', content: '🐰', type: 'animal' },
+            { id: 'cow', content: '🐮', type: 'animal' },
+        ],
+        BIRDS: [
+            { id: 'pigeon', content: '🕊️', type: 'bird' },
+            { id: 'duck', content: '🦆', type: 'bird' },
+            { id: 'eagle', content: '🦅', type: 'bird' },
+            { id: 'owl', content: '🦉', type: 'bird' },
+            { id: 'rooster', content: '🐓', type: 'bird' },
+            { id: 'peacock', content: '🦚', type: 'bird' },
+            { id: 'parrot', content: '🦜', type: 'bird' },
+            { id: 'penguin', content: '🐧', type: 'bird' }, // Penguin is also a bird!
+        ]
+    };
+
+    const TOTAL_ROUNDS = 5;
+    const GRID_SIZE = 6; // 3x3 ગ્રીડમાં 6 આઇટમ બતાવશે
+    const CATEGORIES = [
+        { type: 'animal', instruction: 'બધાં **પ્રાણીઓ (ANIMALS)** ને પસંદ કરો.' },
+        { type: 'bird', instruction: 'બધાં **પક્ષીઓ (BIRDS)** ને પસંદ કરો.' } // Number બદલીને Bird
+    ];
+
+    let currentRound = 0;
+    let score = 0;
+    let currentTask = null;
+    let currentItems = [];
+    let selectedIds = new Set();
+    let isCheckingEnabled = false;
+
+    // DOM References
+    const roundCounter = document.getElementById('round-counter');
+    const scoreDisplay = document.getElementById('score-display');
+    const instructionElement = document.getElementById('instruction');
+    const feedbackMessage = document.getElementById('feedback-message');
+    const gridArea = document.getElementById('grid-area');
+    const checkButton = document.getElementById('check-button');
+    const nextButton = document.getElementById('next-button');
+    const endModal = document.getElementById('end-modal');
+    const finalScoreDisplay = document.getElementById('final-score');
+    const restartButton = document.getElementById('restart-button');
+
+    // Utility function to shuffle an array
+    const shuffleArray = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    };
+
+    // Utility function to get a random sample from an array
+    const getRandomSample = (array, n) => {
+        return shuffleArray(array).slice(0, n);
+    };
+
+    // Game Initialization and Setup
+    function startGame() {
+        currentRound = 0;
+        score = 0;
+        scoreDisplay.textContent = score;
+        restartButton.classList.add('hidden');
+        endModal.classList.add('hidden');
+        
+        loadNextRound();
+    }
+
+    // Load the next round
+    function loadNextRound() {
+        if (currentRound >= TOTAL_ROUNDS) {
+            endGame();
+            return;
+        }
+
+        currentRound++;
+        roundCounter.textContent = currentRound;
+        selectedIds.clear();
+        feedbackMessage.textContent = '';
+        nextButton.classList.add('hidden');
+        checkButton.classList.remove('hidden');
+        checkButton.disabled = true;
+        isCheckingEnabled = true;
+
+        // 1. રેન્ડમ ટાસ્ક પસંદ કરો
+        currentTask = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+        instructionElement.textContent = currentTask.instruction;
+
+        // 2. પ્રાણીઓ અને પક્ષીઓમાંથી રેન્ડમ આઇટમ્સ પસંદ કરો
+        const requiredCount = Math.floor(GRID_SIZE / 2); // 3 items of the required category
+        const otherCount = GRID_SIZE - requiredCount; // 3 items of the other category
+
+        const requiredCategory = currentTask.type === 'animal' ? ITEMS.ANIMALS : ITEMS.BIRDS; // ITEMS.NUMBERS બદલીને ITEMS.BIRDS
+        const otherCategory = currentTask.type === 'animal' ? ITEMS.BIRDS : ITEMS.ANIMALS; // ITEMS.NUMBERS બદલીને ITEMS.BIRDS
+
+        const requiredItems = getRandomSample(requiredCategory, requiredCount);
+        const otherItems = getRandomSample(otherCategory, otherCount);
+        
+        currentItems = shuffleArray([...requiredItems, ...otherItems]);
+
+        // 3. ગ્રીડ રેન્ડર કરો
+        renderGrid();
+    }
+
+    // Render the grid items
+    function renderGrid() {
+        gridArea.innerHTML = '';
+        currentItems.forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.id = item.id;
+            itemDiv.classList.add('grid-item');
+            itemDiv.setAttribute('data-type', item.type);
+            
+            // Set content 
+            const contentSpan = document.createElement('span');
+            contentSpan.classList.add('item-content');
+            // Removed specific number-related classes as we are using birds now
+            contentSpan.textContent = item.content;
+            
+            itemDiv.appendChild(contentSpan);
+
+            itemDiv.addEventListener('click', () => toggleSelection(itemDiv, item.id));
+            gridArea.appendChild(itemDiv);
+        });
+    }
+
+    // Handle item selection/deselection
+    function toggleSelection(element, id) {
+        if (!isCheckingEnabled) return; // Prevent selection after check
+
+        if (selectedIds.has(id)) {
+            selectedIds.delete(id);
+            element.classList.remove('selected');
+        } else {
+            selectedIds.add(id);
+            element.classList.add('selected');
+        }
+
+        // Enable check button if at least one item is selected
+        checkButton.disabled = selectedIds.size === 0;
+    }
+
+    // Check the user's answer
+    function checkAnswer() {
+        if (selectedIds.size === 0) return;
+        
+        isCheckingEnabled = false;
+        checkButton.classList.add('hidden');
+        nextButton.classList.remove('hidden');
+
+        let allCorrect = true;
+        const correctType = currentTask.type;
+
+        currentItems.forEach(item => {
+            const element = document.getElementById(item.id);
+            const isSelected = selectedIds.has(item.id);
+            const isTarget = item.type === correctType;
+
+            if (isTarget) {
+                if (isSelected) {
+                    // Correctly selected a target item
+                    element.classList.add('correct');
+                } else {
+                    // Missed a target item
+                    element.classList.add('correct'); // Highlight missed correct answer
+                    allCorrect = false;
+                }
+            } else { // Not a target item
+                if (isSelected) {
+                    // Incorrectly selected a non-target item
+                    element.classList.add('incorrect');
+                    allCorrect = false;
+                }
+                // If not selected and not a target, do nothing (correctly ignored)
+            }
+            element.classList.remove('selected'); // Remove selection class
+        });
+
+        if (allCorrect) {
+            score++;
+            feedbackMessage.innerHTML = '<span class="text-green-600">બહુ સરસ! 🎉 બધા જવાબો સાચા છે.</span>';
+        } else {
+            // Check if there was any selection at all (if a different logic is required)
+            feedbackMessage.innerHTML = '<span class="text-red-600">ફરી પ્રયાસ કરો. 🙁 કેટલાક જવાબો ખોટા છે.</span>';
+        }
+        scoreDisplay.textContent = score;
+    }
+
+    // End the game
+    function endGame() {
+        finalScoreDisplay.textContent = score;
+        endModal.classList.remove('hidden');
+        checkButton.classList.add('hidden');
+        nextButton.classList.add('hidden');
+        restartButton.classList.remove('hidden');
+    }
+
+    // Event Listeners
+    checkButton.addEventListener('click', checkAnswer);
+    nextButton.addEventListener('click', loadNextRound);
+    restartButton.addEventListener('click', startGame);
+
+    // Start the game on load
+    document.addEventListener('DOMContentLoaded', startGame);
+</script>
+
+</body>
+</html>
