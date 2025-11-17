@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMI હેલ્થ રિપોર્ટ </title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: backgroundMove 20s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes backgroundMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        /* Floating particles */
+        .particle {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: float 3s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(-20px) translateX(10px); }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            border-radius: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1), transparent);
+            animation: headerShine 3s linear infinite;
+        }
+
+        @keyframes headerShine {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .header p {
+            font-size: 1.1em;
+            position: relative;
+            z-index: 1;
+        }
+
+        .creator {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.9em;
+            margin-top: 5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            animation: fadeInUp 0.5s ease-out backwards;
+        }
+
+        .form-group:nth-child(1) { animation-delay: 0.1s; }
+        .form-group:nth-child(2) { animation-delay: 0.2s; }
+        .form-group:nth-child(3) { animation-delay: 0.3s; }
+        .form-group:nth-child(4) { animation-delay: 0.4s; }
+        .form-group:nth-child(5) { animation-delay: 0.5s; }
+        .form-group:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px;
+            border: 3px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1em;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+            transform: scale(1.02);
+        }
+
+        .gender-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .gender-btn {
+            padding: 18px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gender-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+
+        .gender-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .gender-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .gender-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 500px;
+            height: 500px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-info:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(59, 130, 246, 0.5);
+        }
+
+        .report {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .report.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .bmi-result {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+            animation: scaleIn 0.5s ease-out;
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .bmi-result::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2), transparent);
+            animation: resultShine 4s linear infinite;
+        }
+
+        @keyframes resultShine {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .bmi-number {
+            font-size: 3.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            position: relative;
+            z-index: 1;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            animation: numberPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes numberPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .bmi-category {
+            font-size: 1.3em;
+            margin-top: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 6px solid;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            animation: slideInLeft 0.5s ease-out backwards;
+        }
+
+        .info-box:nth-child(odd) {
+            animation: slideInLeft 0.5s ease-out backwards;
+        }
+
+        .info-box:nth-child(even) {
+            animation: slideInRight 0.5s ease-out backwards;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .info-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .info-box.blue {
+            border-color: #3b82f6;
+        }
+
+        .info-box.green {
+            border-color: #10b981;
+        }
+
+        .info-box.yellow {
+            border-color: #f59e0b;
+        }
+
+        .info-box.red {
+            border-color: #ef4444;
+        }
+
+        .info-box.purple {
+            border-color: #8b5cf6;
+        }
+
+        .info-box h3 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-box li {
+            padding: 8px 8px 8px 30px;
+            background: white;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            position: relative;
+            font-size: 0.95em;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .info-box li:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .info-box li:before {
+            content: "✓";
+            position: absolute;
+            left: 10px;
+            font-weight: bold;
+            color: #10b981;
+            font-size: 1.1em;
+            animation: checkBounce 2s ease-in-out infinite;
+        }
+
+        @keyframes checkBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .info-box.red li:before {
+            content: "✗";
+            color: #ef4444;
+        }
+
+        .personal-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 12px;
+            border-radius: 10px;
+            border: 3px solid #fff;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s;
+            animation: cardPop 0.5s ease-out backwards;
+        }
+
+        .info-card:nth-child(1) { animation-delay: 0.1s; }
+        .info-card:nth-child(2) { animation-delay: 0.2s; }
+        .info-card:nth-child(3) { animation-delay: 0.3s; }
+        .info-card:nth-child(4) { animation-delay: 0.4s; }
+        .info-card:nth-child(5) { animation-delay: 0.5s; }
+        .info-card:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes cardPop {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px) rotate(2deg);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .info-card label {
+            display: block;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .info-card value {
+            display: block;
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .footer-info {
+            border-top: 3px solid #e5e7eb;
+            padding-top: 12px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            body::before, .particle {
+                display: none;
+            }
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+                padding: 15px;
+                font-size: 11px;
+                background: white;
+            }
+            .header {
+                margin-bottom: 10px;
+                padding: 15px;
+            }
+            .header h1 {
+                font-size: 1.5em;
+                margin-bottom: 5px;
+            }
+            .header p {
+                font-size: 0.9em;
+            }
+            .bmi-result {
+                padding: 10px;
+                margin-bottom: 8px;
+            }
+            .bmi-number {
+                font-size: 2em;
+                margin: 3px 0;
+            }
+            .bmi-category {
+                font-size: 0.9em;
+            }
+            .info-box {
+                padding: 8px;
+                margin-bottom: 6px;
+                page-break-inside: avoid;
+            }
+            .info-box h3 {
+                font-size: 0.9em;
+                margin-bottom: 5px;
+            }
+            .info-box li {
+                padding: 3px 3px 3px 18px;
+                margin-bottom: 3px;
+                font-size: 0.8em;
+            }
+            .personal-info {
+                gap: 6px;
+                margin-bottom: 8px;
+            }
+            .info-card {
+                padding: 6px;
+            }
+            .info-card label {
+                font-size: 0.7em;
+            }
+            .info-card value {
+                font-size: 0.85em;
+            }
+            .button-group {
+                display: none;
+            }
+            .report-grid {
+                gap: 6px;
+            }
+            .footer-info {
+                margin-top: 8px;
+                padding-top: 8px;
+                font-size: 0.8em;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            .bmi-number {
+                font-size: 2.5em;
+            }
+            .personal-info {
+                grid-template-columns: 1fr 1fr;
+            }
+            .report-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Particles -->
+    <div class="particle" style="top: 20%; left: 10%; animation-delay: 0s;"></div>
+    <div class="particle" style="top: 60%; left: 80%; animation-delay: 1s;"></div>
+    <div class="particle" style="top: 80%; left: 20%; animation-delay: 2s;"></div>
+    <div class="particle" style="top: 40%; left: 70%; animation-delay: 1.5s;"></div>
+    <div class="particle" style="top: 10%; left: 90%; animation-delay: 0.5s;"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>💚 BMI હેલ્થ રિપોર્ટ 💚</h1>
+            <div class="creator">બનાવનાર: Rajesh Barochia</div>
+        </div>
+
+        <!-- Form Section -->
+        <div id="formSection" class="form-section">
+            <form id="bmiForm">
+                <div class="form-group">
+                    <label>📝 પૂરું નામ</label>
+                    <input type="text" id="name" placeholder="ઉદા: રાજેશ કુમાર પટેલ" required>
+                </div>
+
+                <div class="form-group">
+                    <label>📅 જન્મ તારીખ</label>
+                    <input type="date" id="birthDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label>📏 ઊંચાઈ (સેન્ટીમીટર)</label>
+                    <input type="number" id="height" placeholder="170" required>
+                </div>
+
+                <div class="form-group">
+                    <label>⚖️ વજન (કિલોગ્રામ)</label>
+                    <input type="number" id="weight" placeholder="65" required>
+                </div>
+
+                <div class="form-group">
+                    <label>👤 લિંગ</label>
+                    <div class="gender-buttons">
+                        <button type="button" class="gender-btn" onclick="selectGender('male', event)">
+                            👨 પુરુષ
+                        </button>
+                        <button type="button" class="gender-btn" onclick="selectGender('female', event)">
+                            👩 સ્ત્રી
+                        </button>
+                    </div>
+                    <input type="hidden" id="gender" required>
+                </div>
+
+                <div class="form-group">
+                    <label>📍 સ્થળ (શહેર/ગામ)</label>
+                    <input type="text" id="location" placeholder="જામજોધપુર" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    ✨ રિપોર્ટ બનાવો ✨
+                </button>
+            </form>
+        </div>
+
+        <!-- Report Section -->
+        <div id="reportSection" class="report">
+            <div class="personal-info" id="personalInfo"></div>
+            
+            <div class="bmi-result" id="bmiResult"></div>
+
+            <div class="report-grid">
+                <div class="info-box yellow" id="adviceBox"></div>
+                <div class="info-box green" id="dietBox"></div>
+            </div>
+
+            <div class="report-grid">
+                <div class="info-box blue" id="exerciseBox"></div>
+                <div class="info-box red" id="avoidBox"></div>
+            </div>
+
+            <div class="info-box purple">
+                <h3>⚕️ તબીબી સૂચના</h3>
+                <ul>
+                    <li>આ રિપોર્ટ માત્ર માર્ગદર્શન માટે છે</li>
+                    <li>આરોગ્ય સમસ્યા હોય તો ડૉક્ટરની સલાહ લો</li>
+                    <li>આહાર અને કસરત શરૂ કરતા પહેલા તબીબી સલાહ લો</li>
+                </ul>
+            </div>
+
+            <div class="footer-info">
+                <div>
+                    <strong>બનાવનાર:</strong> Rajesh Barochia<br>
+                </div>
+                <div style="text-align: right;">
+                    <strong>તારીખ:</strong> <span id="reportDate"></span>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-success" onclick="window.print()">
+                    🖨️ પ્રિન્ટ કરો
+                </button>
+                <button class="btn btn-info" onclick="resetForm()">
+                    🔄 નવો રિપોર્ટ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedGender = '';
+
+        function selectGender(gender, event) {
+            event.preventDefault();
+            selectedGender = gender;
+            document.getElementById('gender').value = gender;
+            
+            const buttons = document.querySelectorAll('.gender-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            event.target.classList.add('active');
+        }
+
+        document.getElementById('bmiForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const birthDate = document.getElementById('birthDate').value;
+            const height = parseFloat(document.getElementById('height').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const gender = document.getElementById('gender').value;
+            const location = document.getElementById('location').value;
+
+            if (!gender) {
+                alert('કૃપા કરીને લિંગ પસંદ કરો');
+                return;
+            }
+
+            if (height < 50 || height > 300) {
+                alert('યોગ્ય ઊંચાઈ દાખલ કરો (50-300 cm)');
+                return;
+            }
+
+            if (weight < 10 || weight > 300) {
+                alert('યોગ્ય વજન દાખલ કરો (10-300 kg)');
+                return;
+            }
+
+            generateReport(name, birthDate, height, weight, gender, location);
+        });
+
+        function generateReport(name, birthDate, height, weight, gender, location) {
+            const heightM = height / 100;
+            const bmi = (weight / (heightM * heightM)).toFixed(1);
+            
+            const birthYear = new Date(birthDate).getFullYear();
+            const age = new Date().getFullYear() - birthYear;
+            
+            const idealMin = (18.5 * heightM * heightM).toFixed(1);
+            const idealMax = (24.9 * heightM * heightM).toFixed(1);
+
+            let category, advice, diet, exercise, avoid;
+
+            if (bmi < 18.5) {
+                category = 'ઓછું વજન (Underweight)';
+                advice = ['વધુ કેલરી વાળો આહાર લો', 'દિવસમાં 5-6 વખત નાના ભોજન લો', 'પૌષ્ટિક નાસ્તો કરો', 'નિયમિત વ્યાયામ કરો'];
+                diet = ['દૂધ, દહીં, પનીર - પ્રોટીન', 'બદામ, કાજુ, અખરોટ', 'કેળા, આમ, ચીકુ', 'ચોખા, રોટલી, દાળ'];
+                exercise = ['વેઈટ ટ્રેનિંગ - સ્નાયુઓ વધારવા', 'યોગા - શારીરિક સંતુલન', 'સ્વિમિંગ', 'વોકિંગ 30 મિનિટ'];
+                avoid = ['ખાલી પેટે રહેવું', 'વધારે કોફી-ચા', 'જંક ફૂડ પર આધાર'];
+            } else if (bmi >= 18.5 && bmi < 25) {
+                category = 'સામાન્ય વજન (Normal) ✅';
+                advice = ['તમારું વજન યોગ્ય છે - આ રીતે જાળવી રાખો', 'સંતુલિત આહાર ચાલુ રાખો', 'નિયમિત કસરત કરો', 'સારી ઊંઘ લો - 7-8 કલાક'];
+                diet = ['લીલા શાકભાજી - વિટામિન', 'ફળો - રોજ 2-3 પ્રકાર', 'ઘઉં, બાજરી, જુવાર', 'દૂધ અને દહીં'];
+                exercise = ['વોકિંગ / જોગિંગ - 30-45 મિનિટ', 'યોગા - સવારે 20 મિનિટ', 'કોઈપણ રમત', 'સ્ટ્રેચિંગ'];
+                avoid = ['વધારે તળેલું', 'વધારે મીઠું અને ખાંડ', 'પ્રોસેસ્ડ ફૂડ'];
+            } else if (bmi >= 25 && bmi < 30) {
+                category = 'વધારે વજન (Overweight) ⚠️';
+                advice = ['વજન ઘટાડવા પર ધ્યાન આપો', 'કેલરી ઓછી અને પૌષ્ટિક આહાર', 'રોજ 45 મિનિટ કસરત જરૂરી', 'પાણી વધારે પીવો'];
+                diet = ['લીલા શાકભાજી - ઓછી કેલરી', 'ફળો - સફરજન, મોસંબી', 'લો-ફેટ દૂધ અને દહીં', 'બ્રાઉન રાઇસ, ઓટ્સ'];
+                exercise = ['બ્રિસ્ક વોકિંગ - 45 મિનિટ રોજ', 'જોગિંગ - 20-30 મિનિટ', 'સાયકલિંગ', 'યોગા + પ્રાણાયામ'];
+                avoid = ['તળેલું - પકોડા, સમોસા', 'મીઠાઈ અને મિઠાસ', 'કોલ્ડ ડ્રિંક્સ', 'ફાસ્ટ ફૂડ'];
+            } else {
+                category = 'સ્થૂળતા (Obesity) 🚨';
+                advice = ['⚠️ ડૉક્ટરની સલાહ લો - તાત્કાલિક', 'વજન ઘટાડવું અત્યંત જરૂરી છે', 'આહાર નિષ્ણાતની મદદ લો', 'નિયમિત તબીબી તપાસ કરાવો'];
+                diet = ['લીલા શાકભાજી - ભરપૂર માત્રામાં', 'કાચા શાકભાજી સલાડ', 'ઓછી ખાંડવાળા ફળો', 'દાળ અને સ્પ્રાઉટ્સ'];
+                exercise = ['ધીમે ધીમે વોકિંગ 20 મિનિટથી શરૂ', 'ધીરે ધીરે સમય વધારો - 60 મિનિટ સુધી', 'સ્વિમિંગ', 'યોગા - શ્વાસ અને મેડિટેશન'];
+                avoid = ['તળેલું - સંપૂર્ણ બંધ', 'મીઠાઈ, આઈસ્ક્રીમ', 'કોલ્ડ ડ્રિંક્સ', 'બેકરી આઈટમ્સ', 'ફાસ્ટ ફૂડ'];
+            }
+
+            // Personal Info
+            const genderText = gender === 'male' ? '👨 પુરુષ' : '👩 સ્ત્રી';
+            document.getElementById('personalInfo').innerHTML = `
+                <div class="info-card">
+                    <label>નામ</label>
+                    <value>${name}</value>
+                </div>
+                <div class="info-card">
+                    <label>ઉંમર</label>
+                    <value>${age} વર્ષ</value>
+                </div>
+                <div class="info-card">
+                    <label>લિંગ</label>
+                    <value>${genderText}</value>
+                </div>
+                <div class="info-card">
+                    <label>ઊંચાઈ</label>
+                    <value>${height} cm</value>
+                </div>
+                <div class="info-card">
+                    <label>વજન</label>
+                    <value>${weight} kg</value>
+                </div>
+                <div class="info-card">
+                    <label>સ્થળ</label>
+                    <value>${location}</value>
+                </div>
+            `;
+
+            // BMI Result
+            document.getElementById('bmiResult').innerHTML = `
+                <div>તમારો BMI</div>
+                <div class="bmi-number">${bmi}</div>
+                <div class="bmi-category">${category}</div>
+                <div style="margin-top: 15px; font-size: 1.1em;">
+                    આદર્શ વજન: ${idealMin} - ${idealMax} kg
+                </div>
+            `;
+
+            // Advice
+            document.getElementById('adviceBox').innerHTML = `
+                <h3>💡 મહત્વપૂર્ણ સૂચનાઓ</h3>
+                <ul>${advice.map(item => `<li>${item}</li>`).join('')}</ul>
+            `;
+
+            // Diet
+            document.getElementById('dietBox').innerHTML = `
+                <h3>🍎 શું ખાવું - આહાર યોજના</h3>
+                <ul>${diet.map(item => `<li>${item}</li>`).join('')}</ul>
+            `;
+
+            // Exercise
+            document.getElementById('exerciseBox').innerHTML = `
+                <h3>🏃 કસરત અને વ્યાયામ</h3>
+                <ul>${exercise.map(item => `<li>${item}</li>`).join('')}</ul>
+            `;
+
+            // Avoid
+            document.getElementById('avoidBox').innerHTML = `
+                <h3>⛔ શું ન ખાવું - ટાળવા જેવું</h3>
+                <ul>${avoid.map(item => `<li>${item}</li>`).join('')}</ul>
+            `;
+
+            // Show report, hide form
+            document.getElementById('reportDate').textContent = new Date().toLocaleDateString('en-GB');
+            document.getElementById('formSection').classList.add('hidden');
+            document.getElementById('reportSection').classList.add('active');
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('bmiForm').reset();
+            selectedGender = '';
+            document.querySelectorAll('.gender-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('formSection').classList.remove('hidden');
+            document.getElementById('reportSection').classList.remove('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
