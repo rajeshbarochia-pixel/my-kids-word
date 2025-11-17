@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>એંગલ માસ્ટર: લેસર પઝલ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans Gujarati', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #e94560;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .level-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .game-board {
+            background: #0f3460;
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        #canvasContainer {
+            width: 100%;
+            height: 450px;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Noto Sans Gujarati', Arial, sans-serif;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .message {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #e94560;
+            min-height: 30px;
+            margin-bottom: 15px;
+        }
+
+        .instructions {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .instructions p {
+            color: #0f3460;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 22px;
+            }
+
+            .info-box {
+                font-size: 14px;
+                padding: 8px 15px;
+            }
+
+            .action-btn {
+                font-size: 16px;
+                padding: 12px 25px;
+            }
+
+            #canvasContainer {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🔦 એંગલ માસ્ટર: લેસર પઝલ 🎯</h1>
+        </div>
+
+        <div class="level-info">
+            <div class="info-box">લેવલ: <span id="levelNum">1</span></div>
+            <div class="info-box">સ્કોર: <span id="score">0</span></div>
+        </div>
+
+        <div class="instructions">
+            <p>🎮 મિરર અને ટાર્ગેટને ડ્રેગ કરો. મિરર પર ક્લિક કરીને એંગલ બદલો. ટોર્ચ પર ક્લિક કરીને લેસર ચલાવો!</p>
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <div class="game-board">
+            <div id="canvasContainer">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+        </div>
+
+        <button class="action-btn" onclick="resetLevel()">🔄 ફરીથી પ્રયાસ કરો</button>
+
+        <div class="footer">
+            <p>Created by: Rajesh Barochia</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+
+        // Canvas setup
+        function resizeCanvas() {
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            
+            // Update positions when resizing
+            if (level > 0) {
+                const levelData = levels[level - 1];
+                laser.x = canvas.width * 0.1;
+                laser.y = canvas.height * levelData.laserPos.y;
+                target.x = canvas.width * levelData.targetPos.x;
+                target.y = canvas.height * levelData.targetPos.y;
+                
+                // Reset mirror position
+                mirror.x = canvas.width * 0.5;
+                mirror.y = canvas.height * 0.5;
+            }
+            
+            drawGame();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            loadLevel(1);
+        });
+
+        // Game state
+        let level = 1;
+        let score = 0;
+        let laser = { x: 0, y: 0 };
+        let target = { x: 0, y: 0, isDragging: false };
+        let mirror = { x: 0, y: 0, angle: 45, isDragging: false };
+        let laserPath = [];
+        let isAnimating = false;
+        let animationProgress = 0;
+        let torchButtonHovered = false;
+
+        // Level configurations
+        const levels = [
+            { targetPos: { x: 0.9, y: 0.5 }, laserPos: { y: 0.5 } },
+            { targetPos: { x: 0.9, y: 0.3 }, laserPos: { y: 0.7 } },
+            { targetPos: { x: 0.9, y: 0.7 }, laserPos: { y: 0.3 } },
+            { targetPos: { x: 0.9, y: 0.2 }, laserPos: { y: 0.8 } },
+            { targetPos: { x: 0.9, y: 0.8 }, laserPos: { y: 0.2 } }
+        ];
+
+        function loadLevel(levelNum) {
+            const levelData = levels[levelNum - 1];
+            
+            laser.x = canvas.width * 0.1;
+            laser.y = canvas.height * levelData.laserPos.y;
+            target.x = canvas.width * levelData.targetPos.x;
+            target.y = canvas.height * levelData.targetPos.y;
+            
+            // Place mirror in center
+            mirror.x = canvas.width * 0.5;
+            mirror.y = canvas.height * 0.5;
+            mirror.angle = 45;
+            
+            laserPath = [];
+            isAnimating = false;
+            animationProgress = 0;
+            
+            document.getElementById('levelNum').textContent = levelNum;
+            drawGame();
+            showMessage('', '');
+        }
+
+        // Mouse/Touch events for dragging
+        let isDraggingMirror = false;
+        let isDraggingTarget = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function getTouchCoords(touch) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (touch.clientX - rect.left) * scaleX,
+                y: (touch.clientY - rect.top) * scaleY
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const coords = getCanvasCoords(e);
+
+            // Check torch/laser (for shooting)
+            const distToLaser = Math.sqrt((coords.x - laser.x) ** 2 + (coords.y - laser.y) ** 2);
+            if (distToLaser < 35) {
+                // Shoot laser on click
+                shootLaser();
+                return;
+            }
+
+            // Check mirror
+            const distToMirror = Math.sqrt((coords.x - mirror.x) ** 2 + (coords.y - mirror.y) ** 2);
+            if (distToMirror < 50) {
+                isDraggingMirror = true;
+                dragOffsetX = coords.x - mirror.x;
+                dragOffsetY = coords.y - mirror.y;
+                return;
+            }
+
+            // Check target
+            const distToTarget = Math.sqrt((coords.x - target.x) ** 2 + (coords.y - target.y) ** 2);
+            if (distToTarget < 35) {
+                isDraggingTarget = true;
+                dragOffsetX = coords.x - target.x;
+                dragOffsetY = coords.y - target.y;
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const coords = getCanvasCoords(e);
+            
+            // Check if hovering over torch
+            const distToLaser = Math.sqrt((coords.x - laser.x) ** 2 + (coords.y - laser.y) ** 2);
+            const wasHovered = torchButtonHovered;
+            torchButtonHovered = distToLaser < 35;
+            
+            if (wasHovered !== torchButtonHovered) {
+                drawGame();
+            }
+
+            if (!isDraggingMirror && !isDraggingTarget) return;
+
+            if (isDraggingMirror) {
+                mirror.x = coords.x - dragOffsetX;
+                mirror.y = coords.y - dragOffsetY;
+                mirror.x = Math.max(50, Math.min(canvas.width - 50, mirror.x));
+                mirror.y = Math.max(50, Math.min(canvas.height - 50, mirror.y));
+            }
+
+            if (isDraggingTarget) {
+                target.x = coords.x - dragOffsetX;
+                target.y = coords.y - dragOffsetY;
+                target.x = Math.max(50, Math.min(canvas.width - 50, target.x));
+                target.y = Math.max(50, Math.min(canvas.height - 50, target.y));
+            }
+
+            drawGame();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDraggingMirror = false;
+            isDraggingTarget = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            torchButtonHovered = false;
+            drawGame();
+        });
+
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const coords = getTouchCoords(touch);
+
+            // Check torch/laser (for shooting)
+            const distToLaser = Math.sqrt((coords.x - laser.x) ** 2 + (coords.y - laser.y) ** 2);
+            if (distToLaser < 35) {
+                // Shoot laser on tap
+                shootLaser();
+                return;
+            }
+
+            // Check mirror
+            const distToMirror = Math.sqrt((coords.x - mirror.x) ** 2 + (coords.y - mirror.y) ** 2);
+            if (distToMirror < 50) {
+                isDraggingMirror = true;
+                dragOffsetX = coords.x - mirror.x;
+                dragOffsetY = coords.y - mirror.y;
+                return;
+            }
+
+            // Check target
+            const distToTarget = Math.sqrt((coords.x - target.x) ** 2 + (coords.y - target.y) ** 2);
+            if (distToTarget < 35) {
+                isDraggingTarget = true;
+                dragOffsetX = coords.x - target.x;
+                dragOffsetY = coords.y - target.y;
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!isDraggingMirror && !isDraggingTarget) return;
+
+            const touch = e.touches[0];
+            const coords = getTouchCoords(touch);
+
+            if (isDraggingMirror) {
+                mirror.x = coords.x - dragOffsetX;
+                mirror.y = coords.y - dragOffsetY;
+                mirror.x = Math.max(50, Math.min(canvas.width - 50, mirror.x));
+                mirror.y = Math.max(50, Math.min(canvas.height - 50, mirror.y));
+            }
+
+            if (isDraggingTarget) {
+                target.x = coords.x - dragOffsetX;
+                target.y = coords.y - dragOffsetY;
+                target.x = Math.max(50, Math.min(canvas.width - 50, target.x));
+                target.y = Math.max(50, Math.min(canvas.height - 50, target.y));
+            }
+
+            drawGame();
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isDraggingMirror = false;
+            isDraggingTarget = false;
+        });
+
+        // Double-click or long-press to rotate mirror
+        let clickTimeout;
+        canvas.addEventListener('click', (e) => {
+            if (isDraggingMirror || isDraggingTarget) return;
+
+            const coords = getCanvasCoords(e);
+            
+            // Skip if clicked on torch
+            const distToLaser = Math.sqrt((coords.x - laser.x) ** 2 + (coords.y - laser.y) ** 2);
+            if (distToLaser < 35) return;
+
+            const distToMirror = Math.sqrt((coords.x - mirror.x) ** 2 + (coords.y - mirror.y) ** 2);
+            
+            if (distToMirror < 60) {
+                mirror.angle += 15;
+                mirror.angle = mirror.angle % 360;
+                drawGame();
+            }
+        });
+
+        // Scroll to rotate mirror
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const coords = getCanvasCoords(e);
+            const distToMirror = Math.sqrt((coords.x - mirror.x) ** 2 + (coords.y - mirror.y) ** 2);
+            
+            if (distToMirror < 60) {
+                mirror.angle += e.deltaY > 0 ? 5 : -5;
+                mirror.angle = ((mirror.angle % 360) + 360) % 360;
+                drawGame();
+            }
+        });
+
+        function drawFlashlight(x, y, isHovered) {
+            // Flashlight body
+            ctx.fillStyle = isHovered ? '#34495e' : '#2c3e50';
+            ctx.beginPath();
+            ctx.roundRect(x - 38, y - 14, 38, 28, 4);
+            ctx.fill();
+
+            // Flashlight head (clickable button area)
+            ctx.fillStyle = isHovered ? '#4a5f7f' : '#34495e';
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Highlight when hoverable
+            if (isHovered) {
+                ctx.strokeStyle = '#f39c12';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(x, y, 22, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Flashlight lens (glowing)
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, 16);
+            gradient.addColorStop(0, '#fff9e6');
+            gradient.addColorStop(0.5, '#ffeb99');
+            gradient.addColorStop(1, isHovered ? '#ff8c00' : '#ffd700');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, 16, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Button on body
+            ctx.fillStyle = isHovered ? '#ff6b6b' : '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(x - 22, y - 9, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Click indicator
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('▶', x + 2, y + 6);
+
+            // Label below
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = 'bold 11px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ક્લિક કરો', x, y + 35);
+        }
+
+        function drawGame() {
+            if (canvas.width === 0 || canvas.height === 0) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw flashlight with button functionality
+            drawFlashlight(laser.x, laser.y, torchButtonHovered);
+
+            // Draw target (movable)
+            ctx.strokeStyle = isDraggingTarget ? '#f39c12' : '#27ae60';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, 25, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, 18, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, 11, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.fillStyle = isDraggingTarget ? '#f39c12' : '#27ae60';
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('TARGET', target.x, target.y + 40);
+
+            // Draw mirror
+            ctx.save();
+            ctx.translate(mirror.x, mirror.y);
+            ctx.rotate((mirror.angle * Math.PI) / 180);
+
+            // Mirror glow if dragging
+            if (isDraggingMirror) {
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = '#f39c12';
+            } else {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#3498db';
+            }
+
+            ctx.strokeStyle = isDraggingMirror ? '#f39c12' : '#3498db';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(-40, 0);
+            ctx.lineTo(40, 0);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Mirror back
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(-40, 0, 80, 8);
+
+            ctx.restore();
+
+            // Draw angle indicator
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${Math.round(mirror.angle)}°`, mirror.x, mirror.y - 50);
+
+            // Draw animated laser beam
+            if (isAnimating && laserPath.length > 1) {
+                const totalPoints = laserPath.length;
+                const pointsToDraw = Math.floor(animationProgress * totalPoints);
+
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#ff0000';
+                
+                ctx.beginPath();
+                ctx.moveTo(laserPath[0].x, laserPath[0].y);
+                
+                for (let i = 1; i <= pointsToDraw && i < laserPath.length; i++) {
+                    ctx.lineTo(laserPath[i].x, laserPath[i].y);
+                }
+                
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Draw laser beam glow points
+                for (let i = 0; i <= pointsToDraw && i < laserPath.length; i++) {
+                    ctx.fillStyle = '#ff0000';
+                    ctx.beginPath();
+                    ctx.arc(laserPath[i].x, laserPath[i].y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Draw hint arrows
+            if (!isAnimating) {
+                ctx.setLineDash([5, 5]);
+                
+                if (!isDraggingMirror) {
+                    ctx.strokeStyle = 'rgba(52, 152, 219, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(mirror.x - 25, mirror.y - 25);
+                    ctx.lineTo(mirror.x - 15, mirror.y - 15);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                    ctx.font = '11px Arial';
+                    ctx.textAlign = 'right';
+                    ctx.fillText('મિરર', mirror.x - 30, mirror.y - 27);
+                }
+                
+                if (!isDraggingTarget) {
+                    ctx.strokeStyle = 'rgba(39, 174, 96, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(target.x + 25, target.y - 25);
+                    ctx.lineTo(target.x + 15, target.y - 15);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                    ctx.font = '11px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillText('ખસેડો', target.x + 30, target.y - 27);
+                }
+                
+                ctx.setLineDash([]);
+            }
+        }
+
+        function calculateLaserPath() {
+            laserPath = [];
+            let currentPos = { x: laser.x, y: laser.y };
+            let direction = { x: 1, y: 0 };
+            
+            laserPath.push({ ...currentPos });
+
+            // Check if laser hits mirror
+            const dx = mirror.x - currentPos.x;
+            const dy = mirror.y - currentPos.y;
+            const distToMirror = Math.sqrt(dx * dx + dy * dy);
+            
+            // Calculate if mirror is in beam path
+            const dot = (dx * direction.x + dy * direction.y) / distToMirror;
+            
+            if (dot > 0.9 && distToMirror < canvas.width) {
+                // Laser hits mirror
+                laserPath.push({ x: mirror.x, y: mirror.y });
+                
+                // Reflect beam
+                const mirrorAngleRad = (mirror.angle * Math.PI) / 180;
+                const incidentAngle = Math.atan2(direction.y, direction.x);
+                const reflectedAngle = 2 * mirrorAngleRad - incidentAngle;
+                
+                direction = {
+                    x: Math.cos(reflectedAngle),
+                    y: Math.sin(reflectedAngle)
+                };
+                
+                currentPos = { x: mirror.x, y: mirror.y };
+            }
+
+            // Extend beam to edge or target
+            const steps = 1000;
+            for (let i = 0; i < steps; i++) {
+                currentPos.x += direction.x * 2;
+                currentPos.y += direction.y * 2;
+                
+                // Check boundaries
+                if (currentPos.x < 0 || currentPos.x > canvas.width || 
+                    currentPos.y < 0 || currentPos.y > canvas.height) {
+                    break;
+                }
+                
+                // Check if hit target
+                const distToTarget = Math.sqrt(
+                    (currentPos.x - target.x) ** 2 + 
+                    (currentPos.y - target.y) ** 2
+                );
+                
+                if (distToTarget < 25) {
+                    laserPath.push({ x: target.x, y: target.y });
+                    return true; // Hit target!
+                }
+            }
+            
+            laserPath.push(currentPos);
+            return false; // Missed target
+        }
+
+        function animateLaser() {
+            if (!isAnimating) return;
+
+            animationProgress += 0.02;
+
+            if (animationProgress >= 1) {
+                isAnimating = false;
+                animationProgress = 1;
+
+                // Check if target was hit
+                const lastPoint = laserPath[laserPath.length - 1];
+                const distToTarget = Math.sqrt(
+                    (lastPoint.x - target.x) ** 2 + 
+                    (lastPoint.y - target.y) ** 2
+                );
+
+                if (distToTarget < 25) {
+                    score += level * 100;
+                    document.getElementById('score').textContent = score;
+                    showMessage('🎉 શાબાશ! તમે લક્ષ્ય સાધ્યું!', 'green');
+                    
+                    setTimeout(() => {
+                        if (level < levels.length) {
+                            level++;
+                            loadLevel(level);
+                        } else {
+                            showMessage('🏆 અભિનંદન! તમે બધા લેવલ પૂર્ણ કર્યા!', 'gold');
+                        }
+                    }, 2000);
+                } else {
+                    showMessage('❌ ચૂકી ગયા! ફરીથી પ્રયાસ કરો', 'red');
+                }
+            } else {
+                drawGame();
+                requestAnimationFrame(animateLaser);
+            }
+        }
+
+        function shootLaser() {
+            if (isAnimating) return;
+
+            calculateLaserPath();
+            isAnimating = true;
+            animationProgress = 0;
+            animateLaser();
+        }
+
+        function resetLevel() {
+            loadLevel(level);
+        }
+
+        function showMessage(msg, color) {
+            const msgEl = document.getElementById('message');
+            msgEl.textContent = msg;
+            msgEl.style.color = color;
+        }
+    </script>
+</body>
+</html>
