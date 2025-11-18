@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ગુજરાતી શબ્દ પઝલ</title>
     <style>
+        /* CSS શૈલીઓ અહીં શરૂ થાય છે */
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
         body {
             font-family: 'Noto Sans Gujarati', sans-serif;
@@ -84,6 +85,7 @@
             color: #2b6cb0;
             font-size: 1.2em;
             font-weight: bold;
+            min-width: 80px; /* નંબર માટે મિનિમમ જગ્યા */
         }
         .word-input {
             border: 2px solid #cbd5e0;
@@ -171,20 +173,36 @@
             to { opacity: 1; }
         }
         
-        .hint-button {
-            background-color: #ffc107;
-            color: #212529;
-            padding: 8px 15px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9em;
-            margin-left: 10px;
-            transition: background-color 0.3s;
+        /* મોબાઇલ ઉપકરણો માટે પ્રતિભાવશીલતા (Responsiveness for Mobile) */
+        @media (max-width: 600px) {
+            .puzzle-grid {
+                grid-template-columns: repeat(5, 1fr); /* 5x4 ગ્રીડ */
+                gap: 8px;
+            }
+            .box {
+                font-size: 0.9em;
+                padding: 3px;
+            }
+            .box-char {
+                font-size: 1.2em;
+            }
+            .game-container {
+                padding: 15px;
+                margin: 10px;
+            }
+            .word-row {
+                flex-direction: column;
+                margin-bottom: 15px;
+            }
+            .number-sequence {
+                margin-right: 0;
+                margin-bottom: 5px;
+            }
+            .word-input {
+                width: 80%;
+            }
         }
-        .hint-button:hover {
-            background-color: #e0a800;
-        }
+        /* CSS શૈલીઓ અહીં સમાપ્ત થાય છે */
     </style>
 </head>
 <body>
@@ -192,7 +210,7 @@
 <div class="game-container">
     <h1>ગુજરાતી શબ્દ પઝલ</h1>
     <p class="instructions">આપેલ અંકો અને અક્ષરોનો ઉપયોગ કરીને સાચા શબ્દો બનાવો.</p>
-    <p class="instructions">By rajesh barochia</p>
+    <p class="instructions" style="font-size:0.9em; color:#888;">By rajesh barochia</p>
 
     <div class="puzzle-grid">
         <div class="box" id="box1"><span class="box-number">૧</span><span class="box-char">ક</span></div>
@@ -262,41 +280,24 @@
 </div>
 
 <script>
+    // JavaScript અહીં શરૂ થાય છે
     // અક્ષરોનો સંદર્ભ
     const letters = {
-        1: 'ક',
-        2: 'ત',
-        3: 'ટ',
-        4: 'દ',
-        5: 'ર',
-        6: 'સ',
-        7: 'વા',
-        8: 'બા',
-        9: 'યા',
-        10: 'રાં',
-        11: 'વાં',
-        12: 'છો',
-        13: 'જો',
-        14: 'પિ',
-        15: 'ળી',
-        16: 'ઉં',
-        17: 'જૂ',
-        18: 'બૂ',
-        19: 'રૂ',
-        20: 'સ્કૂ'
+        1: 'ક', 2: 'ત', 3: 'ટ', 4: 'દ', 5: 'ર', 6: 'સ', 7: 'વા', 8: 'બા', 9: 'યા', 10: 'રાં', 
+        11: 'વાં', 12: 'છો', 13: 'જો', 14: 'પિ', 15: 'ળી', 16: 'ઉં', 17: 'જૂ', 18: 'બૂ', 19: 'રૂ', 20: 'સ્કૂ'
     };
 
     // સાચા જવાબો
     const answers = {
-        word1: 'વાજૂ', // 7 + 17
-        word2: 'કબાટ', // 1 + 8 + 3
-        word3: 'વાંસળી', // 11 + 6 + 15
-        word4: 'છોકરાં', // 12 + 1 + 10
-        word5: 'સ્કૂટર', // 20 + 3 + 5
-        word6: 'ઉંદર', // 16 + 4 + 5
-        word7: 'રૂપિયા', // 19 + 14 + 9
-        word8: 'જોકર', // 13 + 1 + 5
-        word9: 'કબૂતર' // 1 + 18 + 2 + 5
+        word1: 'વાજૂ', 
+        word2: 'કબાટ', 
+        word3: 'વાંસળી', 
+        word4: 'છોકરાં', 
+        word5: 'સ્કૂટર', 
+        word6: 'ઉંદર', 
+        word7: 'રૂપિયા', 
+        word8: 'જોકર', 
+        word9: 'કબૂતર' 
     };
 
     // શબ્દ અને બોક્સની મેપિંગ
@@ -327,7 +328,7 @@
 
         let allCorrect = true;
         let messageElement = document.getElementById('message');
-        messageElement.innerHTML = '';
+        messageElement.innerHTML = ''; // ભૂલ સંદેશાઓ સાફ કરો
 
         // પહેલા બધા બોક્સ અને ઇનપુટને રીસેટ કરો
         resetColors();
@@ -335,15 +336,16 @@
         // દરેક શબ્દને ચકાસો
         for (const key in answers) {
             const inputElement = document.getElementById(key);
+            const expectedAnswer = answers[key];
+
             if (inputElement) {
-                if (inputs[key] === answers[key]) {
+                if (inputs[key] === expectedAnswer) {
                     // સાચો જવાબ - લીલો કલર
                     inputElement.classList.add('correct');
                     inputElement.classList.remove('incorrect');
                     
                     // સંબંધિત બોક્સને લીલો કરો
-                    const boxes = wordToBoxes[key];
-                    boxes.forEach(boxNumber => {
+                    wordToBoxes[key].forEach(boxNumber => {
                         const boxElement = document.getElementById('box' + boxNumber);
                         if (boxElement) {
                             boxElement.classList.add('correct');
@@ -357,8 +359,7 @@
                     allCorrect = false;
                     
                     // સંબંધિત બોક્સને લાલ કરો
-                    const boxes = wordToBoxes[key];
-                    boxes.forEach(boxNumber => {
+                    wordToBoxes[key].forEach(boxNumber => {
                         const boxElement = document.getElementById('box' + boxNumber);
                         if (boxElement) {
                             boxElement.classList.add('incorrect');
@@ -366,39 +367,52 @@
                         }
                     });
                     
-                    // ખોટા જવાબ માટે સૂચના દર્શાવો
+                    // ખોટા જવાબ માટે અક્ષર-દર-અક્ષર સૂચના દર્શાવો
                     if (inputs[key] !== '') {
                         const wordNumber = key.replace('word', '');
-                        const expectedWord = answers[key];
                         const userWord = inputs[key];
                         
                         let hint = `શબ્દ ${wordNumber}: `;
-                        for (let i = 0; i < Math.max(expectedWord.length, userWord.length); i++) {
-                            if (i < userWord.length && i < expectedWord.length && userWord[i] === expectedWord[i]) {
-                                hint += `<span style="color:green">${userWord[i]}</span>`;
+                        let correctMatch = true;
+                        
+                        // અક્ષર-દર-અક્ષર સરખામણી
+                        for (let i = 0; i < Math.max(expectedAnswer.length, userWord.length); i++) {
+                            if (i < userWord.length && i < expectedAnswer.length && userWord[i] === expectedAnswer[i]) {
+                                hint += `<span style="color:#28a745">${userWord[i]}</span>`; // લીલો = સાચો
                             } else if (i < userWord.length) {
-                                hint += `<span style="color:red">${userWord[i]}</span>`;
+                                hint += `<span style="color:#dc3545">${userWord[i]}</span>`; // લાલ = ખોટો
+                                correctMatch = false;
                             } else {
-                                hint += `<span style="color:gray">${expectedWord[i]}</span>`;
+                                hint += `<span style="color:#6c757d">${expectedAnswer[i]}</span>`; // રાખોડી = ખૂટતો
                             }
                         }
                         
-                        const hintElement = document.createElement('div');
-                        hintElement.innerHTML = hint;
-                        hintElement.style.fontSize = '0.9em';
-                        hintElement.style.marginTop = '5px';
-                        messageElement.appendChild(hintElement);
+                        // જો જવાબ ખાલી ન હોય અને ખોટો હોય તો જ Hint બતાવો
+                        if (!correctMatch || userWord.length !== expectedAnswer.length) {
+                            const hintElement = document.createElement('div');
+                            hintElement.innerHTML = hint;
+                            hintElement.style.fontSize = '0.9em';
+                            hintElement.style.marginTop = '5px';
+                            hintElement.style.marginBottom = '10px';
+                            messageElement.appendChild(hintElement);
+                        }
                     }
                 }
             }
         }
 
+        // અંતિમ સંદેશ
         if (allCorrect) {
-            messageElement.innerHTML = 'અભિનંદન! તમે બધા શબ્દો સાચા બનાવ્યા છે!';
+            messageElement.innerHTML = 'અભિનંદન! તમે બધા શબ્દો સાચા બનાવ્યા છે! 🎉';
             messageElement.className = 'message correct-message all-solved-message';
         } else {
             if (messageElement.innerHTML === '') {
                 messageElement.innerHTML = 'કેટલાક જવાબો ખોટા છે. ફરીથી પ્રયાસ કરો.';
+            } else {
+                let generalMessage = document.createElement('div');
+                generalMessage.innerHTML = 'ઉપર લાલ રંગમાં બતાવેલ અક્ષરો/શબ્દોમાં ભૂલ છે.';
+                generalMessage.style.fontSize = '1em';
+                messageElement.prepend(generalMessage);
             }
             messageElement.className = 'message incorrect-message';
         }
@@ -417,22 +431,16 @@
         });
     }
 
-    // ઉપયોગકર્તાને મદદ કરવા માટે હિન્ટ ફંક્શન
-    function showHint(wordNumber) {
-        const answer = answers['word' + wordNumber];
-        const numberSequence = document.querySelectorAll('.number-sequence')[wordNumber-1].textContent;
-        
-        alert(`શબ્દ ${wordNumber} (${numberSequence}) માટે હિન્ટ:\nઆ શબ્દ "${answer}" છે.`);
-    }
-
     // ઇનપુટ ફીલ્ડમાં એન્ટર દબાવવાથી પણ જવાબ ચકાસો
     document.querySelectorAll('.word-input').forEach(input => {
         input.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
+                e.preventDefault(); // ફોર્મ સબમિશન અટકાવો
                 checkAnswers();
             }
         });
     });
+    // JavaScript અહીં સમાપ્ત થાય છે
 </script>
 
 </body>
