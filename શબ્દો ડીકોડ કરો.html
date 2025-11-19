@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>શબ્દો ડીકોડ કરો!</title>
+    <!-- Tailwind CSS CDN --><script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font setup for Gujarati */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        body {
+            font-family: 'Noto Sans Gujarati', 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* કી સર્કલની સાઈઝ નાની કરી જેથી વધુ અક્ષરો એક લાઈનમાં સમાય */
+        .cipher-key-circle {
+            width: 25px; 
+            height: 25px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.75rem; /* ફોન્ટ સાઈઝ નાની કરી */
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+            margin: 2px; /* માર્જિન ઓછું કર્યું */
+        }
+        /* કી લેબલ માટે સ્ટાઇલ */
+        .cipher-key-label {
+            font-size: 0.875rem; /* ટેક્સ્ટ સાઈઝ નાની કરી */
+            font-weight: 500;
+            color: #4b5563;
+        }
+        .input-box {
+            text-transform: uppercase;
+            text-align: center;
+            font-size: 1.5rem;
+            width: 50px;
+            height: 50px;
+            border: 3px solid #6b7280;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .input-box:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+        .correct {
+            border-color: #10b981 !important;
+            background-color: #d1fae5;
+        }
+        .incorrect {
+            border-color: #ef4444 !important;
+            background-color: #fee2e2;
+        }
+        /* ઇમોજી માટે સ્ટાઇલ */
+        .animal-emoji {
+            font-size: 4rem; /* ઇમોજીની સાઇઝ મોટી કરી */
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="p-4 flex items-center justify-center min-h-screen">
+
+    <div id="app" class="w-full max-w-lg bg-white p-6 md:p-8 rounded-2xl shadow-xl">
+        <h1 class="text-3xl font-bold text-center text-blue-800 mb-1">
+            શબ્દો ડીકોડ કરો!
+        </h1>
+        <!-- નવું: બનાવનારનું નામ --><p class="text-center text-gray-500 text-sm font-medium mb-4">
+            Created by : Rajesh Barochia
+        </p>
+        <p class="text-center text-gray-600 mb-6">આપેલી કી (Key) નો ઉપયોગ કરીને પરિચિત વસ્તુઓ, પ્રાણીઓ કે શબ્દોના નામ શોધો.</p>
+
+        <!-- Cipher Key Section --><div id="key-container" class="mb-8 p-4 bg-gray-100 rounded-lg shadow-inner">
+            <h2 class="text-xl font-semibold mb-3 text-gray-700">કોડિંગ કી (Cipher Key)</h2>
+            <!-- Key will be inserted here by JavaScript --></div>
+
+        <!-- Puzzle Section --><div id="puzzle-container" class="text-center">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">શબ્દ #<span id="puzzle-number">1</span>:</h2>
+            
+            <!-- Encoded Circles --><div id="encoded-word" class="flex justify-center space-x-2 mb-4">
+                <!-- Circles will be inserted here --></div>
+
+            <!-- Input Boxes --><div id="decoded-input" class="flex justify-center space-x-2 mb-6">
+                <!-- Input fields will be inserted here --></div>
+
+            <!-- Messages and Controls --><div id="message-box" class="h-8 text-center text-lg font-semibold mb-4"></div>
+            
+            <!-- New: Image/Emoji Display Area - ઇમોજી અહીં દેખાશે --><div id="animal-emoji-container" class="mb-6 h-32 flex justify-center items-center">
+                <!-- Emoji will be inserted here --></div>
+            
+            <div class="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4 justify-center">
+                <button id="check-button" class="bg-indigo-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:bg-indigo-700 transition duration-300 transform hover:scale-[1.02]">
+                    જવાબ ચકાસો (Check Answer)
+                </button>
+                <button id="next-button" disabled class="bg-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:bg-green-700 transition duration-300 transform hover:scale-[1.02] opacity-50 cursor-not-allowed">
+                    આગળનો શબ્દ (Next Word)
+                </button>
+            </div>
+            
+            <div id="score-display" class="mt-6 text-xl font-semibold text-gray-700">
+                સાચા જવાબ: <span id="score">0</span> / <span id="total-puzzles">0</span>
+            </div>
+        </div>
+
+        <!-- End Game Modal --><div id="end-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-white p-8 rounded-xl shadow-2xl text-center max-w-sm w-full">
+                <h3 class="text-3xl font-bold text-green-600 mb-4">અભિનંદન! 🎉</h3>
+                <p class="text-lg text-gray-700 mb-6">તમે બધા શબ્દો સફળતાપૂર્વક ડીકોડ કર્યા છે.</p>
+                <p class="text-2xl font-extrabold text-blue-800 mb-6">તમારો સ્કોર: <span id="final-score"></span></p>
+                <button id="restart-button" class="bg-red-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-red-600 transition duration-300">
+                    ફરીથી રમો (Play Again)
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ફાયરબેઝ/ફાયરસ્ટોર માટે ગ્લોબલ વેરિયેબલ્સ.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        // કોડિંગ કી (તમારા ઈમેજ પર આધારિત) - હવે Hex Colors નો ઉપયોગ કરીને
+        const cipherMap = {
+            'A': '#10b981', // Emerald Green
+            'E': '#facc15',  // Yellow
+            'O': '#ec4899',    // Pink
+            'B': '#1e40af',    // Dark Blue
+            'C': '#9333ea',  // Purple
+            'D': '#a78bfa',  // Violet/Purple
+            'G': '#ea580c',  // Orange
+            'H': '#6F4E37',    // Coffee Brown
+            'S': '#9ca3af',    // Grey
+            'T': '#38bdf8',     // Sky Blue
+            'N': '#4f46e5'       // New: Indigo Blue
+        };
+
+        // પરિચિત શબ્દોનો કોયડો (પ્રાણીઓ, વસ્તુઓ, વગેરે)
+        let animalPuzzles = [ // હવે let નો ઉપયોગ કર્યો કારણ કે આ એરે શફલ થશે
+            { word: 'CAT', guj: 'બિલાડી', emoji: '🐈' },
+            { word: 'DOG', guj: 'કૂતરો', emoji: '🐕' },
+            { word: 'BAT', guj: 'બેટ', emoji: '🏏' },
+            { word: 'DOT', guj: 'ટપકું', emoji: '⚫' },
+            { word: 'COAT', guj: 'કોટ', emoji: '🧥' },
+            { word: 'BOAT', guj: 'હોડી', emoji: '⛵' },
+            { word: 'SODA', guj: 'સોડા', emoji: '🥤' },
+            { word: 'GATE', guj: 'દરવાજો', emoji: '🚪' },
+            { word: 'NOTE', guj: 'નોંધ', emoji: '📝' }, 
+            { word: 'HEAT', guj: 'ગરમી', emoji: '🔥' }
+        ];
+
+        let currentPuzzleIndex = 0;
+        let score = 0;
+        let inputs = [];
+
+        // DOM Elements
+        const keyContainer = document.getElementById('key-container');
+        const encodedWordContainer = document.getElementById('encoded-word');
+        const decodedInputContainer = document.getElementById('decoded-input');
+        const checkButton = document.getElementById('check-button');
+        const nextButton = document.getElementById('next-button');
+        const messageBox = document.getElementById('message-box');
+        const animalEmojiContainer = document.getElementById('animal-emoji-container');
+        const scoreDisplay = document.getElementById('score');
+        const totalPuzzlesDisplay = document.getElementById('total-puzzles');
+        const puzzleNumberDisplay = document.getElementById('puzzle-number');
+        const endModal = document.getElementById('end-modal');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+        
+        // Fisher-Yates (Knuth) shuffle algorithm: એરેને રેન્ડમ ક્રમમાં ગોઠવવા માટે
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+        }
+
+        // 1. કોડિંગ કી રેન્ડર કરો
+        function renderKey() {
+            let keyHTML = '';
+            for (const [letter, hexColor] of Object.entries(cipherMap)) {
+                keyHTML += `
+                    <!-- Flex container for each key item --><div class="flex flex-col items-center mx-1 my-1">
+                        <!-- Color Circle --><div class="cipher-key-circle shadow-md" style="background-color: ${hexColor};"></div>
+                        <!-- Letter Label --><div class="cipher-key-label">${letter}</div>
+                    </div>
+                `;
+            }
+            // જૂની કી દૂર કરો અને નવી કી ઉમેરો
+            const existingKeyDiv = keyContainer.querySelector('.key-wrapper');
+            if (existingKeyDiv) existingKeyDiv.remove();
+
+            // નવી કી માટે એક કન્ટેનર ઉમેરો
+            // સ્ક્રીન ફ્રેન્ડલી બનાવવા માટે flex-wrap નો ઉપયોગ
+            keyContainer.innerHTML += `<div class="key-wrapper flex flex-wrap justify-center">${keyHTML}</div>`;
+        }
+        
+        // 2. વર્તમાન કોયડો લોડ કરો
+        function loadPuzzle() {
+            if (currentPuzzleIndex >= animalPuzzles.length) {
+                showEndGameModal();
+                return;
+            }
+
+            const currentWord = animalPuzzles[currentPuzzleIndex].word;
+            
+            // UI અપડેટ
+            puzzleNumberDisplay.textContent = currentPuzzleIndex + 1;
+            totalPuzzlesDisplay.textContent = animalPuzzles.length;
+            scoreDisplay.textContent = score;
+            messageBox.textContent = '';
+            animalEmojiContainer.innerHTML = ''; // નવો કોયડો લોડ થતાં ઇમોજી દૂર કરો
+            checkButton.disabled = false;
+            nextButton.disabled = true;
+            nextButton.classList.add('opacity-50', 'cursor-not-allowed');
+            nextButton.classList.remove('hover:bg-green-700');
+            checkButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            checkButton.classList.add('hover:bg-indigo-700');
+
+
+            // રંગીન કોડ્સ (Encoded Circles) રેન્ડર કરો
+            encodedWordContainer.innerHTML = '';
+            decodedInputContainer.innerHTML = '';
+            inputs = [];
+
+            for (let i = 0; i < currentWord.length; i++) {
+                const letter = currentWord[i];
+                const hexColor = cipherMap[letter];
+
+                // 1. રંગીન વર્તુળ (Circle)
+                const circle = document.createElement('div');
+                circle.className = `cipher-key-circle shadow-md`;
+                circle.style.width = '40px';
+                circle.style.height = '40px';
+                circle.style.margin = '0 6px';
+                circle.style.backgroundColor = hexColor; 
+                encodedWordContainer.appendChild(circle);
+
+                // 2. ઇનપુટ બોક્સ (Input Box)
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.maxLength = 1;
+                input.className = 'input-box focus:border-blue-500';
+                input.id = `input-${i}`;
+                input.dataset.index = i;
+                input.addEventListener('input', handleInput);
+                input.addEventListener('keydown', handleKeyDown);
+                decodedInputContainer.appendChild(input);
+                inputs.push(input);
+            }
+            
+            // પ્રથમ ઇનપુટ પર ફોકસ કરો
+            if (inputs.length > 0) {
+                inputs[0].focus();
+            }
+        }
+
+        // 3. ઇનપુટ હેન્ડલર
+        function handleInput(event) {
+            const input = event.target;
+            input.value = input.value.toUpperCase();
+            
+            // જો ઇનપુટમાં કિંમત હોય અને તે છેલ્લું બોક્સ ન હોય, તો આગળના બોક્સ પર જાઓ
+            if (input.value && input.dataset.index < inputs.length - 1) {
+                inputs[parseInt(input.dataset.index) + 1].focus();
+            }
+            // ક્લાસ રીસેટ કરો
+            input.classList.remove('correct', 'incorrect');
+            messageBox.textContent = '';
+            animalEmojiContainer.innerHTML = ''; // ઇમોજી દૂર કરો
+        }
+
+        // 4. કીબોર્ડ નેવિગેશન હેન્ડલર (ડાબી કી)
+        function handleKeyDown(event) {
+            const input = event.target;
+            const index = parseInt(input.dataset.index);
+
+            if (event.key === 'Backspace' && input.value === '') {
+                if (index > 0) {
+                    inputs[index - 1].focus();
+                }
+            } else if (event.key === 'ArrowLeft') {
+                if (index > 0) {
+                    inputs[index - 1].focus();
+                }
+            } else if (event.key === 'ArrowRight') {
+                if (index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            } else if (event.key === 'Enter') {
+                checkAnswer();
+            }
+        }
+
+        // 5. જવાબ ચકાસો
+        function checkAnswer() {
+            if (checkButton.disabled) return; // જો જવાબ પહેલેથી જ ચકાસાયેલ હોય
+
+            const currentPuzzle = animalPuzzles[currentPuzzleIndex];
+            const currentWord = currentPuzzle.word;
+            let userAnswer = '';
+            let isCorrect = true;
+
+            for (let i = 0; i < inputs.length; i++) {
+                const input = inputs[i];
+                const expectedLetter = currentWord[i];
+                const enteredLetter = input.value.toUpperCase();
+                
+                userAnswer += enteredLetter;
+
+                input.classList.remove('correct', 'incorrect');
+
+                if (enteredLetter === expectedLetter) {
+                    input.classList.add('correct');
+                } else {
+                    input.classList.add('incorrect');
+                    isCorrect = false;
+                }
+            }
+
+            if (isCorrect) {
+                messageBox.textContent = `સાચું! આ છે: ${currentPuzzle.guj}`;
+                messageBox.classList.remove('text-red-500');
+                messageBox.classList.add('text-green-600');
+                score++;
+                scoreDisplay.textContent = score;
+
+                // **સાચો જવાબ મળતા ઇમોજી પ્રદર્શિત કરો**
+                animalEmojiContainer.innerHTML = `<span class="animal-emoji">${currentPuzzle.emoji}</span>`;
+
+
+                // નેક્સ્ટ બટન સક્ષમ કરો
+                nextButton.disabled = false;
+                nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                nextButton.classList.add('hover:bg-green-700');
+                
+                checkButton.disabled = true;
+                checkButton.classList.add('opacity-50', 'cursor-not-allowed');
+                checkButton.classList.remove('hover:bg-indigo-700');
+
+            } else {
+                messageBox.textContent = 'ખોટો જવાબ. ફરી પ્રયાસ કરો.';
+                messageBox.classList.remove('text-green-600');
+                messageBox.classList.add('text-red-500');
+                animalEmojiContainer.innerHTML = ''; // ખોટો જવાબ હોય તો ઇમોજી દૂર કરો
+            }
+        }
+
+        // 6. આગળનો શબ્દ
+        function nextPuzzle() {
+            if (nextButton.disabled) return;
+            currentPuzzleIndex++;
+            loadPuzzle();
+        }
+
+        // 7. ગેમ પૂર્ણ કરો
+        function showEndGameModal() {
+            finalScoreDisplay.textContent = `${score} / ${animalPuzzles.length}`;
+            endModal.classList.remove('hidden');
+        }
+
+        // 8. ગેમ રીસ્ટાર્ટ કરો
+        function restartGame() {
+            currentPuzzleIndex = 0;
+            score = 0;
+            endModal.classList.add('hidden');
+            // ગેમ રીસ્ટાર્ટ કરતા પહેલા શબ્દોને ફરીથી રેન્ડમ કરો
+            shuffleArray(animalPuzzles); 
+            loadPuzzle();
+        }
+
+        // Event Listeners
+        checkButton.addEventListener('click', checkAnswer);
+        nextButton.addEventListener('click', nextPuzzle);
+        restartButton.addEventListener('click', restartGame);
+        
+        // Initial setup
+        window.onload = function() {
+            renderKey();
+            // ડીકોડિંગ શરૂ કરતા પહેલા શબ્દોને રેન્ડમ કરો
+            shuffleArray(animalPuzzles); 
+            loadPuzzle();
+        };
+
+    </script>
+</body>
+</html>
