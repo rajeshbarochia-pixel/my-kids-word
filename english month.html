@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="gu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>બાળકો માટે સ્પિન વ્હીલ (અંગ્રેજી મહિના)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg:#f6f9fc; --card:#fff; --accent:#2b6cb0; --muted:#666;
+  }
+  /* Tailwind is loaded, but keeping custom styles for consistency and game look */
+  * {box-sizing:border-box}
+  body { 
+    font-family:Inter,system-ui,Segoe UI,Arial; 
+    margin:0; 
+    background:var(--bg); 
+    color:#111; 
+    padding:10px; 
+    display:flex; 
+    justify-content:center; 
+    align-items:center; 
+    min-height:100vh;
+  } 
+  
+  .wrap{
+    max-width:600px; /* વ્હીલ માટે મહત્તમ પહોળાઈ */
+    width:100%;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:center;
+  }
+  header h1{font-size:18px;margin:0 0 0px 0; text-align:center;} /* માર્જિન ઘટાડ્યું */
+  header p{font-size:14px; margin:0 0 10px 0; color:#6b7280; text-align:center;} /* નવા ટાઇટલ માટે સ્ટાઇલ */
+  .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(20,20,40,.06); width:100%;}
+  
+  /* --- CANVAS SIZE MANAGEMENT (FIXED FOR MOBILE) --- */
+  #wheelCanvas{
+    /* Use w-full in Tailwind, but keeping the block display and max-width in CSS for a clear square area */
+    width:100%; 
+    max-width: 500px; /* Reduced max-width slightly for better padding/margin on desktop/tablet */
+    height:auto;
+    aspect-ratio: 1 / 1; /* Ensure it is always square based on width */
+    border-radius:8px;
+    display:block;
+    margin: 0 auto;
+    background:linear-gradient(180deg,#fff,#f3f6fb);
+    box-shadow: 0 0 0 4px #e0e0e0, 0 8px 15px rgba(0,0,0,0.1);
+  }
+  
+  .controls{display:flex;gap:8px;flex-wrap:wrap; margin-top:10px; justify-content:center;}
+  button{background:var(--accent);color:#fff;border:0;padding:8px 16px;border-radius:8px;cursor:pointer;transition:all 0.2s; font-weight: 600; text-transform: uppercase;}
+  button:hover{opacity:0.9;transform:translateY(-1px)}
+  button.ghost{background:transparent;color:var(--accent);border:1px solid #a0a0a0}
+  button.ghost:hover{background:#f0f5ff}
+  .small{font-size:14px;padding:8px 12px}
+
+  /* Result box is now primarily for accessibility, visual result is in center wheel */
+  .result{
+    position: absolute; /* Hide visually but keep for screen readers */
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Ensure controls are below the wheel */
+  @media (max-width:600px){
+    body { padding: 8px; } 
+    .wrap{ gap: 8px; }
+    #wheelCanvas {
+      max-width: 95vw; 
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>બાળકો માટે સ્પિન વ્હીલ 🎡</h1>
+      <p class="text-sm text-gray-500 mt-1">Rajesh Barochiha</p>
+    </header>
+
+    <div class="card">
+      <canvas id="wheelCanvas" width="800" height="800" role="img" aria-label="અંગ્રેજી મહિનાઓનું સ્પિન વ્હીલ"></canvas>
+
+      <div class="controls">
+        <button id="spinBtn" class="small">SPIN</button>
+        <button id="quickSpin" class="small ghost">Quick Spin</button>
+        <button id="stopBtn" class="small ghost">STOP</button>
+      </div>
+
+      
+
+<div id="resultBox" class="result" style="display:none" aria-live="polite"></div>
+    </div>
+  </div>
+
+<script>
+/* ---------- Data model ---------- */
+// ૧૨ અંગ્રેજી મહિનાઓના નામ ગુજરાતીમાં ઉમેર્યા
+const items = [
+    "જાન્યુઆરી", 
+    "ફેબ્રુઆરી", 
+    "માર્ચ", 
+    "એપ્રિલ", 
+    "મે", 
+    "જૂન", 
+    "જુલાઈ", 
+    "ઓગસ્ટ", 
+    "સપ્ટેમ્બર", 
+    "ઓક્ટોબર", 
+    "નવેમ્બર", 
+    "ડિસેમ્બર"
+];
+let colors = [];
+let currentWinner = ""; // Global variable to store the winner for drawing in the center
+
+/* ---------- Utils ---------- */
+function genColor(i, n) {
+  const hue = Math.round((i * 360 / n) % 360);
+  // Set darker colors for better contrast with text
+  return `hsl(${hue} 70% 65%)`; 
+}
+
+function ensureColors() {
+  for (let i = 0; i < items.length; i++) {
+    colors[i] = genColor(i, items.length);
+  }
+}
+
+/* ---------- Canvas wheel ---------- */
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+let cw, ch, cx, cy, radius;
+let isSpinning = false, angularVelocity = 0, angle = 0;
+let animationId = null;
+
+/* draw wheel */
+function drawWheel() {
+  ctx.clearRect(0, 0, cw, ch);
+  const n = items.length || 1;
+  const seg = 2 * Math.PI / n;
+  
+  // 1. Draw the rotating wheel segments
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+
+  for (let i = 0; i < n; i++) {
+    const start = i * seg;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, radius, start, start + seg);
+    ctx.closePath();
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2; // Reduced line width for 12 segments
+    ctx.stroke();
+  }
+  
+  // Outer border
+  ctx.strokeStyle = "#4a5568";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+  ctx.stroke();
+  
+  ctx.restore(); // Restore after wheel rotation
+
+  // 2. Draw text (always horizontal)
+  ctx.save();
+  for (let i = 0; i < n; i++) {
+    const start = i * seg + angle; 
+    const textAngle = start + seg / 2;
+    const textRadius = radius * 0.75; // Move text slightly closer to center
+    const textX = cx + Math.cos(textAngle) * textRadius;
+    const textY = cy + Math.sin(textAngle) * textRadius;
+    
+    ctx.fillStyle = "#08203a";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    
+    let text = items[i];
+    
+    // Adjusted font size for 12 items (Gujarati text)
+    ctx.font = `bold ${Math.max(14, Math.floor(radius/15))}px Inter, Arial, sans-serif`; 
+    ctx.fillText(text, textX, textY); 
+  }
+  ctx.restore();
+
+  // 3. Draw Center Circle
+  const centerRadius = radius * 0.25; // Adjust size as needed
+  ctx.beginPath();
+  ctx.arc(cx, cy, centerRadius, 0, 2 * Math.PI);
+  ctx.fillStyle = "#ffffff"; // White circle
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+  ctx.shadowBlur = 15;
+  ctx.fill();
+  ctx.strokeStyle = "#4a5568";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // 4. Draw Winner Text in Center Circle (Simplified for single word)
+  if (!isSpinning && currentWinner) {
+    ctx.fillStyle = "#08203a";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    // Adjusted font for Gujarati text in the center
+    ctx.font = `bold ${Math.max(18, Math.floor(centerRadius * 0.3))}px Inter, Arial, sans-serif`;
+    ctx.fillText(currentWinner, cx, cy);
+  }
+}
+
+/* animation loop */
+function animate() {
+  if (!isSpinning) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+    return;
+  }
+  angle += angularVelocity;
+  angularVelocity *= 0.995;
+  
+  if (angle > 2 * Math.PI) angle -= 2 * Math.PI;
+  if (angle < -2 * Math.PI) angle += 2 * Math.PI;
+
+  if (Math.abs(angularVelocity) < 0.0005) {
+    isSpinning = false;
+    finishSpin();
+  } else {
+    animationId = requestAnimationFrame(animate);
+  }
+  drawWheel();
+}
+
+/* start spin */
+function startSpin(forceFast) {
+  if (isSpinning) return;
+  currentWinner = "";
+  resultBox.style.display = "none"; 
+  drawWheel(); 
+
+  isSpinning = true;
+  angularVelocity = (Math.PI / 30) * (forceFast ? (6 + Math.random() * 6) : (3 + Math.random() * 4));
+  angularVelocity = -Math.abs(angularVelocity); 
+  
+  animate();
+  playSoundTicking();
+}
+
+/* stop immediately (brake) */
+function stopSpin() {
+  angularVelocity = 0.0001; 
+}
+
+/* determine result when stopped */
+function finishSpin() {
+  const n = items.length;
+  const seg = 2 * Math.PI / n;
+  
+  let normalizedAngle = -angle % (2 * Math.PI); 
+  if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+
+  const topReferenceAngle = 3 * Math.PI / 2;
+
+  let effectiveAngle = (normalizedAngle - topReferenceAngle + 2 * Math.PI) % (2 * Math.PI);
+
+  let idx = Math.floor(effectiveAngle / seg);
+  
+  idx = (n - 1 - idx + n) % n; 
+
+  const winner = items[idx] || "—";
+  currentWinner = winner; 
+  showResult(winner); 
+  
+  drawWheel(); 
+  playSoundWin();
+  try{ window.confetti && window.confetti({particleCount:100, spread:90, origin: { y: 0.5 }}); }catch(e){}
+}
+
+
+/* result display (now for accessibility mostly) */
+const resultBox = document.getElementById('resultBox');
+function showResult(text) {
+  resultBox.style.display = "block"; 
+  resultBox.textContent = `🎉 વિજેતા: ${text}`; 
+}
+
+/* ---------- Sound (simple) ---------- */
+function playSoundTicking(){
+  try{
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = "sine";
+    o.frequency.value = 800;
+    g.gain.value = 0.04;
+    o.connect(g); g.connect(ac.destination);
+    o.start();
+    setTimeout(()=>{ o.stop(); ac.close(); }, 200);
+  }catch(e){}
+}
+function playSoundWin(){
+  try{
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ac.currentTime;
+    const g = ac.createGain(); g.gain.value = 0.1;
+    const o1 = ac.createOscillator(); o1.type="sine"; o1.frequency.value = 523; // C5
+    const o2 = ac.createOscillator(); o2.type="sine"; o2.frequency.value = 659; // E5
+    const o3 = ac.createOscillator(); o3.type="sine"; o3.frequency.value = 784; // G5
+    o1.connect(g); o2.connect(g); o3.connect(g); g.connect(ac.destination);
+    o1.start(now); o2.start(now); o3.start(now);
+    o1.stop(now+0.4); o2.stop(now+0.4); o3.stop(now+0.4);
+    setTimeout(()=>ac.close(),500);
+  }catch(e){}
+}
+
+/* ---------- Events ---------- */
+document.getElementById('spinBtn').addEventListener('click', () => startSpin(false));
+document.getElementById('quickSpin').addEventListener('click', () => startSpin(true));
+document.getElementById('stopBtn').addEventListener('click', stopSpin);
+
+/* handle window resize to keep canvas crisp */
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(rect.width * ratio);
+  canvas.height = Math.floor(rect.width * ratio); 
+  
+  cw = canvas.width; 
+  ch = canvas.height; 
+  cx = cw / 2; 
+  cy = ch / 2; 
+  radius = Math.min(cw, ch) * 0.45; 
+  drawWheel();
+}
+window.addEventListener('resize', resizeCanvas);
+
+/* load confetti lib (CDN) for fun */
+(function loadConfetti(){
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
+  document.head.appendChild(s);
+})();
+
+/* startup */
+function init() {
+  ensureColors();
+  resizeCanvas();
+}
+init();
+
+</script>
+</body>
+</html>
