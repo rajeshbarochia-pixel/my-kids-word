@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>નળની ભૂલભુલામણી</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* કસ્ટમ ફોન્ટ અને બેકગ્રાઉન્ડ */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f3e8; /* હળવો ક્રીમ બેકગ્રાઉન્ડ */
+            /* આખું પેજ કેન્દ્રમાં રહે તે માટે */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0; /* ફરજિયાત */
+            padding: 10px; /* નાની સ્ક્રીન પર કિનારીથી દૂર રાખવા */
+            box-sizing: border-box;
+        }
+
+        /* SVG કન્ટેનર માટે સ્ટાઇલ, જેથી તે કેન્દ્રમાં રહે અને રિસ્પોન્સિવ હોય */
+        #game-container {
+            width: 100%; /* નાના સ્ક્રીન પર આખી પહોળાઈ લો */
+            max-width: 450px;
+            /* aspect-ratio: 1 / 1.5; - આ SVG ના કદને ફોર્સ કરશે, તેને હટાવી શકાય છે જો SVG ને તેની સામગ્રી પ્રમાણે ફ્લેક્સ થવા દેવું હોય, પણ અહીં રહેવા દીધું છે */
+            background-color: white;
+            border: 8px solid #a855f7; /* જાંબલી બોર્ડર */
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            /* margin: 10px; */ /* body માં padding આપ્યું છે */
+            display: flex; /* સામગ્રીને ગોઠવવા માટે */
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* SVG ને ફ્લેક્સ કન્ટેનરની અંદર સારી રીતે ફિટ કરવા */
+        #game-svg {
+            width: 100%;
+            height: auto;
+            flex-grow: 1; /* ઉપલબ્ધ જગ્યા લેવા માટે */
+        }
+
+        /* નળના હેન્ડલ માટે ક્લિકેબલ વિસ્તાર */
+        .tap-handle {
+            cursor: pointer;
+            transition: transform 0.1s ease-in-out;
+            transform-origin: center;
+        }
+
+        .tap-handle:hover {
+            transform: scale(1.1);
+        }
+
+        /* નળ નંબર માટે */
+        .tap-number {
+            font-weight: 700;
+            font-size: 1.5rem;
+            fill: #333;
+        }
+
+        /* પરિણામ મેસેજ માટે */
+        #result-message {
+            min-height: 50px;
+        }
+        
+        /* નાના સ્ક્રીન માટે ફોન્ટ સાઇઝ એડજસ્ટમેન્ટ */
+        @media (max-width: 400px) {
+            h1 {
+                font-size: 1.5rem; /* ટાઇટલ નાનું કરો */
+            }
+            .text-sm {
+                font-size: 0.75rem; /* સબ-ટાઇટલ નાનું કરો */
+            }
+            .tap-number {
+                font-size: 1.2rem; /* નળના નંબર નાના કરો */
+            }
+        }
+
+        /* --- પાણીના પ્રવાહ માટે CSS એનિમેશન --- */
+        @keyframes flow {
+            to {
+                stroke-dashoffset: 0; /* ડેશને અંત સુધી ખસેડો */
+            }
+        }
+        
+        /* લાંબી નળીઓ માટે એનિમેશન સમય 4s થી વધારીને 6s કર્યો */
+        .flowing-hose {
+            animation: flow 6s linear infinite; /* ધીમું અને સતત વહેવું */
+        }
+    </style>
+    <script>
+        // ગેમનો લોજિક (JavaScript)
+        const CORRECT_TAP = 'tap3'; // છબીના આધારે, નળ 3 ડોલ ભરે છે.
+        
+        // એલિમેન્ટ્સ
+        let resultMessage;
+        let taps = {}; // નળના SVG એલિમેન્ટ્સનો સંગ્રહ
+        let waterFlowPaths = {}; // પાણીના વહેતા રસ્તાઓનો સંગ્રહ
+        let waterDrops = []; // પાણીના ટીપાં (લીક)
+        
+        // Firebase ગ્લોબલ વેરીએબલ્સ (આ એપ્લિકેશનમાં ઉપયોગમાં નથી, પરંતુ સેટઅપ માટે શામેલ છે)
+        // const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        /**
+         * પાણીના વહેવાનો એનિમેશન મેનેજ કરે છે
+         * @param {string | null} tapId - જે નળ માટે એનિમેશન શરૂ કરવું છે. જો null હોય તો બધા બંધ કરો.
+         * @param {boolean} start - true = શરૂ કરો, false = બંધ કરો
+         */
+        function manageWaterFlow(tapId, start) {
+            // બધા પાથમાંથી એનિમેશન ક્લાસ દૂર કરો અને છુપાવો
+            Object.keys(waterFlowPaths).forEach(key => {
+                const path = waterFlowPaths[key];
+                path.classList.remove('flowing-hose');
+                path.style.display = 'none';
+            });
+            
+            // જો શરૂ કરવાનું હોય, તો પસંદ કરેલ નળ માટે લાગુ કરો
+            if (start && tapId) {
+                const flowPath = waterFlowPaths[tapId];
+                if (!flowPath) return;
+
+                // SVG પાથની લંબાઈ ગણો
+                const pathLength = flowPath.getTotalLength();
+                // stroke-dasharray ને આખી લંબાઈ જેટલો સેટ કરો, અને ડેશસેટને પણ આખી લંબાઈ જેટલો સેટ કરો.
+                // આનાથી ડેશ બહારની તરફ છુપાયેલું રહેશે.
+                flowPath.style.strokeDasharray = `${pathLength} ${pathLength}`;
+                flowPath.style.strokeDashoffset = `${pathLength}`;
+                
+                // CSS એનિમેશન ક્લાસ ઉમેરો, જે ડેશસેટને 0 તરફ એનિમેટ કરશે (વહેતી અસર)
+                flowPath.classList.add('flowing-hose');
+                flowPath.style.display = 'block';
+            }
+        }
+
+        /**
+         * નળ ક્લિક હેન્ડલર
+         * @param {string} tapId - ક્લિક કરેલ નળનો ID ('tap1', 'tap2', વગેરે)
+         * @param {string} tapLabel - નળનો નંબર (ગુજરાતીમાં)
+         */
+        function checkAnswer(tapId, tapLabel) {
+            // 1. અન્ય નળના રંગોને રીસેટ કરો
+            Object.values(taps).forEach(tap => {
+                tap.style.fill = tap.getAttribute('data-initial-color'); // શરૂઆતનો કલર રીસેટ કરો
+            });
+            
+            // 2. બધા લીક અને ડોલનું પાણી બંધ કરો
+            waterDrops.forEach(drop => drop.style.opacity = '0');
+            document.getElementById('bucket-water').style.opacity = '0';
+            document.getElementById('bucket-water-flow').style.opacity = '0';
+
+            // 3. પસંદ કરેલ નળને ખુલ્લો રંગ આપો (હેન્ડલનો કલર તો પહેલાથી જ છે, આ ખાલી ખાતરી માટે છે)
+            const clickedTap = taps[tapId];
+            clickedTap.style.fill = clickedTap.getAttribute('data-color'); // હેન્ડલનો કલર
+
+            // 4. પાણીનો પ્રવાહ શરૂ કરો
+            manageWaterFlow(tapId, true);
+
+            if (tapId === CORRECT_TAP) {
+                // સાચો જવાબ
+                resultMessage.innerHTML = `<span class="text-green-600 font-bold">🎉 અભિનંદન!</span> નળ ${tapLabel} <span class="font-bold">ડોલ ભરે છે!</span>`;
+                resultMessage.classList.remove('bg-red-100', 'text-red-600', 'border-red-400');
+                resultMessage.classList.add('bg-green-100', 'text-green-600', 'border-green-400');
+                
+                // ડોલમાં પાણી બતાવો
+                document.getElementById('bucket-water').style.opacity = '1';
+                document.getElementById('bucket-water-flow').style.opacity = '1';
+
+            } else {
+                // ખોટો જવાબ
+                resultMessage.innerHTML = `<span class="text-red-600 font-bold">❌ માફ કરશો!</span> નળ ${tapLabel} ડોલ નથી ભરતો. ફરી પ્રયાસ કરો.`;
+                resultMessage.classList.remove('bg-green-100', 'text-green-600', 'border-green-400');
+                resultMessage.classList.add('bg-red-100', 'text-red-600', 'border-red-400');
+                
+                // લીક બતાવો (જેમ કે મૂળ ચિત્રમાં છે)
+                if (tapId === 'tap1') document.getElementById('water-leak-1').style.opacity = '1';
+                if (tapId === 'tap2') document.getElementById('water-leak-2').style.opacity = '1';
+                if (tapId === 'tap4') document.getElementById('water-leak-3').style.opacity = '1';
+            }
+        }
+
+        window.onload = function() {
+            resultMessage = document.getElementById('result-message');
+            
+            // નળના એલિમેન્ટ્સને કેશ કરો
+            taps['tap1'] = document.getElementById('tap1-handle');
+            taps['tap2'] = document.getElementById('tap2-handle');
+            taps['tap3'] = document.getElementById('tap3-handle');
+            taps['tap4'] = document.getElementById('tap4-handle');
+
+            // પાણીના પ્રવાહના પાથને કેશ કરો
+            waterFlowPaths['tap1'] = document.getElementById('water1-flow');
+            waterFlowPaths['tap2'] = document.getElementById('water2-flow');
+            waterFlowPaths['tap3'] = document.getElementById('water3-flow');
+            waterFlowPaths['tap4'] = document.getElementById('water4-flow');
+
+            // પાણીના ટીપાં (લીક) ને કેશ કરો
+            waterDrops.push(document.getElementById('water-leak-1'));
+            waterDrops.push(document.getElementById('water-leak-2'));
+            waterDrops.push(document.getElementById('water-leak-3'));
+
+            // દરેક નળના હેન્ડલનો શરૂઆતનો કલર સેટ કરો
+            taps['tap1'].setAttribute('data-initial-color', taps['tap1'].getAttribute('data-color'));
+            taps['tap2'].setAttribute('data-initial-color', taps['tap2'].getAttribute('data-color'));
+            taps['tap3'].setAttribute('data-initial-color', taps['tap3'].getAttribute('data-color'));
+            taps['tap4'].setAttribute('data-initial-color', taps['tap4'].getAttribute('data-color'));
+
+            // નળ પર ક્લિક ઇવેન્ટ્સ જોડો
+            taps['tap1'].onclick = () => checkAnswer('tap1', '1');
+            taps['tap2'].onclick = () => checkAnswer('tap2', '2');
+            taps['tap3'].onclick = () => checkAnswer('tap3', '3');
+            taps['tap4'].onclick = () => checkAnswer('tap4', '4');
+
+            // શરૂઆતમાં પરિણામ સંદેશ સેટ કરો
+            resultMessage.innerHTML = 'તમને શું લાગે છે? કયો નળ ડોલ ભરે છે?';
+        };
+    </script>
+</head>
+<body>
+    <div id="game-container">
+        <h1 class="text-2xl font-bold text-center text-purple-700 mt-2 mb-1">નળની ભૂલભુલામણી</h1>
+        <p class="text-sm text-gray-500 mb-4">Created by : Rajesh Barochia</p>
+        
+        <div id="result-message" class="w-full text-center p-3 border-2 border-dashed rounded-lg transition-all text-gray-700">
+            તમને શું લાગે છે? કયો નળ ડોલ ભરે છે?
+        </div>
+        
+        <svg id="game-svg" viewBox="0 0 400 600">
+            
+            <g id="taps-area">
+                <text x="50" y="30" class="tap-number">1</text>
+                <g id="tap1" transform="translate(45, 40)">
+                    <rect x="0" y="0" width="10" height="30" rx="3" fill="#eab308"/>
+                    <rect x="-5" y="30" width="20" height="15" rx="5" fill="#f59e0b"/>
+                    <rect id="tap1-handle" data-color="#ef4444" x="-10" y="-10" width="30" height="15" rx="5" fill="#ef4444" class="tap-handle"/>
+                    <circle cx="5" cy="-2.5" r="3" fill="#333"/>
+                </g>
+
+                <text x="150" y="30" class="tap-number">2</text>
+                <g id="tap2" transform="translate(145, 40)">
+                    <rect x="0" y="0" width="10" height="30" rx="3" fill="#eab308"/>
+                    <rect x="-5" y="30" width="20" height="15" rx="5" fill="#f59e0b"/>
+                    <rect id="tap2-handle" data-color="#3b82f6" x="-10" y="-10" width="30" height="15" rx="5" fill="#3b82f6" class="tap-handle"/>
+                    <circle cx="5" cy="-2.5" r="3" fill="#333"/>
+                </g>
+
+                <text x="250" y="30" class="tap-number">3</text>
+                <g id="tap3" transform="translate(245, 40)">
+                    <rect x="0" y="0" width="10" height="30" rx="3" fill="#eab308"/>
+                    <rect x="-5" y="30" width="20" height="15" rx="5" fill="#f59e0b"/>
+                    <rect id="tap3-handle" data-color="#10b981" x="-10" y="-10" width="30" height="15" rx="5" fill="#10b981" class="tap-handle"/>
+                    <circle cx="5" cy="-2.5" r="3" fill="#333"/>
+                </g>
+
+                <text x="350" y="30" class="tap-number">4</text>
+                <g id="tap4" transform="translate(345, 40)">
+                    <rect x="0" y="0" width="10" height="30" rx="3" fill="#eab308"/>
+                    <rect x="-5" y="30" width="20" height="15" rx="5" fill="#f59e0b"/>
+                    <rect id="tap4-handle" data-color="#f97316" x="-10" y="-10" width="30" height="15" rx="5" fill="#f97316" class="tap-handle"/>
+                    <circle cx="5" cy="-2.5" r="3" fill="#333"/>
+                </g>
+            </g>
+
+            <g id="hoses-base" fill="none" stroke="#e17b38" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" opacity="0.8">
+                <path d="M50 80 C 50 120, 250 150, 250 250 S 100 350, 250 450 S 370 520, 370 550"/>
+                <path d="M150 80 C 200 180, 50 250, 150 350 S 300 450, 200 500 S 320 530, 320 550"/>
+                <path d="M250 80 C 300 150, 100 200, 200 300 S 180 400, 100 480 S 120 500, 120 520"/>
+                <path d="M350 80 C 350 150, 150 200, 150 350 S 200 450, 50 500 S 270 530, 270 550"/>
+            </g>
+            
+            <g id="hoses-hollow-effect" fill="none" stroke="#f7f3e8" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M50 80 C 50 120, 250 150, 250 250 S 100 350, 250 450 S 370 520, 370 550"/>
+                <path d="M150 80 C 200 180, 50 250, 150 350 S 300 450, 200 500 S 320 530, 320 550"/>
+                <path d="M250 80 C 300 150, 100 200, 200 300 S 180 400, 100 480 S 120 500, 120 520"/>
+                <path d="M350 80 C 350 150, 150 200, 150 350 S 200 450, 50 500 S 270 530, 270 550"/>
+            </g>
+
+            <g id="water-flow-paths" fill="none" stroke="#4d94ff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+                <path id="water1-flow" class="water-path" style="display:none;" d="M50 80 C 50 120, 250 150, 250 250 S 100 350, 250 450 S 370 520, 370 550"/>
+                <path id="water2-flow" class="water-path" style="display:none;" d="M150 80 C 200 180, 50 250, 150 350 S 300 450, 200 500 S 320 530, 320 550"/>
+                <path id="water3-flow" class="water-path" style="display:none;" d="M250 80 C 300 150, 100 200, 200 300 S 180 400, 100 480 S 120 500, 120 520"/>
+                <path id="water4-flow" class="water-path" style="display:none;" d="M350 80 C 350 150, 150 200, 150 350 S 200 450, 50 500 S 270 530, 270 550"/>
+            </g>
+
+
+            <g id="bucket-area" transform="translate(70, 500)">
+                <ellipse cx="50" cy="50" rx="60" ry="10" fill="#a0522d" stroke="#8b4513" stroke-width="2"/>
+                <rect x="-10" y="50" width="120" height="70" rx="5" fill="#cd853f" stroke="#8b4513" stroke-width="2"/>
+                <rect x="-15" y="45" width="130" height="8" fill="#8b4513"/>
+                <rect x="-15" y="117" width="130" height="8" fill="#8b4513"/>
+                <path d="M-10 50 A 60 40 0 0 1 110 50" fill="none" stroke="#696969" stroke-width="4"/>
+
+                <ellipse id="bucket-water" cx="50" cy="50" rx="55" ry="8" fill="#4d94ff" opacity="0" style="transition: opacity 0.5s;"/>
+            </g>
+            
+            <path id="bucket-water-flow" d="M120 520 L 120 540" stroke="#4d94ff" stroke-width="10" stroke-linecap="round" opacity="0" style="transition: opacity 0.5s;"/>
+
+
+            <g id="leaks-area">
+                <circle id="water-leak-1" cx="370" cy="565" r="8" fill="#4d94ff" opacity="0" style="transition: opacity 0.5s;"/>
+                <circle id="water-leak-2" cx="320" cy="565" r="8" fill="#4d94ff" opacity="0" style="transition: opacity 0.5s;"/>
+                <circle id="water-leak-3" cx="270" cy="565" r="8" fill="#4d94ff" opacity="0" style="transition: opacity 0.5s;"/>
+            </g>
+            
+        </svg>
+    </div>
+</body>
+</html>
