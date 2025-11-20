@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>સંખ્યારેખા</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Colors */
+        .color-negative { background-color: #6B46C1; /* Deep Purple */ }
+        .color-positive { background-color: #38A169; /* Deep Green */ }
+        .color-zero { background-color: #F6E05E; /* Yellow/Gold for Zero */ }
+        .color-line { background-color: #44337A; /* Darker Purple for line */ }
+
+        /* Character/Current Position Pin (Reverted to 📍) */
+        .character {
+            position: absolute;
+            transition: left 0.3s ease-in-out;
+            z-index: 10;
+            user-select: none;
+            touch-action: manipulation;
+            top: -10px; 
+            font-size: 1.5rem; 
+            transform: translateX(-50%); 
+            opacity: 1; 
+        }
+
+        /* Initial Position Marker (Reverted to 📍) */
+        .initial-marker {
+            position: absolute;
+            top: -10px; 
+            transition: left 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            z-index: 5;
+            text-align: center;
+            font-size: 1.5rem;
+            opacity: 1;
+            pointer-events: none;
+            transform: translateX(-50%); 
+        }
+        
+        /* Ensure the body is full screen and centered for responsiveness */
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* Marker positioning cleanup for responsiveness */
+        .number-line-container {
+            width: 90%;
+            max-width: 800px;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-purple': '#6B46C1',
+                        'primary-green': '#38A169',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 flex flex-col items-center p-4">
+
+    <!-- Game Card -->
+    <div id="game-container" class="w-full max-w-4xl bg-white rounded-xl shadow-2xl p-6 md:p-10 mt-4 border-b-8 border-primary-purple relative">
+        
+        <h1 class="text-3xl md:text-4xl font-bold text-center text-primary-purple mb-6">સંખ્યારેખા </h1>
+        <p class="text-center text-gray-600 mb-8 md:text-lg">પીનને સાચા નંબર પર ખસેડીને સરવાળા/બાદબાકીનો ઉકેલ શોધો!</p>
+
+        <!-- Current Challenge & Position -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10 p-4 bg-primary-purple/10 rounded-lg shadow-inner">
+            <div class="text-center md:text-left mb-4 md:mb-0">
+                <p class="text-sm font-semibold text-primary-purple">વર્તમાન પડકાર:</p>
+                <p id="challenge-text" class="text-2xl font-extrabold text-primary-purple">...</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm font-semibold text-gray-700">વર્તમાન સ્થિતિ:</p>
+                <p id="current-position-display" class="text-3xl font-extrabold text-primary-green">0</p>
+            </div>
+        </div>
+
+        <!-- NEW: Feedback Bar (Always visible but changes content/style) -->
+        <div id="feedback-bar" class="w-full p-4 mb-4 rounded-xl text-center bg-gray-200 border-2 border-gray-300">
+            <h3 id="feedback-message" class="text-xl font-bold text-gray-700">સંખ્યારેખા પર જવા માટે બટનોનો ઉપયોગ કરો.</h3>
+        </div>
+
+        <!-- Number Line Area -->
+        <div class="number-line-container mx-auto relative h-24 mb-12">
+            
+            <!-- The main number line track -->
+            <div class="absolute inset-x-0 top-1/2 h-2 transform -translate-y-1/2 flex items-center rounded-full overflow-hidden shadow-lg">
+                <!-- Negative Integers (Purple) -->
+                <div class="h-full w-1/2 color-negative"></div>
+                <!-- Zero Marker (Yellow) -->
+                <div class="h-3 w-3 rounded-full color-zero absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 top-1/2 border-2 border-gray-800"></div>
+                <!-- Positive Integers (Green) -->
+                <div class="h-full w-1/2 color-positive"></div>
+            </div>
+
+            <!-- Number Markers (Labels and Ticks) -->
+            <div id="number-markers" class="absolute inset-x-0 top-0 flex justify-between h-full">
+                <!-- Numbers will be populated by JS -->
+            </div>
+
+            <!-- Initial Position Marker (Red Pin for Start) - Reverted to 📍 -->
+            <div id="initial-marker" class="initial-marker text-red-600">📍</div>
+
+            <!-- The Character (Current Position Pin) - Reverted to 📍 -->
+            <div id="character" class="character">
+                <!-- This span is colored dynamically in JS -->
+                <span id="current-position-pin" class="current-position-pin">📍</span>
+            </div>
+        </div>
+
+        <!-- Controls and Feedback -->
+        <div id="controls-container" class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+            <!-- Move Buttons -->
+            <button id="move-left-btn" class="px-6 py-3 rounded-xl bg-primary-purple text-white font-bold text-lg shadow-md hover:bg-purple-700 transition duration-200 active:scale-95">
+                <span class="text-xl mr-2">◀️</span> ડાબે ખસો (-1)
+            </button>
+            <button id="move-right-btn" class="px-6 py-3 rounded-xl bg-primary-green text-white font-bold text-lg shadow-md hover:bg-green-700 transition duration-200 active:scale-95">
+                જમણે ખસો (+1) <span class="text-xl ml-2">▶️</span>
+            </button>
+
+            <!-- NEW: Check Answer Button (Active during game) -->
+            <button id="check-answer-btn" class="px-6 py-3 rounded-xl bg-blue-500 text-white font-bold text-lg shadow-md hover:bg-blue-600 transition duration-200 active:scale-95">
+                જવાબ ચકાસો
+            </button>
+            
+            <!-- Next Challenge Button (Hidden initially, shown after win) -->
+            <button id="next-challenge-btn" class="px-8 py-3 rounded-full bg-yellow-500 text-white font-extrabold text-xl shadow-lg hover:bg-yellow-600 transition duration-200 active:scale-95 hidden">
+                નવો પ્રશ્ન શરૂ કરો
+            </button>
+        </div>
+    </div>
+    
+    <!-- Attribution Text Added Here -->
+    <div class="mt-4 text-sm text-gray-500 text-center">
+        Created by :Rajesh Barochia
+    </div>
+
+    <script>
+        // Game state and configuration
+        const MIN_NUMBER = -10;
+        const MAX_NUMBER = 10;
+        const NUMBER_RANGE = MAX_NUMBER - MIN_NUMBER; // 20
+        const STEPS = 21; // Total number of positions from -10 to 10
+
+        let currentPosition = 0;
+        let targetNumber = 0;
+        let isGameActive = true;
+        
+        let initialPosition = 0;
+        let jumpValue = 0;
+        let operation = '';
+
+        // DOM elements
+        const characterEl = document.getElementById('character');
+        const challengeTextEl = document.getElementById('challenge-text');
+        const currentPositionDisplayEl = document.getElementById('current-position-display');
+        const numberMarkersEl = document.getElementById('number-markers');
+        const moveLeftBtn = document.getElementById('move-left-btn');
+        const moveRightBtn = document.getElementById('move-right-btn');
+        const checkAnswerBtn = document.getElementById('check-answer-btn'); // NEW button
+        const nextChallengeBtn = document.getElementById('next-challenge-btn');
+        const initialMarkerEl = document.getElementById('initial-marker');
+        const currentPositionPinEl = document.getElementById('current-position-pin'); 
+        
+        // Feedback bar elements
+        const feedbackBarEl = document.getElementById('feedback-bar');
+        const feedbackMessageEl = document.getElementById('feedback-message');
+
+
+        // Helper function to calculate the element's horizontal position
+        function calculateElementX(position) {
+            const percent = ((position - MIN_NUMBER) / NUMBER_RANGE) * 100;
+            return `${percent}%`; 
+        }
+
+        // 1. Initial Number Line Setup
+        function setupNumberMarkers() {
+            numberMarkersEl.innerHTML = ''; 
+            for (let i = MIN_NUMBER; i <= MAX_NUMBER; i++) {
+                const marker = document.createElement('div');
+                marker.className = 'number-marker flex flex-col items-center justify-start h-full';
+                
+                // Calculate position for the marker
+                const percent = ((i - MIN_NUMBER) / NUMBER_RANGE) * 100;
+                const markerWidth = 100 / STEPS;
+                
+                // Set marker position
+                marker.style.width = `${markerWidth}%`;
+                marker.style.position = 'absolute';
+                marker.style.left = `calc(${percent}% - ${markerWidth/2}%)`;
+
+                // Tick mark
+                const tick = document.createElement('div');
+                tick.className = `w-1 h-3 absolute top-[45%] ${i === 0 ? 'bg-yellow-500 h-5' : 'color-line'}`;
+                
+                // Number label
+                const label = document.createElement('span');
+                label.textContent = i;
+                label.className = `text-sm font-semibold mt-1 top-full absolute ${i < 0 ? 'text-primary-purple' : i > 0 ? 'text-primary-green' : 'text-gray-800'}`;
+                
+                marker.appendChild(tick);
+                marker.appendChild(label);
+                numberMarkersEl.appendChild(marker);
+            }
+        }
+
+        // 2. Update UI (Character position and display)
+        function updateUI() {
+            // Update character (current position pin) position on the line
+            characterEl.style.left = calculateElementX(currentPosition);
+
+            // Update position display text
+            currentPositionDisplayEl.textContent = currentPosition;
+            currentPositionDisplayEl.className = 'text-3xl font-extrabold transition-colors duration-300 ' + 
+                                                (currentPosition < 0 ? 'text-primary-purple' : currentPosition > 0 ? 'text-primary-green' : 'text-gray-800');
+            
+            // Update initial marker position and visibility
+            if (initialMarkerEl) {
+                // Position the initial marker at the starting point
+                initialMarkerEl.style.left = calculateElementX(initialPosition);
+                
+                // Control opacity based on overlap
+                if (currentPosition === initialPosition) {
+                    initialMarkerEl.style.opacity = '0.4'; // Make initial pin slightly transparent
+                    characterEl.style.zIndex = '10'; // Ensure current pin is on top
+                } else {
+                    initialMarkerEl.style.opacity = '1'; // Full opacity if not overlapping
+                }
+            }
+            
+            // Update current position pin color based on current position
+            if (currentPositionPinEl) {
+                if (currentPosition > 0) {
+                    currentPositionPinEl.style.color = 'var(--tw-colors-primary-green)'; // Green for positive
+                } else if (currentPosition < 0) {
+                    currentPositionPinEl.style.color = 'var(--tw-colors-primary-purple)'; // Purple for negative
+                } else {
+                    currentPositionPinEl.style.color = 'var(--tw-colors-yellow-500)'; // Yellow for zero
+                }
+            }
+            
+            // NOTE: checkAnswer is no longer called here. It is triggered by the button.
+        }
+
+        // 3. Move Logic
+        function move(direction) {
+            if (!isGameActive) return;
+
+            const newPosition = currentPosition + direction;
+
+            if (newPosition >= MIN_NUMBER && newPosition <= MAX_NUMBER) {
+                currentPosition = newPosition;
+                updateUI();
+                // When moving, revert feedback to info if it was an error
+                showFeedback('લક્ષ્ય સંખ્યા પર પહોંચો.', 'info'); 
+            } else {
+                showFeedback('સીમા પર પહોંચી ગયા છો (-10 અને 10 વચ્ચે જ ખસી શકો છો).', 'error');
+            }
+        }
+
+        /**
+         * 4. Check Answer Logic (Triggered by Button)
+         */
+        function checkAnswer() {
+            if (!isGameActive) return;
+
+            if (currentPosition === targetNumber) {
+                isGameActive = false;
+                
+                // 1. Show success message (Correct Result)
+                feedbackMessageEl.innerHTML = `🎉 <span class="text-2xl font-black">અભિનંદન!</span> સાચો જવાબ છે: <span class="font-extrabold text-2xl">${targetNumber}</span> 🎉`;
+                feedbackBarEl.classList.remove('bg-gray-200', 'border-gray-300', 'bg-red-500/20', 'border-red-500');
+                feedbackBarEl.classList.add('bg-primary-green/20', 'border-primary-green');
+                feedbackMessageEl.classList.remove('text-gray-700', 'text-red-600');
+                feedbackMessageEl.classList.add('text-primary-green');
+                
+                // 2. Hide control buttons, show next challenge button
+                moveLeftBtn.classList.add('hidden');
+                moveRightBtn.classList.add('hidden');
+                checkAnswerBtn.classList.add('hidden'); 
+                
+                setTimeout(() => {
+                    nextChallengeBtn.classList.remove('hidden');
+                }, 500);
+
+            } else {
+                // Incorrect Answer Feedback
+                showFeedback(`ખોટો જવાબ. તમે હાલમાં ${currentPosition} પર છો. લક્ષ્ય સંખ્યા સુધી પહોંચવા માટે ખસતા રહો.`, 'error');
+            }
+        }
+        
+        /**
+         * Displays status/error messages in the feedback bar
+         * @param {string} message - The message to display.
+         * @param {string} type - 'info', 'success', or 'error'.
+         */
+        function showFeedback(message, type) {
+            feedbackMessageEl.innerHTML = message;
+            // Reset classes
+            feedbackBarEl.classList.remove('bg-primary-green/20', 'border-primary-green', 'bg-red-500/20', 'border-red-500');
+            feedbackMessageEl.classList.remove('text-primary-green', 'text-red-600', 'text-gray-700');
+
+            if (type === 'info') {
+                feedbackBarEl.classList.add('bg-gray-200', 'border-gray-300');
+                feedbackMessageEl.classList.add('text-gray-700');
+            } else if (type === 'success') {
+                feedbackBarEl.classList.add('bg-primary-green/20', 'border-primary-green');
+                feedbackMessageEl.classList.add('text-primary-green');
+            } else if (type === 'error') {
+                feedbackBarEl.classList.add('bg-red-500/20', 'border-red-500');
+                feedbackMessageEl.classList.add('text-red-600');
+            }
+        }
+
+        // 5. Game Initialization and Reset
+        function startGame() {
+            isGameActive = true;
+            
+            // Reset button visibility
+            nextChallengeBtn.classList.add('hidden');
+            moveLeftBtn.classList.remove('hidden');
+            moveRightBtn.classList.remove('hidden');
+            checkAnswerBtn.classList.remove('hidden'); // Show check button
+            
+            // 1. Generate challenge components
+            // Initial position: Random from -5 to 5
+            initialPosition = Math.floor(Math.random() * 11) - 5; 
+            
+            // Jump value: Random from 1 to 5
+            jumpValue = Math.floor(Math.random() * 5) + 1;
+            
+            // Operation: Randomly choose '+' or '-'
+            operation = Math.random() < 0.5 ? '+' : '-';
+
+            // 2. Calculate target number and ensure it's within bounds (-10 to 10)
+            let newTarget;
+            let attempts = 0;
+            
+            do {
+                // Recalculate if out of bounds (re-randomize position/value)
+                if (attempts > 0) {
+                    initialPosition = Math.floor(Math.random() * 11) - 5; 
+                    jumpValue = Math.floor(Math.random() * 5) + 1;
+                }
+
+                if (operation === '+') {
+                    newTarget = initialPosition + jumpValue;
+                } else {
+                    newTarget = initialPosition - jumpValue;
+                }
+                attempts++;
+                
+                // Emergency break if targets are stuck at edges
+                if (attempts > 10) {
+                    if (newTarget > MAX_NUMBER) newTarget = MAX_NUMBER;
+                    if (newTarget < MIN_NUMBER) newTarget = MIN_NUMBER;
+                    break;
+                }
+            } while (newTarget < MIN_NUMBER || newTarget > MAX_NUMBER);
+            
+            targetNumber = newTarget;
+
+            // 3. Set starting point for the character
+            currentPosition = initialPosition;
+
+            // 4. Update Challenge Text
+            const initialTextClass = initialPosition < 0 ? 'text-primary-purple' : initialPosition > 0 ? 'text-primary-green' : 'text-gray-800';
+            const operationColor = operation === '+' ? 'text-primary-green' : 'text-primary-purple';
+            
+            challengeTextEl.innerHTML = `શરૂ કરો <span class="${initialTextClass} font-black">${initialPosition}</span> થી, <span class="${operationColor} font-black">${operation} ${jumpValue}</span> ખસેડો. અંતિમ સંખ્યા શોધો!`;
+            
+            // 5. Reset Feedback
+            showFeedback('લક્ષ્ય સંખ્યા પર પહોંચો.', 'info');
+
+            // 6. Update UI to reflect start state
+            updateUI(); 
+        }
+
+        // Event Listeners
+        moveLeftBtn.addEventListener('click', () => move(-1));
+        moveRightBtn.addEventListener('click', () => move(1));
+        checkAnswerBtn.addEventListener('click', checkAnswer); // NEW: Check Answer Listener
+        nextChallengeBtn.addEventListener('click', startGame);
+
+        // Initialize the game on load
+        window.onload = function() {
+            setupNumberMarkers();
+            startGame();
+        };
+
+        // Handle initial character positioning correctly
+        window.addEventListener('resize', updateUI);
+
+    </script>
+
+</body>
+</html>
