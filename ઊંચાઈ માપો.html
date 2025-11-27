@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ઊંચાઈ માપો</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background-color: #f0f9ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 0;
+        }
+
+        .game-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            margin-bottom: 10px; /* Space above footer */
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .instruction {
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .score-info {
+            font-size: 1.1em;
+            color: #34495e;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .scene {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 400px;
+            border-bottom: 5px solid #34495e; /* Floor */
+            position: relative;
+            margin-bottom: 20px;
+            overflow: hidden;
+            gap: 20px; /* Space between object and ruler */
+        }
+
+        /* The Object Container */
+        .object-container {
+            width: auto;
+            min-width: 50px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            position: relative;
+            transition: height 0.5s ease-out;
+        }
+
+        /* The Image itself */
+        .object-img {
+            height: 100%;
+            width: auto; /* Maintain aspect ratio */
+            display: block;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+            object-fit: contain; 
+            object-position: bottom center;
+        }
+
+        /* The Red Measuring Line */
+        .measure-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1000px; /* Very long to ensure it hits the ruler */
+            height: 2px;
+            background-color: red;
+            border-top: 1px dashed red;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* The Ruler */
+        .ruler {
+            width: 60px;
+            height: 100%;
+            background-color: #f1c40f;
+            border: 2px solid #d35400;
+            border-bottom: none;
+            display: flex;
+            flex-direction: column-reverse; /* 0 at bottom */
+            position: relative;
+            box-shadow: inset 2px 0 5px rgba(0,0,0,0.1);
+            flex-shrink: 0; /* Don't shrink the ruler */
+        }
+
+        .tick {
+            width: 100%;
+            border-bottom: 1px solid #333;
+            position: absolute;
+            left: 0;
+        }
+
+        .tick.major {
+            width: 60%;
+            border-bottom: 2px solid #000;
+            left: 0;
+        }
+
+        .tick.minor {
+            width: 30%;
+            border-bottom: 1px solid #666;
+        }
+
+        .tick-label {
+            position: absolute;
+            right: 5px;
+            font-weight: bold;
+            font-size: 18px;
+            transform: translateY(50%);
+            color: #333;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="number"] {
+            padding: 10px;
+            font-size: 1.2em;
+            width: 80px;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            transition: transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-check {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .btn-reset {
+            background-color: #3498db;
+            color: white;
+            display: none;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.2em;
+            height: 30px;
+        }
+
+        .success { color: #27ae60; }
+        .error { color: #c0392b; }
+        .game-over-message {
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 1.5em;
+        }
+
+        .footer {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>ઊંચાઈ માપો! (ફુટમાં)</h1>
+        <p class="instruction">ચિત્રમાં આપેલી વસ્તુની ઊંચાઈ **કેટલા ફુટ** છે?</p>
+        
+        <p class="score-info">પ્રશ્ન: <span id="questionCount">1</span> / 10 | સ્કોર: <span id="score">0</span></p>
+
+        <div class="scene" id="scene">
+            <div class="object-container" id="objectContainer">
+                <!-- The red line indicator -->
+                <div class="measure-line"></div>
+                <!-- The object image -->
+                <img id="gameChar" class="object-img" src="" alt="Character">
+            </div>
+
+            <div class="ruler" id="ruler">
+                <!-- Ticks generated by JS -->
+            </div>
+        </div>
+
+        <div id="gameControls">
+            <div class="controls">
+                <input type="number" id="userGuess" placeholder="?" min="0" max="10">
+                <button class="btn-check" onclick="checkAnswer()">તપાસો</button>
+            </div>
+            <div class="feedback" id="feedback"></div>
+        </div>
+        
+        <div id="gameOver" style="display: none;">
+            <div class="game-over-message">
+                રમત સમાપ્ત! તમારો કુલ સ્કોર: <span id="finalScore">0</span> / 10
+            </div>
+            <button class="btn-reset" style="display: block; margin: 15px auto;" onclick="initGame()">ફરીથી સ્ટાર્ટ</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        Created by: Rajesh barochia
+    </div>
+
+    <script>
+        // Game State Variables
+        let currentHeight = 0;
+        let score = 0;
+        let questionCount = 0;
+        const maxQuestions = 10;
+        // Array to store the sequence of image URLs for the current game
+        let imageSequence = [];
+        let currentImageIndex = 0; 
+        
+        // Ruler Constants
+        const maxUnits = 10; // Max height in feet
+        const sceneHeight = 400; 
+        const pixelsPerUnit = sceneHeight / (maxUnits + 1); 
+
+        // URLs for images (using Iconify SVG for simple, scalable assets)
+        const objectUrls = [
+            'https://api.iconify.design/noto:boy-medium-light-skin-tone.svg', // Child height (e.g., 3-5 ft)
+            'https://api.iconify.design/noto:girl-light-skin-tone.svg', // Child height (e.g., 3-5 ft)
+            'https://api.iconify.design/noto:evergreen-tree.svg', // Small tree/plant (e.g., 5-9 ft)
+            'https://api.iconify.design/noto:giraffe.svg', // Giraffe (e.g., 8-10 ft)
+            'https://api.iconify.design/noto:robot.svg', // Robot (e.g., 4-7 ft)
+            'https://api.iconify.design/lucide:door-open.svg' // Door (Standard height, e.g., 6-8 ft)
+        ];
+        
+        // Helper function to shuffle an array (Fisher-Yates shuffle)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // --- Image Sequencing Logic ---
+        function generateImageSequence() {
+            imageSequence = [];
+            currentImageIndex = 0;
+            
+            // Get a copy of the available URLs
+            let availableUrls = [...objectUrls];
+
+            // Determine how many times we need to cycle through the images
+            const cycles = Math.ceil(maxQuestions / objectUrls.length);
+
+            for (let c = 0; c < cycles; c++) {
+                // Shuffle the current set of URLs
+                shuffleArray(availableUrls);
+                
+                // Add the shuffled sequence to the main sequence
+                imageSequence.push(...availableUrls);
+            }
+            
+            // Trim the sequence to exactly maxQuestions length
+            imageSequence = imageSequence.slice(0, maxQuestions);
+        }
+
+        // --- UI Initialization and Reset ---
+
+        function initRuler() {
+            const ruler = document.getElementById('ruler');
+            ruler.innerHTML = ''; 
+
+            for (let i = 0; i <= maxUnits; i++) {
+                // Major tick line
+                const tick = document.createElement('div');
+                tick.className = 'tick major';
+                tick.style.bottom = (i * pixelsPerUnit) + 'px';
+                
+                // Label (the number)
+                const label = document.createElement('div');
+                label.className = 'tick-label';
+                // Add 'ft' label to show it's feet
+                label.innerText = i + ' ft'; 
+                label.style.bottom = (i * pixelsPerUnit) - 10 + 'px';
+
+                if (i > 0) ruler.appendChild(label); // Don't label 0 to prevent clutter
+                ruler.appendChild(tick);
+
+                // Minor ticks (half units)
+                if (i < maxUnits) {
+                    const minorTick = document.createElement('div');
+                    minorTick.className = 'tick minor';
+                    minorTick.style.bottom = ((i + 0.5) * pixelsPerUnit) + 'px';
+                    ruler.appendChild(minorTick);
+                }
+            }
+        }
+
+        function initGame() {
+            // Reset game state
+            score = 0;
+            questionCount = 0;
+            // Generate a new sequence of images for the 10 questions
+            generateImageSequence(); 
+            
+            // Show/Hide game sections
+            document.getElementById('gameControls').style.display = 'block';
+            document.getElementById('gameOver').style.display = 'none';
+
+            // Start the first round
+            newRound();
+        }
+
+        function newRound() {
+            questionCount++;
+
+            // Update UI elements
+            document.getElementById('userGuess').value = '';
+            document.getElementById('feedback').innerText = '';
+            document.getElementById('questionCount').innerText = questionCount;
+            document.getElementById('score').innerText = score;
+            document.querySelector('.btn-check').style.display = 'inline-block';
+            document.getElementById('userGuess').disabled = false;
+            
+            // 1. Get Image URL from the pre-generated sequence
+            const imgElement = document.getElementById('gameChar');
+            const nextUrl = imageSequence[currentImageIndex];
+            imgElement.src = nextUrl;
+            currentImageIndex++; // Move to the next image in the sequence
+
+            // 2. Randomize Height (Whole numbers between 2 and 9 feet)
+            currentHeight = Math.floor(Math.random() * 8) + 2; 
+
+            // 3. Apply Height
+            const container = document.getElementById('objectContainer');
+            // Height is calculated in pixels based on the unit value
+            container.style.height = (currentHeight * pixelsPerUnit) + 'px';
+        }
+
+        function checkAnswer() {
+            const guessInput = document.getElementById('userGuess');
+            // Use Math.round to check only whole numbers, as we are only generating whole number heights
+            const guess = parseFloat(guessInput.value); 
+            const feedback = document.getElementById('feedback');
+
+            if (isNaN(guess) || guess < 0) {
+                feedback.innerText = "કૃપા કરીને માન્ય નંબર લખો.";
+                feedback.className = "feedback error";
+                return;
+            }
+
+            if (guess === currentHeight) {
+                feedback.innerText = "🎉 ખૂબ સરસ! તમારો જવાબ સાચો છે.";
+                feedback.className = "feedback success";
+                score++; // Increment score
+                endRound();
+            } else {
+                feedback.innerText = "❌ ખોટું છે. ફરી પ્રયાસ કરો!";
+                feedback.className = "feedback error";
+            }
+        }
+
+        function endRound() {
+            document.querySelector('.btn-check').style.display = 'none';
+            document.getElementById('userGuess').disabled = true;
+
+            // Check if game is over
+            if (questionCount >= maxQuestions) {
+                // Game Over
+                setTimeout(showGameOver, 1500); // Wait a moment before showing score
+            } else {
+                // Continue to next round
+                setTimeout(newRound, 1500); // Wait 1.5 seconds before starting next question
+            }
+        }
+        
+        function showGameOver() {
+            document.getElementById('gameControls').style.display = 'none';
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+
+        // --- Initial Setup ---
+        window.onload = function() {
+            initRuler();
+            initGame(); // Start the first game sequence
+        };
+
+    </script>
+</body>
+</html>
