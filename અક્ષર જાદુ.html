@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>અક્ષર જાદુ: અક્ષર ફટાકડા</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light grey background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 0; /* Use full screen */
+            overflow: hidden; 
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 100vh; /* Full screen height */
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end; 
+            background: linear-gradient(45deg, #a7c7e7, #b3ffb3, #ffffa0, #ffb3ff); /* Colourful gradient background */
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite; /* Gradient animation */
+            border-radius: 0; 
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.4); 
+            padding-bottom: 0; /* Character is flushed to the bottom */
+        }
+
+        @keyframes gradientShift {
+            0% {background-position: 0% 50%;}
+            50% {background-position: 100% 50%;}
+            100% {background-position: 0% 50%;}
+        }
+        
+        /* Projection Character - Now a Platform for the Emoji */
+        .projection-tube {
+            position: relative;
+            width: 120px; 
+            height: 120px; 
+            background: linear-gradient(to top, rgba(180, 180, 180, 0.9), rgba(250, 250, 250, 1));
+            border-radius: 50%; /* Circular base */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.8);
+            z-index: 10;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.3s;
+            display: flex;
+            align-items: center; 
+            justify-content: center;
+            padding-bottom: 0;
+            margin-bottom: -60px; /* Pull the base slightly off-screen */
+        }
+        
+        /* The Emoji itself */
+        .emoji-pot {
+            font-size: 6rem; /* Large emoji size */
+            line-height: 1;
+            /* Use the Amphora/Vase emoji 🏺 */
+            transform: translateY(-10px); /* Center the emoji visually */
+        }
+
+        .projection-tube:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 1), inset 0 0 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        .projection-tube:active {
+            transform: scale(0.98);
+        }
+
+        .sky-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; 
+        }
+
+        .letter {
+            position: absolute;
+            font-size: 2.8rem; 
+            font-weight: 900; /* Made bolder for clarity */
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.1);
+            transition: all 3.5s ease-out, opacity 3.5s ease-out, transform 3.5s ease-out; /* Very slow speed */
+            /* Added white stroke and minimal glow for high visibility */
+            text-shadow: 
+                1px 1px 0 #fff, 
+                -1px -1px 0 #fff, 
+                1px -1px 0 #fff, 
+                -1px 1px 0 #fff,
+                0 0 10px currentColor; /* Small glow */
+            will-change: transform, opacity;
+        }
+
+        .particle {
+            position: absolute;
+            background-color: currentColor; 
+            border-radius: 50%;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.1);
+            transition: all 2.5s ease-out, opacity 2.5s ease-out, transform 2.5s ease-out; /* Slow speed */
+            will-change: transform, opacity;
+        }
+
+        .title-text {
+            color: #333; 
+            text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.6);
+        }
+        
+        .message-text {
+             color: #2c5282; 
+             text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+
+    </style>
+</head>
+<body class="select-none">
+
+    <div class="game-container">
+        
+        <div class="text-center mb-6 absolute top-4">
+            <h1 class="text-4xl font-extrabold title-text">અક્ષર જાદુ</h1>
+            <p class="text-sm text-gray-700 mt-1">Creative by: Rajesh Barochia</p>
+            <p class="text-sm text-gray-600 mt-1">પાત્ર પર ક્લિક કરો અને અક્ષરોને ફેલાતા જુઓ.</p>
+            <p id="message-text" class="text-lg font-bold message-text mt-4 h-6"></p>
+        </div>
+
+        <div id="sky-area" class="sky-area">
+            <!-- Letters and particles will appear here -->
+        </div>
+
+        <!-- Jug/Pitcher Character (Now using Emoji) -->
+        <div id="projection-base" class="projection-tube">
+            <span class="emoji-pot" aria-label="Pot or Jug Emoji" role="img">🏺</span>
+        </div>
+
+    </div>
+
+    <script>
+        // Gujarati letters collection
+        const GUJARATI_LETTERS = ['ન', 'મ', 'ગ', 'જ', 'ક', 'ર', 'લ', 'વ', 'પ', 'ય', 'શ', 'હ'];
+        let letterIndex = 0;
+
+        // Spark colors - Made slightly darker/more saturated for better visibility
+        const SPARK_COLORS = [
+            '#FF4747', // Brighter Red
+            '#477EFF', // Deeper Blue
+            '#47FF47', // Brighter Green
+            '#FFFF47', // Rich Yellow
+            '#FF47FF', // Vivid Pink
+            '#FFFFFF', // White
+            '#FF8C00', // Darker Orange
+            '#9932CC', // Darker Purple
+        ];
+        
+        // DOM elements
+        const baseCube = document.getElementById('projection-base');
+        const skyArea = document.getElementById('sky-area');
+        const messageText = document.getElementById('message-text');
+
+        // Get position of the character's top opening
+        function getBasePosition() {
+            const rect = baseCube.getBoundingClientRect();
+            const containerRect = skyArea.getBoundingClientRect();
+            
+            // The letter should emerge from the center of the character's mouth
+            
+            // We need to calculate the point where the letters should start. 
+            // This is the top center of the visible part of the base.
+            const baseTop = rect.top - containerRect.top;
+            const baseCenterX = rect.left + rect.width / 2 - containerRect.left;
+
+            // Adjust the emission point higher, near the top of the emoji (approx -60px from baseTop)
+            return {
+                x: baseCenterX,
+                y: baseTop - 60 
+            };
+        }
+
+        // Get random integer between min and max
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Create and animate the letter spark
+        function createLetterSpark(basePos, letter, color) {
+            
+            // 1. Create letter element
+            const letterEl = document.createElement('div');
+            letterEl.textContent = letter;
+            letterEl.className = 'letter';
+            letterEl.style.color = color;
+
+            // 2. Set initial position (top of the character)
+            letterEl.style.left = `${basePos.x}px`;
+            letterEl.style.top = `${basePos.y}px`;
+            letterEl.style.opacity = '1';
+            letterEl.style.transform = 'translate(-50%, -50%) scale(1)';
+
+            skyArea.appendChild(letterEl);
+
+            // 3. Calculate final animation targets
+            const targetX = basePos.x + getRandomInt(-180, 180); 
+            const targetY = basePos.y - getRandomInt(400, 650); /* High and slow target */
+            const targetRotation = getRandomInt(-720, 720); 
+            
+            // 4. Start animation transition
+            setTimeout(() => {
+                letterEl.style.left = `${targetX}px`;
+                letterEl.style.top = `${targetY}px`;
+                letterEl.style.opacity = '0';
+                letterEl.style.fontSize = `${getRandomInt(30, 50)}px`; 
+                letterEl.style.transitionDuration = '3.5s'; /* Very slow speed */
+                letterEl.style.transform = `translate(-50%, -50%) scale(1.8) rotate(${targetRotation}deg)`;
+            }, 50); 
+
+            // 5. Remove element after transition completes (3.5s)
+            setTimeout(() => {
+                letterEl.remove();
+            }, 3500);
+        }
+
+        // Create and animate the particle
+        function createParticle(basePos, color) {
+            const particleEl = document.createElement('div');
+            particleEl.className = 'particle';
+            particleEl.style.backgroundColor = color;
+            particleEl.style.width = `${getRandomInt(5, 10)}px`;
+            particleEl.style.height = particleEl.style.width;
+            
+            particleEl.style.left = `${basePos.x}px`;
+            particleEl.style.top = `${basePos.y}px`;
+            particleEl.style.opacity = '1';
+            particleEl.style.transform = 'translate(-50%, -50%) scale(1)';
+
+            skyArea.appendChild(particleEl);
+
+            const targetX = basePos.x + getRandomInt(-150, 150); 
+            const targetY = basePos.y - getRandomInt(250, 450); 
+            const targetScale = getRandomInt(0.5, 1.5);
+
+            setTimeout(() => {
+                particleEl.style.left = `${targetX}px`;
+                particleEl.style.top = `${targetY}px`;
+                particleEl.style.opacity = '0';
+                particleEl.style.transitionDuration = '2.5s'; /* Slow speed */
+                particleEl.style.transform = `translate(-50%, -50%) scale(${targetScale})`;
+            }, 50);
+
+            setTimeout(() => {
+                particleEl.remove();
+            }, 2500);
+        }
+
+        // Character click handler
+        function handleCubeClick() {
+            const basePos = getBasePosition();
+            
+            // Select current letter and color
+            const currentLetter = GUJARATI_LETTERS[letterIndex];
+            const currentColor = SPARK_COLORS[getRandomInt(0, SPARK_COLORS.length - 1)];
+
+            // Move letter index to the next
+            letterIndex = (letterIndex + 1) % GUJARATI_LETTERS.length;
+            
+            // Update message
+            messageText.textContent = `અક્ષર '${currentLetter}' બહાર નીકળ્યો!`;
+            
+            // Create 5 to 7 copies of the letter for starburst effect
+            const sparkCount = getRandomInt(5, 7);
+            const finalSparkCount = Math.max(5, sparkCount); // Ensures at least 5 letters
+            
+            for (let i = 0; i < finalSparkCount; i++) {
+                const sparkColor = SPARK_COLORS[getRandomInt(0, SPARK_COLORS.length - 1)];
+                setTimeout(() => {
+                    createLetterSpark(basePos, currentLetter, sparkColor);
+                }, i * 50);
+            }
+
+            // Create 10-15 small particles for effect
+            const particleCount = getRandomInt(10, 15);
+            for (let i = 0; i < particleCount; i++) {
+                const particleColor = SPARK_COLORS[getRandomInt(0, SPARK_COLORS.length - 1)];
+                setTimeout(() => {
+                    createParticle(basePos, particleColor);
+                }, i * 30);
+            }
+        }
+
+        // Event Listeners
+        baseCube.addEventListener('click', handleCubeClick);
+        baseCube.addEventListener('touchstart', handleCubeClick);
+        
+        // Initial message on load
+        window.onload = () => {
+             // Character is set to the bottom via CSS, so only display the message
+             messageText.textContent = 'રમવાનું શરૂ કરવા માટે નીચેના પાત્રને ટચ કરો.';
+        };
+        
+    </script>
+</body>
+</html>
