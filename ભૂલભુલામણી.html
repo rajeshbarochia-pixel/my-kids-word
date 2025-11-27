@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ભૂલભુલામણી - Maze Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 20px;
+            max-width: 500px;
+            width: 95%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            color: #ff6b6b;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .instruction {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 16px;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+
+        .maze-container {
+            position: relative;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-radius: 15px;
+            padding: 10px;
+            border: 3px solid #4fc3f7;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            cursor: crosshair;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Georgia', serif;
+        }
+
+        .reset-btn {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .reset-btn:hover {
+            background: #ff5252;
+            transform: scale(1.05);
+        }
+
+        .new-maze-btn {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .new-maze-btn:hover {
+            background: #45b7af;
+            transform: scale(1.05);
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 30px;
+        }
+
+        .success {
+            color: #28a745;
+            animation: bounce 0.5s ease;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .emoji {
+            font-size: 24px;
+        }
+
+        .creator {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🏡 ભૂલભુલામણી 👦</h1>            
+        </div>
+        
+        <div class="instruction">
+            બાળકને ઘર સુધી પહોંચાડો! 👆<br>
+            આંગળીથી રસ્તો દોરો અથવા એરો કીઓથી ચલાવો ⬆️⬇️⬅️➡️
+        </div>
+
+        <div class="maze-container">
+            <canvas id="mazeCanvas"></canvas>
+        </div>
+
+        <div class="controls">
+            <button class="reset-btn" onclick="resetPath()">🔄 ફરી શરૂ કરો</button>
+            <button class="new-maze-btn" onclick="generateNewMaze()">✨ નવી ભૂલભુલામણી</button>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="creator">
+            વિકાસકર્તા: Rajesh Barochia 📚
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mazeCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusDiv = document.getElementById('status');
+
+        // Set canvas size
+        const size = 400;
+        canvas.width = size;
+        canvas.height = size;
+
+        let isDrawing = false;
+        let userPath = [];
+        let currentMaze = [];
+        let solution = [];
+        let cellSize;
+        let cols, rows;
+        let startCell = {x: 0, y: 0};
+        let endCell = {x: 0, y: 0};
+        let playerCell = {x: 0, y: 0}; // Current position of player
+        let keyboardMode = false; // Track if using keyboard controls
+
+        // Maze generation using recursive backtracking
+        class Cell {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.walls = {top: true, right: true, bottom: true, left: true};
+                this.visited = false;
+            }
+
+            draw() {
+                const x = this.x * cellSize;
+                const y = this.y * cellSize;
+
+                ctx.strokeStyle = '#2196F3';
+                ctx.lineWidth = 3;
+
+                if (this.walls.top) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + cellSize, y);
+                    ctx.stroke();
+                }
+                if (this.walls.right) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + cellSize, y);
+                    ctx.lineTo(x + cellSize, y + cellSize);
+                    ctx.stroke();
+                }
+                if (this.walls.bottom) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + cellSize, y + cellSize);
+                    ctx.lineTo(x, y + cellSize);
+                    ctx.stroke();
+                }
+                if (this.walls.left) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + cellSize);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function generateMaze() {
+            cols = 8;
+            rows = 8;
+            cellSize = size / cols;
+            currentMaze = [];
+
+            // Create grid
+            for (let y = 0; y < rows; y++) {
+                let row = [];
+                for (let x = 0; x < cols; x++) {
+                    row.push(new Cell(x, y));
+                }
+                currentMaze.push(row);
+            }
+
+            // Generate maze using recursive backtracking
+            let stack = [];
+            let current = currentMaze[0][0];
+            current.visited = true;
+
+            while (true) {
+                let neighbors = getUnvisitedNeighbors(current);
+                
+                if (neighbors.length > 0) {
+                    let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    stack.push(current);
+                    removeWalls(current, next);
+                    next.visited = true;
+                    current = next;
+                } else if (stack.length > 0) {
+                    current = stack.pop();
+                } else {
+                    break;
+                }
+            }
+
+            // Set start and end
+            startCell = {x: 0, y: 0};
+            endCell = {x: cols - 1, y: rows - 1};
+        }
+
+        function getUnvisitedNeighbors(cell) {
+            let neighbors = [];
+            let {x, y} = cell;
+
+            if (y > 0 && !currentMaze[y-1][x].visited) neighbors.push(currentMaze[y-1][x]);
+            if (x < cols - 1 && !currentMaze[y][x+1].visited) neighbors.push(currentMaze[y][x+1]);
+            if (y < rows - 1 && !currentMaze[y+1][x].visited) neighbors.push(currentMaze[y+1][x]);
+            if (x > 0 && !currentMaze[y][x-1].visited) neighbors.push(currentMaze[y][x-1]);
+
+            return neighbors;
+        }
+
+        function removeWalls(current, next) {
+            let dx = current.x - next.x;
+            let dy = current.y - next.y;
+
+            if (dx === 1) {
+                current.walls.left = false;
+                next.walls.right = false;
+            } else if (dx === -1) {
+                current.walls.right = false;
+                next.walls.left = false;
+            }
+
+            if (dy === 1) {
+                current.walls.top = false;
+                next.walls.bottom = false;
+            } else if (dy === -1) {
+                current.walls.bottom = false;
+                next.walls.top = false;
+            }
+        }
+
+        function drawMaze() {
+            ctx.clearRect(0, 0, size, size);
+            
+            // Draw background
+            ctx.fillStyle = '#f0f8ff';
+            ctx.fillRect(0, 0, size, size);
+
+            // Draw maze walls
+            for (let row of currentMaze) {
+                for (let cell of row) {
+                    cell.draw();
+                }
+            }
+
+            // Draw path trail if keyboard mode
+            if (keyboardMode && userPath.length > 0) {
+                ctx.fillStyle = 'rgba(255, 107, 107, 0.3)';
+                for (let cell of userPath) {
+                    const x = cell.x * cellSize + cellSize * 0.1;
+                    const y = cell.y * cellSize + cellSize * 0.1;
+                    ctx.fillRect(x, y, cellSize * 0.8, cellSize * 0.8);
+                }
+            }
+
+            // Draw start marker if player hasn't moved
+            if (!keyboardMode || (playerCell.x === startCell.x && playerCell.y === startCell.y)) {
+                const startX = startCell.x * cellSize + cellSize / 2;
+                const startY = startCell.y * cellSize + cellSize / 2;
+                ctx.font = `${cellSize * 0.6}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('👦', startX, startY);
+            }
+
+            // Draw player at current position (for keyboard mode)
+            if (keyboardMode) {
+                const playerX = playerCell.x * cellSize + cellSize / 2;
+                const playerY = playerCell.y * cellSize + cellSize / 2;
+                ctx.font = `${cellSize * 0.6}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('👦', playerX, playerY);
+            }
+
+            // Draw end (house)
+            const endX = endCell.x * cellSize + cellSize / 2;
+            const endY = endCell.y * cellSize + cellSize / 2;
+            ctx.font = `${cellSize * 0.6}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🏡', endX, endY);
+
+            // Draw user path (for touch mode)
+            if (!keyboardMode && userPath.length > 0) {
+                ctx.strokeStyle = '#ff6b6b';
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(userPath[0].x, userPath[0].y);
+                for (let i = 1; i < userPath.length; i++) {
+                    ctx.lineTo(userPath[i].x, userPath[i].y);
+                }
+                ctx.stroke();
+            }
+        }
+
+        function getCanvasCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function getCellFromCoordinates(x, y) {
+            const col = Math.floor(x / cellSize);
+            const row = Math.floor(y / cellSize);
+            return {x: col, y: row};
+        }
+
+        function isValidMove(fromCell, toCell) {
+            if (toCell.x < 0 || toCell.x >= cols || toCell.y < 0 || toCell.y >= rows) return false;
+            if (fromCell.x === toCell.x && fromCell.y === toCell.y) return true;
+
+            const dx = toCell.x - fromCell.x;
+            const dy = toCell.y - fromCell.y;
+
+            // Check if adjacent
+            if (Math.abs(dx) + Math.abs(dy) !== 1) return false;
+
+            const current = currentMaze[fromCell.y][fromCell.x];
+
+            if (dx === 1 && current.walls.right) return false;
+            if (dx === -1 && current.walls.left) return false;
+            if (dy === 1 && current.walls.bottom) return false;
+            if (dy === -1 && current.walls.top) return false;
+
+            return true;
+        }
+
+        function checkWin() {
+            let won = false;
+
+            if (keyboardMode) {
+                // Check if player reached end cell
+                if (playerCell.x === endCell.x && playerCell.y === endCell.y) {
+                    won = true;
+                }
+            } else {
+                // Check for touch mode
+                if (userPath.length === 0) return;
+                const lastPoint = userPath[userPath.length - 1];
+                const lastCell = getCellFromCoordinates(lastPoint.x, lastPoint.y);
+                if (lastCell.x === endCell.x && lastCell.y === endCell.y) {
+                    won = true;
+                }
+            }
+
+            if (won) {
+                statusDiv.innerHTML = '<span class="success">🎉 શાબાશ! તમે પહોંચી ગયા! 🏆</span>';
+                isDrawing = false;
+                setTimeout(() => {
+                    if (confirm('શાબાશ! 🎉 બીજી ભૂલભુલામણી રમવા માગો છો?')) {
+                        generateNewMaze();
+                    }
+                }, 500);
+            }
+        }
+
+        function startDrawing(e) {
+            e.preventDefault();
+            const pos = getCanvasCoordinates(e);
+            const cell = getCellFromCoordinates(pos.x, pos.y);
+
+            // Check if starting from start cell
+            if (cell.x === startCell.x && cell.y === startCell.y) {
+                isDrawing = true;
+                userPath = [pos];
+                drawMaze();
+                statusDiv.innerHTML = '';
+            } else {
+                statusDiv.innerHTML = '<span class="error">⚠️ બાળક (👦) થી શરૂ કરો!</span>';
+            }
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+
+            const pos = getCanvasCoordinates(e);
+            const currentCell = getCellFromCoordinates(pos.x, pos.y);
+            
+            if (userPath.length > 0) {
+                const lastPoint = userPath[userPath.length - 1];
+                const lastCell = getCellFromCoordinates(lastPoint.x, lastPoint.y);
+
+                if (!isValidMove(lastCell, currentCell)) {
+                    statusDiv.innerHTML = '<span class="error">❌ દીવાલમાંથી જઈ શકાતું નથી!</span>';
+                    isDrawing = false;
+                    return;
+                }
+            }
+
+            userPath.push(pos);
+            drawMaze();
+            checkWin();
+        }
+
+        function stopDrawing(e) {
+            if (isDrawing) {
+                e.preventDefault();
+                isDrawing = false;
+            }
+        }
+
+        function resetPath() {
+            userPath = [];
+            isDrawing = false;
+            keyboardMode = false;
+            playerCell = {x: startCell.x, y: startCell.y};
+            statusDiv.innerHTML = '';
+            drawMaze();
+        }
+
+        function generateNewMaze() {
+            generateMaze();
+            resetPath();
+        }
+
+        // Arrow key controls
+        function handleKeyPress(e) {
+            // Arrow keys: 37=left, 38=up, 39=right, 40=down
+            const key = e.keyCode;
+            if (![37, 38, 39, 40].includes(key)) return;
+            
+            e.preventDefault();
+            
+            // Enable keyboard mode on first arrow key press
+            if (!keyboardMode) {
+                keyboardMode = true;
+                playerCell = {x: startCell.x, y: startCell.y};
+                userPath = [playerCell];
+                statusDiv.innerHTML = '';
+            }
+
+            const oldCell = {x: playerCell.x, y: playerCell.y};
+            let newCell = {x: playerCell.x, y: playerCell.y};
+
+            // Determine new position based on arrow key
+            switch(key) {
+                case 37: // Left
+                    newCell.x--;
+                    break;
+                case 38: // Up
+                    newCell.y--;
+                    break;
+                case 39: // Right
+                    newCell.x++;
+                    break;
+                case 40: // Down
+                    newCell.y++;
+                    break;
+            }
+
+            // Check if move is valid
+            if (isValidMove(oldCell, newCell)) {
+                playerCell = newCell;
+                // Add to path if not already there
+                const alreadyInPath = userPath.some(cell => cell.x === newCell.x && cell.y === newCell.y);
+                if (!alreadyInPath) {
+                    userPath.push({x: newCell.x, y: newCell.y});
+                }
+                drawMaze();
+                checkWin();
+            } else {
+                statusDiv.innerHTML = '<span class="error">❌ દીવાલમાંથી જઈ શકાતું નથી!</span>';
+                setTimeout(() => {
+                    if (statusDiv.innerHTML.includes('દીવાલમાંથી')) {
+                        statusDiv.innerHTML = '';
+                    }
+                }, 1500);
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', handleKeyPress);
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        // Initialize
+        generateNewMaze();
+    </script>
+</body>
+</html>
