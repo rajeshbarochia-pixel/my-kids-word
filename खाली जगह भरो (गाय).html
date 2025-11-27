@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>खाली जगह भरो खेल</title>
+    <!-- Tailwind CSS CDN --><script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Hindi specific font (Noto Sans for broad coverage) */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans', sans-serif;
+            background-color: #f7f7f7; /* Light Gray Background */
+        }
+        .game-card {
+            background-color: #ffffff;
+            border: 4px solid #f97316; /* Orange border */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            padding: 1.5rem;
+        }
+        .sentence-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .blank {
+            display: inline-block;
+            min-width: 60px;
+            padding: 0 4px;
+            border-bottom: 3px dashed #ea580c; /* Darker Orange dashed line */
+            color: transparent;
+            font-weight: 700;
+            text-align: center;
+        }
+        .selected-blank {
+            background-color: #fef08a; /* Yellow highlight for selection */
+            border-bottom: 3px solid #f59e0b; /* Orange solid line */
+            animation: pulse-border 1s infinite;
+        }
+        .filled-blank {
+            color: #10b981; /* Green color for correct fill */
+            border-bottom: 3px solid #10b981;
+            background-color: #d1fae5;
+            transition: all 0.3s ease;
+        }
+        .option-button {
+            transition: all 0.15s ease;
+            transform: scale(1);
+        }
+        .option-button:hover:not(:disabled) {
+            transform: scale(1.03);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .option-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #f3f4f6;
+        }
+        @keyframes pulse-border {
+            0% { border-color: #f59e0b; }
+            50% { border-color: #ef4444; }
+            100% { border-color: #f59e0b; }
+        }
+        .game-over-message {
+            font-size: 2rem;
+            color: #f97316; /* Orange color */
+            font-weight: 900;
+            animation: bounce 0.5s infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-5px); }
+        }
+        .restart-button {
+            /* Custom styles for the restart button */
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .restart-button:hover {
+            background-color: #10b981;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="game-container" class="w-full max-w-xl mx-auto">
+        <div class="game-card rounded-xl text-center">
+            
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-orange-600 mb-2">गाय के बारे में वाक्य पूरा करें</h1>
+            <p class="text-xl text-gray-600 mb-6">सही शब्द चुनने के लिए खाली जगह पर क्लिक करें।</p>
+
+            <!-- Cow Emoji --><div class="mb-6">
+                <span class="text-7xl sm:text-8xl" role="img" aria-label="गाय का इमोजी">🐮</span>
+            </div>
+
+            <!-- Score and Status --><div class="flex justify-between items-center mb-6 p-3 bg-orange-50 rounded-lg font-semibold text-gray-800">
+                <p class="text-lg">सही उत्तर: <span id="score" class="text-green-600 text-2xl">0</span></p>
+                <p class="text-lg">बाकी शब्द: <span id="remaining-options-count" class="text-red-500 text-2xl">5</span></p>
+            </div>
+
+            <!-- Sentences Area --><div id="sentences-area" class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-8 text-left text-xl sm:text-2xl font-medium leading-relaxed">
+                <!-- Sentences will be rendered here --></div>
+
+            <!-- Options Area --><div id="options-area" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
+                <!-- Option buttons will be inserted here by JavaScript --></div>
+            
+            <!-- Game Over Message and Restart Button -->
+            <div id="game-over-display" class="hidden py-4">
+                <p id="game-over-text" class="game-over-message mb-6">खेल समाप्त!</p>
+                <button id="restart-button" 
+                        class="restart-button w-full sm:w-1/2 p-4 rounded-xl text-2xl font-bold bg-green-500 text-white shadow-lg uppercase tracking-wider" 
+                        onclick="startGame()">
+                    नया खेल शुरू करें
+                </button>
+            </div>
+
+            <!-- Creator Credit --><p class="mt-4 text-xs text-gray-400">Created by: Rajesh barochia</p>
+
+        </div>
+    </div>
+
+    <script>
+        // Sentence Data (Based on the new image: Cow and related Hindi sentences)
+        const SENTENCE_DATA = [
+            // The structure is { id, parts: [Part before blank, Part after blank], correct: The missing word }
+            { id: 1, parts: ["गाय हमें ", " देती है।"], correct: "दूध" },
+            { id: 2, parts: ["गाय का दूध शरीर को ", " देता है।"], correct: "ताकत" },
+            { id: 3, parts: ["गाय ", " खाती है।"], correct: "घास" },
+            { id: 4, parts: ["गाय के दो ", " होते हैं।"], correct: "सींग" },
+            { id: 5, parts: ["गाय के ", " पैर होते हैं।"], correct: "चार" }
+        ];
+
+        let score = 0;
+        let sentences = [];
+        let options = [];
+        let selectedBlankId = null;
+        let isGameActive = true;
+
+        // DOM Elements
+        const scoreElement = document.getElementById('score');
+        const remainingOptionsCountElement = document.getElementById('remaining-options-count');
+        const sentencesArea = document.getElementById('sentences-area');
+        const optionsArea = document.getElementById('options-area');
+        const gameOverDisplay = document.getElementById('game-over-display');
+
+        // Shuffle function
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // Start the game
+        function startGame() {
+            score = 0;
+            isGameActive = true;
+            selectedBlankId = null;
+            
+            // Set up sentences and options
+            sentences = shuffleArray(SENTENCE_DATA).map(s => ({ 
+                ...s, 
+                filled: false, 
+                currentAnswer: "" 
+            }));
+            
+            options = shuffleArray(SENTENCE_DATA.map(s => s.correct));
+            
+            scoreElement.textContent = score;
+            remainingOptionsCountElement.textContent = options.length;
+            gameOverDisplay.classList.add('hidden');
+            optionsArea.classList.remove('hidden'); // Ensure options are visible at start
+            
+            renderSentences();
+            renderOptions();
+        }
+
+        // Render sentences on the UI
+        function renderSentences() {
+            sentencesArea.innerHTML = '';
+            sentences.forEach((s) => {
+                const sentenceDiv = document.createElement('div');
+                sentenceDiv.className = 'sentence-item py-2';
+                
+                // Part 1 (Text before the blank)
+                const part1 = document.createTextNode(s.parts[0]);
+                sentenceDiv.appendChild(part1);
+
+                // Blank space / Filled word
+                const blankSpan = document.createElement('span');
+                blankSpan.id = `blank-${s.id}`;
+                
+                if (s.filled) {
+                    // If filled
+                    blankSpan.textContent = s.currentAnswer;
+                    blankSpan.className = 'filled-blank px-2';
+                } else {
+                    // If blank
+                    blankSpan.textContent = '_________';
+                    blankSpan.className = 'blank';
+                    blankSpan.onclick = () => selectBlank(s.id);
+                }
+                
+                if (selectedBlankId === s.id && !s.filled) {
+                    blankSpan.classList.add('selected-blank');
+                }
+
+                sentenceDiv.appendChild(blankSpan);
+
+                // Part 2 (Text after the blank)
+                const part2 = document.createTextNode(s.parts[1]);
+                sentenceDiv.appendChild(part2);
+                
+                sentencesArea.appendChild(sentenceDiv);
+            });
+        }
+
+        // Render options buttons
+        function renderOptions() {
+            optionsArea.innerHTML = '';
+            // Options buttons are styled using shades of red/orange for vibrancy
+            options.forEach((optionText) => {
+                const button = document.createElement('button');
+                button.textContent = optionText;
+                
+                button.classList.add(
+                    'option-button', 
+                    'w-full', 'py-3', 'rounded-lg', 'text-xl', 'font-bold', 
+                    'bg-red-500', 'text-white', 'shadow-md', 'hover:bg-red-600', 
+                    'active:bg-red-700'
+                );
+                
+                button.onclick = () => selectOption(optionText);
+                optionsArea.appendChild(button);
+            });
+        }
+
+        // Select a blank space
+        function selectBlank(id) {
+            if (!isGameActive) return;
+            selectedBlankId = id;
+            renderSentences();
+        }
+
+        // Select an option
+        function selectOption(selectedOption) {
+            if (!isGameActive) return;
+
+            if (selectedBlankId === null) {
+                // If no blank is selected
+                alertMessage("पहले खाली जगह चुनें।");
+                return;
+            }
+
+            const sentenceIndex = sentences.findIndex(s => s.id === selectedBlankId);
+            const currentSentence = sentences[sentenceIndex];
+
+            // Check the answer
+            if (currentSentence.correct === selectedOption) {
+                // Correct answer
+                score++;
+                currentSentence.filled = true;
+                currentSentence.currentAnswer = selectedOption;
+                scoreElement.textContent = score;
+
+                // Remove the option from the Options array
+                options = options.filter(opt => opt !== selectedOption);
+                remainingOptionsCountElement.textContent = options.length;
+
+                // Update UI
+                selectedBlankId = null;
+                renderSentences();
+                renderOptions();
+                
+                // Check for game end
+                if (score === SENTENCE_DATA.length) {
+                    endGame();
+                }
+
+            } else {
+                // Incorrect answer
+                alertMessage(`गलत उत्तर। फिर से प्रयास करें!`);
+                
+                // Remove highlight from the selected blank
+                selectedBlankId = null;
+                renderSentences();
+            }
+        }
+        
+        // Custom Alert Message (instead of alert())
+        function alertMessage(message) {
+            // Display a temporary feedback message
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 p-3 bg-red-600 text-white rounded-lg shadow-xl text-lg z-50';
+            feedbackDiv.textContent = message;
+            document.body.appendChild(feedbackDiv);
+            setTimeout(() => feedbackDiv.remove(), 1500);
+        }
+
+        // End the game
+        function endGame() {
+            isGameActive = false;
+            gameOverDisplay.classList.remove('hidden');
+            optionsArea.classList.add('hidden'); // Hide options when game is over
+            const gameOverText = document.getElementById('game-over-text');
+            // Show score in game over message
+            gameOverText.innerHTML = `सभी वाक्य पूरे हुए! 🎉<br>आपने ${SENTENCE_DATA.length} में से ${score} सही किए!`;
+            // The restart button is now inside the game-over-display div
+        }
+
+        // Initial load
+        window.onload = startGame; // Start the game immediately
+    </script>
+</body>
+</html>
