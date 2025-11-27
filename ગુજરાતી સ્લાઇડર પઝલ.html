@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગુજરાતી ૧૫-પઝલ</title>
+    <!-- Tailwind CSS (For Mobile-First Design) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* કસ્ટમ ફોન્ટ અને બેકગ્રાઉન્ડ સ્ટાઇલિંગ */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            /* નવા બ્લુ-ટીલ ગ્રેડિએન્ટ બેકગ્રાઉન્ડ */
+            background: linear-gradient(135deg, #1B263B 0%, #003B46 100%);
+            min-height: 100vh;
+        }
+
+        /* ટાઇલ માટે કસ્ટમ સાઈઝ અને સંક્રમણ (Transition) */
+        .tile {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.25rem; /* 36px */
+            font-weight: 700;
+            cursor: pointer;
+            /* ટાઇલનો રંગ: આછો સફેદ/મીંટ */
+            background-color: #E3F9F1; 
+            /* ટાઇલ પરના અંકનો રંગ: ડાર્ક ટીલ */
+            color: #003B46; 
+            /* શેડો: ઘેરો, 3D અસર માટે */
+            box-shadow: 0 4px #005E7C, 0 8px 10px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease-in-out, background-color 0.1s;
+            user-select: none;
+        }
+
+        .tile:active {
+            box-shadow: 0 2px #005E7C, 0 4px 6px rgba(0,0,0,0.5);
+            transform: translateY(2px);
+        }
+
+        .empty {
+            background-color: transparent !important;
+            box-shadow: none !important;
+            cursor: default !important;
+        }
+
+        /* બોર્ડ કન્ટેનર માટે ગ્રીડ લેઆઉટ */
+        #board-container {
+            /* બોર્ડરનો રંગ: વાઇબ્રન્ટ ટીલ */
+            border: 12px solid #005E7C; 
+            /* બોર્ડનો રંગ: ડાર્ક ટીલ */
+            background-color: #007C92; 
+            padding: 8px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            max-width: 450px;
+            width: 95%; /* મોબાઈલ માટે ફ્લુઇડ */
+            aspect-ratio: 1 / 1; /* બોર્ડને ચોરસ રાખો */
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 8px;
+            height: 100%;
+        }
+
+        /* જીતનો મેસેજ */
+        #win-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="p-4 flex flex-col items-center justify-center">
+
+    <header class="text-center mb-6">
+        <h1 class="text-4xl font-bold text-yellow-300 shadow-lg p-2 rounded-lg bg-gray-900/50">ગુજરાતી અંક સ્લાઇડર પઝલ</h1>
+        <p class="text-white mt-2 text-lg">ટાઇલ્સને ૧ થી ૧૫ ના ક્રમમાં ગોઠવો.</p>
+        <!-- Created by: Rajesh Barochia ઉમેર્યું -->
+        <p class="text-gray-300 text-sm mt-1">નિર્માતા:Rajesh Barochia</p>
+    </header>
+
+    <div id="board-container">
+        <div id="board">
+            <!-- ટાઇલ્સ JavaScript દ્વારા અહીં ઉમેરવામાં આવશે -->
+        </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-4 mt-6 w-full max-w-sm justify-center">
+        <!-- શફલ બટન માટે વાઇબ્રન્ટ કલર -->
+        <button id="shuffle-button" class="px-6 py-3 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-lg transition duration-200 shadow-xl text-lg">
+            ફરીથી ગોઠવો (Shuffle)
+        </button>
+        <div id="moves-count" class="px-6 py-3 bg-yellow-400 text-gray-900 font-bold rounded-lg text-center text-xl shadow-xl">
+            ચાલ: ૦
+        </div>
+    </div>
+
+    <!-- જીતનો મેસેજ મોડલ -->
+    <div id="win-message">
+        <div class="bg-white p-10 rounded-xl shadow-2xl transform scale-105">
+            <h2 class="text-5xl font-extrabold text-green-600 mb-4 animate-pulse">તમે જીતી ગયા! (YOU WIN!)</h2>
+            <p id="final-moves" class="text-2xl text-gray-700 mb-6"></p>
+            <button onclick="document.getElementById('win-message').style.display='none'; shuffleTiles();" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xl transition">
+                નવી ગેમ શરૂ કરો
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        // JavaScript લોજિક શરૂ
+        const gujaratiNumerals = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯', '૧૦', '૧૧', '૧૨', '૧૩', '૧૪', '૧૫'];
+        const TILE_COUNT = 16;
+        const GRID_SIZE = 4;
+        const board = document.getElementById('board');
+        const movesCountDisplay = document.getElementById('moves-count');
+        const winMessage = document.getElementById('win-message');
+        const finalMoves = document.getElementById('final-moves');
+        
+        let tiles = [];
+        let moves = 0;
+
+        // વેસ્ટર્ન અંક (0-15) ને ગુજરાતી અંકમાં રૂપાંતરિત કરે છે.
+        function toGujarati(number) {
+            // Number 0 is at index 0, 15 is at index 15
+            if (number >= 0 && number <= 15) {
+                return gujaratiNumerals[number];
+            }
+            return number.toString(); // Fallback for higher numbers (like move count)
+        }
+
+        // બોર્ડ પર ગુજરાતી અંકો સાથે ટાઇલ્સ સેટઅપ કરે છે.
+        function createBoard() {
+            board.innerHTML = '';
+            tiles = [];
+            
+            // 1 થી 15 સુધીની ટાઇલ્સ
+            for (let i = 1; i < TILE_COUNT; i++) {
+                const tile = createTile(i, i, false);
+                tiles.push(tile);
+            }
+            
+            // ખાલી ટાઇલ (મૂલ્ય 16)
+            const emptyTile = createTile(TILE_COUNT, TILE_COUNT, true);
+            tiles.push(emptyTile);
+            
+            // ટાઇલ્સને બોર્ડમાં ઉમેરો
+            // આપણે તેમને પોઝિશનના ક્રમમાં ઉમેરીએ છીએ, પછી JavaScript માં બદલીશું.
+            tiles.sort((a, b) => parseInt(a.dataset.value) - parseInt(b.dataset.value));
+            tiles.forEach(tile => board.appendChild(tile));
+        }
+
+        // એક ટાઇલ બનાવે છે
+        function createTile(value, initialPosition, isEmpty = false) {
+            const tile = document.createElement('div');
+            tile.classList.add('tile', 'rounded-lg');
+            if (isEmpty) {
+                tile.classList.add('empty');
+            }
+            // 1 થી 15 સુધીના મૂલ્યો માટે ગુજરાતી અંક દર્શાવો
+            tile.textContent = isEmpty ? '' : toGujarati(value); 
+            tile.dataset.value = value;
+            tile.dataset.position = initialPosition;
+            tile.addEventListener('click', handleTileClick);
+            return tile;
+        }
+
+        // ટાઇલ્સને સ્લાઇડ કરવાની લોજિક
+        function handleTileClick(event) {
+            const clickedTile = event.target;
+            if (clickedTile.classList.contains('empty')) return;
+
+            const clickedPos = parseInt(clickedTile.dataset.position);
+            const emptyTile = document.querySelector('.empty');
+            const emptyPos = parseInt(emptyTile.dataset.position);
+
+            const isMovable = checkMove(clickedPos, emptyPos);
+
+            if (isMovable) {
+                // સ્વેપ ટાઇલની પોઝિશન
+                [clickedTile.dataset.position, emptyTile.dataset.position] = [emptyTile.dataset.position, clickedTile.dataset.position];
+                
+                // DOM માં ટાઇલની પોઝિશન અપડેટ કરો (ફરીથી ગોઠવણ)
+                updateBoardLayout();
+
+                // ચાલની ગણતરી
+                moves++;
+                movesCountDisplay.innerHTML = `ચાલ: ${toGujarati(moves)}`;
+
+                // જીત્યા કે નહીં તે તપાસો
+                checkWin();
+            }
+        }
+
+        // ચાલ શક્ય છે કે નહીં તે તપાસો (ખાલી જગ્યાની બાજુમાં છે?)
+        function checkMove(clickedPos, emptyPos) {
+            const rowClicked = Math.floor((clickedPos - 1) / GRID_SIZE);
+            const colClicked = (clickedPos - 1) % GRID_SIZE;
+            const rowEmpty = Math.floor((emptyPos - 1) / GRID_SIZE);
+            const colEmpty = (emptyPos - 1) % GRID_SIZE;
+
+            // એક જ હરોળમાં અથવા એક જ કોલમમાં અને એક ડગલું દૂર હોવું જોઈએ
+            const rowDiff = Math.abs(rowClicked - rowEmpty);
+            const colDiff = Math.abs(colClicked - colEmpty);
+            
+            // બાજુની હરોળ (rowDiff=1, colDiff=0) અથવા બાજુનો કોલમ (rowDiff=0, colDiff=1)
+            return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+        }
+
+        // બોર્ડ લેઆઉટ અપડેટ કરો (પોઝિશન ડેટાના આધારે DOM માં ટાઇલ્સ ફરીથી ગોઠવો)
+        function updateBoardLayout() {
+            // બોર્ડના તમામ બાળકોને પકડો
+            const currentTiles = Array.from(board.children);
+            
+            // તેમને તેમના dataset.position મૂલ્યના આધારે સોર્ટ કરો
+            currentTiles.sort((a, b) => 
+                parseInt(a.dataset.position) - parseInt(b.dataset.position)
+            );
+            
+            // સોર્ટ કરેલી ટાઇલ્સને ફરીથી બોર્ડમાં ઉમેરો
+            board.innerHTML = '';
+            currentTiles.forEach(tile => board.appendChild(tile));
+        }
+
+        // સોલ્વેબિલિટી (Solvability) તપાસ સાથે શફલ કરો
+        function shuffleTiles() {
+            moves = 0;
+            movesCountDisplay.innerHTML = `ચાલ: ૦`;
+
+            // 1 થી 15 સુધીના અંકોનું એરે
+            let values = Array.from({length: TILE_COUNT - 1}, (_, i) => i + 1); // [1, 2, ..., 15]
+            
+            // ફિશર-યેટ્સ શફલ એલ્ગોરિધમ
+            for (let i = values.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [values[i], values[j]] = [values[j], values[i]];
+            }
+
+            // સોલ્વેબિલિટી તપાસો (15-પઝલ માટે આવશ્યક)
+            // ઇન્વર્ઝન કાઉન્ટ
+            let inversionCount = 0;
+            for (let i = 0; i < values.length; i++) {
+                for (let j = i + 1; j < values.length; j++) {
+                    if (values[i] > values[j]) {
+                        inversionCount++;
+                    }
+                }
+            }
+            
+            // ખાલી ટાઇલ ક્યાં છે તે તપાસો (અહીં ખાલી ટાઇલ 16મી પોઝિશન પર છે, એટલે કે 4થી હરોળ)
+            const emptyTileRowFromBottom = 1; // 4x4 માં 4થી હરોળ નીચેથી 1મી છે.
+            
+            // સોલ્વેબિલિટી નિયમ: 
+            // 4x4 માં, જો બોર્ડની પહોળાઈ (4) ઈવન હોય:
+            // - ખાલી ટાઇલ નીચેથી ઈવન હરોળમાં હોય (જેમ કે 4થી હરોળ): ઇન્વર્ઝન કાઉન્ટ ઓડ હોવો જોઈએ.
+            // - ખાલી ટાઇલ નીચેથી ઓડ હરોળમાં હોય (જેમ કે 3જી હરોળ): ઇન્વર્ઝન કાઉન્ટ ઈવન હોવો જોઈએ.
+            // આપણે હંમેશા ખાલી ટાઇલને છેલ્લી પોઝિશન (પોઝિશન ૧૬, હરોળ ૪, નીચેથી હરોળ ૧) પર મૂકીશું.
+            // અહીં હરોળ (૧) ઓડ છે, તેથી ઇન્વર્ઝન કાઉન્ટ ઈવન હોવો જોઈએ.
+            // જો ઇન્વર્ઝન કાઉન્ટ ઓડ હોય, તો તેને ઈવન કરવા માટે પ્રથમ બે ટાઇલ્સને સ્વેપ કરો.
+
+            if (inversionCount % 2 !== 0) {
+                // પ્રથમ બે ટાઇલ્સને સ્વેપ કરીને સોલ્વેબલ બનાવો
+                [values[0], values[1]] = [values[1], values[0]];
+            }
+
+            // ટાઇલ્સને નવી પોઝિશન આપો
+            const allTiles = Array.from(board.children);
+
+            for (let i = 0; i < TILE_COUNT - 1; i++) {
+                // 1 થી 15 ટાઇલ્સ
+                allTiles[i].dataset.value = values[i];
+                allTiles[i].textContent = toGujarati(values[i]);
+                allTiles[i].dataset.position = i + 1; // પોઝિશન 1 થી 15
+                allTiles[i].classList.remove('empty');
+            }
+
+            // ખાલી ટાઇલ (પોઝિશન 16)
+            const emptyTile = allTiles[TILE_COUNT - 1];
+            emptyTile.dataset.value = TILE_COUNT;
+            emptyTile.textContent = '';
+            emptyTile.dataset.position = TILE_COUNT;
+            emptyTile.classList.add('empty');
+
+            // સોલ્વ્ડ પોઝિશનમાં મૂકો
+            // આ લૂપ શફલ કરેલા મૂલ્યોને બોર્ડ પર ગોઠવે છે
+            
+            // નવી પોઝિશન અપડેટ કર્યા પછી ફરીથી લેઆઉટ ગોઠવો
+            updateBoardLayout();
+        }
+
+        // જીતની તપાસ કરો
+        function checkWin() {
+            const currentTiles = Array.from(board.children);
+            let isSolved = true;
+            
+            // 1 થી 15 સુધીની ટાઇલ્સ તપાસો. 16મી ટાઇલ ખાલી હોવી જોઈએ.
+            for (let i = 0; i < TILE_COUNT - 1; i++) {
+                const tile = currentTiles[i];
+                const expectedValue = i + 1;
+                const currentValue = parseInt(tile.dataset.value);
+                
+                // જો મૂલ્ય અને પોઝિશન મેળ ખાતા નથી, તો ગેમ સોલ્વ થઈ નથી.
+                if (currentValue !== expectedValue) {
+                    isSolved = false;
+                    break;
+                }
+            }
+
+            // છેલ્લી ટાઇલ ખાલી છે અને તે તેની યોગ્ય (16મી) પોઝિશન પર છે.
+            const lastTile = currentTiles[TILE_COUNT - 1];
+            if (!lastTile.classList.contains('empty')) {
+                 isSolved = false;
+            }
+
+            if (isSolved) {
+                // જીતનો મેસેજ દર્શાવો
+                finalMoves.textContent = `તમે ${toGujarati(moves)} ચાલમાં પઝલ પૂર્ણ કરી.`;
+                winMessage.style.display = 'flex';
+            }
+        }
+
+        // શરૂઆત
+        window.onload = function() {
+            createBoard();
+            shuffleTiles();
+        };
+
+    </script>
+</body>
+</html>
