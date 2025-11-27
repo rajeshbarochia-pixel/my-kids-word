@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગુજરાતી મૂળાક્ષર રમત</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background-color: #111827; /* gray-900 */
+            color: white;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .letter-glow {
+            text-shadow: 0 0 15px currentColor;
+            transition: transform 0.3s ease, text-shadow 0.3s ease;
+        }
+
+        .target-active {
+            transform: scale(1.5);
+            text-shadow: 0 0 30px currentColor;
+            z-index: 10;
+        }
+
+        .needle-shadow {
+            box-shadow: 0 0 15px white;
+        }
+
+        /* Utility for centering */
+        .center-abs {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen selection:bg-pink-500">
+
+    <!-- Header -->
+    <div class="absolute top-4 text-center z-10 w-full px-4">
+        <h1 class="text-4xl md:text-5xl font-black text-white mb-2 tracking-wide neon-text">
+            મૂળાક્ષર ચક્ર
+        </h1>
+        <p class="text-gray-300 text-lg"> Rajesh Barochia</p>
+    </div>
+
+    <!-- Game Container -->
+    <div class="relative w-full max-w-md aspect-square flex items-center justify-center mt-6">
+        
+        <!-- The Clock Face -->
+        <div class="relative w-[320px] h-[320px] md:w-[380px] md:h-[380px] rounded-full border-8 border-gray-700 shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-gray-800" id="clock-face">
+            
+            <!-- Center Decoration -->
+            <div class="absolute inset-0 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 opacity-80 pointer-events-none"></div>
+            
+            <!-- Letters will be injected here via JS -->
+            <div id="stages-container"></div>
+
+            <!-- The Needle -->
+            <div id="needle" class="absolute top-0 left-1/2 w-2 h-1/2 -ml-1 origin-bottom z-20 pointer-events-none" style="transform: rotate(0deg);">
+                <div class="w-full h-[80%] mt-auto bg-yellow-400 rounded-t-full needle-shadow border-2 border-white" style="margin-top: 20%;"></div>
+            </div>
+
+            <!-- Center Hub -->
+            <div class="absolute top-1/2 left-1/2 w-6 h-6 -ml-3 -mt-3 bg-white rounded-full z-30 shadow-lg border-4 border-yellow-500"></div>
+        </div>
+
+        <!-- Target Instruction Overlay -->
+        <div id="target-display" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 mt-[240px] w-full text-center hidden">
+            <p class="text-gray-300 text-sm uppercase tracking-widest mb-2">આ અક્ષર શોધો:</p>
+            <div id="target-name" class="text-6xl font-black animate-bounce transition-colors duration-300 drop-shadow-lg">
+                ?
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Controls Area -->
+    <div class="z-10 mt-12 flex flex-col items-center gap-4 w-full px-6 h-[160px]">
+        
+        <!-- Message Area -->
+        <div id="message-area" class="h-8 text-center font-bold text-xl drop-shadow-md text-green-400"></div>
+
+        <!-- Buttons -->
+        <div id="controls" class="w-full flex justify-center">
+            
+            <!-- Start Button -->
+            <button id="btn-start" class="group relative px-10 py-4 bg-blue-600 hover:bg-blue-500 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.5)] transition-all active:scale-95">
+                <span class="text-2xl font-bold text-white tracking-wider">રમત શરૂ કરો ▶</span>
+            </button>
+
+            <!-- Stop Button (Hidden initially) -->
+            <button id="btn-stop" class="hidden w-full max-w-[240px] py-4 bg-red-500 hover:bg-red-400 text-white rounded-2xl text-3xl font-black tracking-widest shadow-[0_0_20px_rgba(239,68,68,0.6)] active:scale-95 transition-all border-b-4 border-red-700 active:border-b-0 active:translate-y-1">
+                થોભો! ✋
+            </button>
+
+            <!-- Restart Button (Hidden initially) -->
+            <button id="btn-restart" class="hidden px-8 py-3 bg-gray-700 hover:bg-gray-600 rounded-full border border-gray-500 transition-colors text-white text-xl font-bold">
+                ફરીથી રમો ↻
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="fixed bottom-2 text-center text-gray-500 text-xs w-full pointer-events-none">
+         <br>
+        Creativ by : Rajesh Barochia
+    </div>
+
+    <script>
+        // --- Game Data (Gujarati Letters) ---
+        const letters = [
+            { char: "ન", color: "#F87171" }, // Red
+            { char: "મ", color: "#FB923C" }, // Orange
+            { char: "ગ", color: "#FACC15" }, // Yellow
+            { char: "જ", color: "#A3E635" }, // Lime
+            { char: "વ", color: "#4ADE80" }, // Green
+            { char: "ર", color: "#2DD4BF" }, // Teal
+            { char: "સ", color: "#38BDF8" }, // Sky
+            { char: "દ", color: "#60A5FA" }, // Blue
+            { char: "પ", color: "#818CF8" }, // Indigo
+            { char: "ડ", color: "#A78BFA" }, // Purple
+            { char: "ત", color: "#E879F9" }, // Fuchsia
+            { char: "ણ", color: "#FB7185" }  // Rose
+        ];
+
+        // --- Variables ---
+        let gameState = 'menu';
+        let score = 0;
+        let currentRotation = 0;
+        let targetIndex = null;
+        let speed = 1.5; // Slower start speed for kids
+        let animationFrameId;
+        
+        // --- DOM Elements ---
+        const needleEl = document.getElementById('needle');
+        const stagesContainer = document.getElementById('stages-container');
+        const btnStart = document.getElementById('btn-start');
+        const btnStop = document.getElementById('btn-stop');
+        const btnRestart = document.getElementById('btn-restart');
+        const messageArea = document.getElementById('message-area');
+        const targetDisplay = document.getElementById('target-display');
+        const targetNameEl = document.getElementById('target-name');
+
+        // --- Initialization ---
+        function initBoard() {
+            letters.forEach((item, index) => {
+                const angle = index * 30; // 360 / 12 = 30 degrees
+                
+                // Create Letter Container
+                const el = document.createElement('div');
+                el.className = 'absolute w-12 h-12 flex items-center justify-center icon-container font-black text-4xl select-none';
+                el.dataset.index = index;
+                el.style.color = item.color;
+                
+                // Position Logic
+                // Rotate container to angle, push out, un-rotate text
+                el.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translate(0, -135px) rotate(-${angle}deg)`;
+                el.style.top = '50%';
+                el.style.left = '50%';
+
+                // Insert Text directly
+                el.innerHTML = `<span class="letter-glow">${item.char}</span>`;
+                
+                stagesContainer.appendChild(el);
+            });
+        }
+
+        // --- Game Logic ---
+
+        function startGame() {
+            score = 0;
+            speed = 1.5; // Reset speed
+            gameState = 'playing';
+            messageArea.textContent = '';
+            
+            // UI Updates
+            btnStart.classList.add('hidden');
+            btnRestart.classList.add('hidden');
+            btnStop.classList.remove('hidden');
+            targetDisplay.classList.remove('hidden');
+
+            pickNewTarget();
+            startLoop();
+        }
+
+        function pickNewTarget() {
+            // Remove highlight from old target
+            document.querySelectorAll('.icon-container span').forEach(span => {
+                span.classList.remove('target-active');
+            });
+
+            // Random index
+            targetIndex = Math.floor(Math.random() * letters.length);
+            
+            // Update Text
+            const item = letters[targetIndex];
+            targetNameEl.textContent = item.char;
+            targetNameEl.style.color = item.color;
+
+            // Highlight new target on board (Helper for kids)
+            // Optional: Remove this if you want it harder. I kept it for visual flair.
+            const icons = document.querySelectorAll('.icon-container');
+            if(icons[targetIndex]) {
+                const span = icons[targetIndex].querySelector('span');
+                span.classList.add('target-active');
+            }
+        }
+
+        function startLoop() {
+            if (gameState !== 'playing') return;
+
+            function loop() {
+                currentRotation = currentRotation + speed;
+                needleEl.style.transform = `rotate(${currentRotation}deg)`;
+                
+                if (gameState === 'playing') {
+                    animationFrameId = requestAnimationFrame(loop);
+                }
+            }
+            animationFrameId = requestAnimationFrame(loop);
+        }
+
+        function handleStop() {
+            if (gameState !== 'playing') return;
+            
+            cancelAnimationFrame(animationFrameId);
+
+            // Hit Logic
+            // Index 0 (12 o'clock) covers 345deg to 15deg.
+            const normalizedRot = currentRotation % 360;
+            const hitIndex = Math.floor((normalizedRot + 15) / 30) % 12;
+
+            if (hitIndex === targetIndex) {
+                winRound();
+            } else {
+                loseGame();
+            }
+        }
+
+        function winRound() {
+            score += 10;
+            messageArea.textContent = 'સાચું! (Correct!) 🎉';
+            messageArea.className = 'h-8 text-center font-bold text-xl drop-shadow-md text-green-400 animate-bounce';
+            
+            // Slight speed increase, cap at reasonable speed for kids
+            if(speed < 5) speed += 0.3;
+
+            setTimeout(() => {
+                if (gameState === 'playing') {
+                    messageArea.textContent = '';
+                    pickNewTarget();
+                    startLoop();
+                }
+            }, 1500);
+        }
+
+        function loseGame() {
+            gameState = 'gameover';
+            messageArea.textContent = 'ફરી પ્રયત્ન કરો! (Oops!)';
+            messageArea.className = 'h-8 text-center font-bold text-xl drop-shadow-md text-red-500';
+            
+            btnStop.classList.add('hidden');
+            btnRestart.classList.remove('hidden');
+        }
+
+        // --- Event Listeners ---
+        btnStart.addEventListener('click', startGame);
+        btnStop.addEventListener('click', handleStop);
+        btnRestart.addEventListener('click', startGame);
+
+        // Initialize
+        initBoard();
+
+    </script>
+</body>
+</html>
