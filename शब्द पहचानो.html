@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>शब्द पहचानो - बाल मनोरंजन</title>
+    <!-- Load Tailwind CSS for styling --><script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styling for a vibrant, kid-friendly look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fceb9c 0%, #ffc400 100%); /* Yellow Gradient */
+        }
+        .card {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        .option-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- Main Game Container --><div id="game-container" class="w-full max-w-lg p-6 bg-white card rounded-2xl shadow-xl">
+        <h1 class="text-4xl font-bold text-center mb-6 text-yellow-700">शब्द पहचानो (Word Quiz)</h1>
+        <p class="text-center text-gray-600 mb-8">चित्र देखकर सही हिंदी शब्द चुनें।</p>
+
+        <!-- Picture Display Area --><div id="image-display" class="text-9xl text-center mb-8 p-6 bg-yellow-100 rounded-xl border-4 border-dashed border-yellow-400">
+            <!-- Emoji/SVG will be placed here -->❓
+        </div>
+
+        <!-- Options Buttons --><div id="options-container" class="grid grid-cols-2 gap-4">
+            <!-- Buttons will be generated here --></div>
+
+        <!-- Feedback and Score --><div class="mt-8 flex justify-between items-center border-t pt-4 border-yellow-200">
+            <!-- Score now includes question number: स्कोर: 0 | प्रश्न: 1/10 --><div id="score-display" class="text-xl font-semibold text-gray-700">स्कोर: 0</div>
+            <div id="feedback-message" class="text-xl font-bold transition-opacity duration-300 opacity-0"></div>
+        </div>
+        
+        <!-- Next Question Button / Start New Game Button --><button id="next-button" class="mt-4 w-full p-4 text-xl font-bold bg-indigo-500 text-white rounded-lg shadow-md hover:bg-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-300 hidden" onclick="loadQuestion()">
+            अगला प्रश्न
+        </button>
+
+    </div>
+
+    <!-- Creator Credit --><p class="mt-6 text-sm text-yellow-800 font-medium">Created by: Rajesh barochia</p>
+
+    <script>
+        // Set up the app ID and initial data
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'word-quiz-hindi-default';
+
+        // --- Game Data (10 unique questions) ---
+        const gameData = [
+            // Changed 'नल' emoji from 🚿 to 🚰
+            { emoji: '🚰', word: 'नल', incorrect: ['गेंद', 'हाथ', 'पैर'] }, 
+            { emoji: '🚌', word: 'बस', incorrect: ['घर', 'मेज', 'फल'] },
+            { emoji: '🧺', word: 'बाल्टी', incorrect: ['पानी', 'पतंग', 'कुर्सी'] },
+            { emoji: '📿', word: 'माला', incorrect: ['किताब', 'कलम', 'स्कूल'] },
+            { emoji: '🍎', word: 'सेब', incorrect: ['केला', 'आम', 'अंगूर'] },
+            { emoji: '⚽', word: 'गेंद', incorrect: ['बैट', 'खिलौना', 'दरवाजा'] },
+            { emoji: '🐱', word: 'बिल्ली', incorrect: ['कुत्ता', 'बाघ', 'शेर'] },
+            { emoji: '☀️', word: 'सूरज', incorrect: ['चाँद', 'तारा', 'बादल'] },
+            { emoji: '🏠', word: 'घर', incorrect: ['सड़क', 'पेड़', 'किताब'] },
+            { emoji: '✏️', word: 'पेंसिल', incorrect: ['रबर', 'कलर', 'चम्मच'] }
+        ];
+
+        let currentQuestion = null;
+        let score = 0;
+        let isWaiting = false; // To prevent multiple clicks during feedback
+        let currentQuestionIndex = 0; // Tracks the index in questionsOrder
+        const maxQuestions = 10;
+        let questionsOrder = []; // Stores the indices of the 10 questions to be played
+
+        const imageDisplay = document.getElementById('image-display');
+        const optionsContainer = document.getElementById('options-container');
+        const scoreDisplay = document.getElementById('score-display');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const nextButton = document.getElementById('next-button');
+
+        /**
+         * Shuffles an array using the Fisher-Yates algorithm.
+         * @param {Array} array The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /**
+         * Initializes the game state, score, and question order.
+         */
+        function initializeGame() {
+            score = 0;
+            currentQuestionIndex = 0;
+            scoreDisplay.textContent = `स्कोर: 0 | प्रश्न: 1/${maxQuestions}`;
+            feedbackMessage.textContent = '';
+            feedbackMessage.classList.add('opacity-0');
+            nextButton.textContent = 'अगला प्रश्न';
+            
+            // Generate a shuffled order of maxQuestions unique question indices
+            let indices = Array.from(Array(gameData.length).keys()); // [0, 1, ..., 9]
+            shuffleArray(indices);
+            questionsOrder = indices.slice(0, maxQuestions); 
+            
+            loadQuestion();
+        }
+
+        /**
+         * Loads the next question based on the questionsOrder array.
+         */
+        function loadQuestion() {
+            // Check if all questions are played
+            if (currentQuestionIndex >= maxQuestions) {
+                endGame();
+                return;
+            }
+            
+            // Reset the state and hide the next button
+            isWaiting = false; 
+            nextButton.classList.add('hidden');
+
+            // 1. Get the next question using the generated order
+            const nextDataIndex = questionsOrder[currentQuestionIndex];
+            currentQuestion = gameData[nextDataIndex];
+            
+            // Increment the question count
+            currentQuestionIndex++;
+            
+            // Update the display to show current question number (e.g., Q 1/10)
+            scoreDisplay.textContent = `स्कोर: ${score} | प्रश्न: ${currentQuestionIndex}/${maxQuestions}`;
+
+            // 2. Prepare the options (correct answer + 3 incorrect)
+            let options = [...currentQuestion.incorrect.slice(0, 3), currentQuestion.word];
+
+            // 3. Shuffle the options
+            options = shuffleArray(options);
+
+            // 4. Update the UI
+            imageDisplay.textContent = currentQuestion.emoji;
+            optionsContainer.innerHTML = ''; // Clear previous options
+            feedbackMessage.textContent = ''; // Clear previous feedback
+            feedbackMessage.classList.add('opacity-0');
+
+            // 5. Create option buttons
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                // Revert button styling to initial state
+                button.className = 'option-button p-4 text-xl font-bold bg-yellow-500 text-white rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-4 focus:ring-yellow-300';
+                button.onclick = () => checkAnswer(option, button);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        /**
+         * Checks the user's selected answer.
+         * @param {string} selectedWord The word selected by the user.
+         * @param {HTMLElement} buttonClicked The button element that was clicked.
+         */
+        function checkAnswer(selectedWord, buttonClicked) {
+            if (isWaiting) return;
+            isWaiting = true; // Block clicks until feedback is shown
+
+            // Disable all buttons to prevent further clicks
+            Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
+
+            // Check if the answer is correct
+            if (selectedWord === currentQuestion.word) {
+                // Correct Answer Logic
+                score++;
+                // Update score display immediately, but question count remains the same until next load
+                scoreDisplay.textContent = `स्कोर: ${score} | प्रश्न: ${currentQuestionIndex}/${maxQuestions}`; 
+                buttonClicked.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                buttonClicked.classList.add('bg-green-500', 'hover:bg-green-600');
+                showFeedback('सही जवाब! 🎉', 'text-green-600');
+            } else {
+                // Incorrect Answer Logic
+                buttonClicked.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                buttonClicked.classList.add('bg-red-500', 'hover:bg-red-600');
+                showFeedback('गलत जवाब! 😞', 'text-red-600');
+                // Highlight the correct answer
+                Array.from(optionsContainer.children).forEach(btn => {
+                    if (btn.textContent === currentQuestion.word) {
+                        btn.classList.add('border-4', 'border-green-500');
+                    }
+                });
+            }
+
+            // Show the next question button or end game button after a brief delay
+            setTimeout(() => {
+                if (currentQuestionIndex < maxQuestions) {
+                    nextButton.textContent = 'अगला प्रश्न';
+                    nextButton.onclick = loadQuestion;
+                } else {
+                    // Game is ending, change button text and action
+                    nextButton.textContent = 'नई गेम शुरू करें';
+                    nextButton.onclick = initializeGame;
+                }
+                nextButton.classList.remove('hidden');
+            }, 1500); 
+        }
+
+        /**
+         * Displays the final score screen.
+         */
+        function endGame() {
+            imageDisplay.textContent = '🏆'; // Trophy or celebration emoji
+            optionsContainer.innerHTML = '';
+            scoreDisplay.textContent = `फाइनल स्कोर: ${score} / ${maxQuestions}`;
+            showFeedback(`गेम ख़त्म! आपने ${maxQuestions} में से ${score} सही जवाब दिए।`, 'text-indigo-600');
+            // The next button setup is handled within checkAnswer's setTimeout
+        }
+
+        /**
+         * Displays the feedback message temporarily.
+         * @param {string} message The message to display.
+         * @param {string} colorClass Tailwind text color class.
+         */
+        function showFeedback(message, colorClass) {
+            feedbackMessage.textContent = message;
+            feedbackMessage.className = `text-xl font-bold transition-opacity duration-300 ${colorClass}`;
+            setTimeout(() => {
+                feedbackMessage.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        // --- Initialization ---
+        window.onload = function() {
+            // Start the game by initializing it
+            initializeGame();
+        }
+
+    </script>
+</body>
+</html>
