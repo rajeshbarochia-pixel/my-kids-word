@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>માપન ગેમ (૧૦ પ્રશ્નો) - Measurement Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Font Imports: Fredoka for playfulness, Noto Sans Gujarati for language */
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Fredoka', 'Noto Sans Gujarati', sans-serif;
+            background-color: #fef0f8; /* Softer, vibrant pink background */
+            touch-action: manipulation;
+            line-height: 1.5;
+        }
+
+        .game-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Align to top for better mobile flow */
+            padding: 1rem 1rem 4rem 1rem; /* More padding at the bottom */
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Interactive Card Styling */
+        .item-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: 3px solid transparent;
+            background: white;
+            box-shadow: 0 4px 12px rgba(219, 39, 119, 0.1); /* Subtle pink shadow */
+            user-select: none; /* Prevent text selection on tap */
+        }
+
+        .item-card:hover:not(.selected) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(219, 39, 119, 0.15);
+        }
+
+        .item-card:active {
+            transform: scale(0.97);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .item-card.selected {
+            border-color: #db2777; /* Pink-600 */
+            background-color: #fde6f8; /* Lighter selection background */
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px -2px rgba(219, 39, 119, 0.25);
+        }
+
+        .item-card.correct {
+            border-color: #10b981; /* Emerald-500 */
+            background-color: #ecfdf5; /* Light green */
+        }
+
+        .item-card.wrong {
+            border-color: #ef4444;
+            background-color: #fee2e2;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) translateY(0); }
+            20% { transform: translateX(-6px) translateY(-2px); }
+            40% { transform: translateX(6px) translateY(2px); }
+            60% { transform: translateX(-6px) translateY(-2px); }
+            80% { transform: translateX(6px) translateY(2px); }
+        }
+
+        .number-badge {
+            width: 40px; /* Slightly larger touch target */
+            height: 40px;
+            border-radius: 50%;
+            background-color: #db2777;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%) scale(0.9);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .selected .number-badge {
+            opacity: 1;
+            transform: translateY(-50%) scale(1);
+        }
+
+        .object-svg {
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.15));
+            max-width: 100%;
+            height: auto;
+            pointer-events: none; /* Crucial: ensures clicks register on the parent card */
+        }
+        
+        /* Button Styling */
+        .primary-btn {
+            background-image: linear-gradient(to right, #ec4899, #db2777); /* Pink Gradient */
+            border: none;
+            color: white;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .primary-btn:hover {
+            box-shadow: 0 8px 15px rgba(219, 39, 119, 0.5);
+            transform: scale(1.03);
+        }
+
+        .secondary-btn {
+            background-color: #10b981; /* Green */
+            transition: all 0.3s ease-in-out;
+        }
+
+        .secondary-btn:hover {
+            box-shadow: 0 8px 15px rgba(16, 185, 129, 0.5);
+            transform: scale(1.03);
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    
+    <!-- Header / Scoreboard -->
+    <div class="w-full flex justify-between items-center mb-4 px-2 pt-4">
+        <div class="text-pink-600 font-bold text-lg md:text-xl">પ્રશ્ન: <span id="current-q">1</span>/10</div>
+        <div class="bg-white px-4 py-2 rounded-full shadow-xl text-pink-600 font-bold flex items-center text-lg md:text-xl">
+            <span class="mr-1">⭐</span> <span id="score">0</span>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-container">
+        <div id="progress-bar" class="progress-bar"></div>
+    </div>
+
+    <!-- Question Title -->
+    <div class="text-center mb-6">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 mb-2 leading-tight">સૌથી લાંબા થી સૌથી ટૂંકા</h1>
+        <p class="text-pink-600 text-base md:text-lg font-semibold">પહેલા સૌથી લાંબી વસ્તુ પર ક્લિક કરો (૧, ૨, ૩)</p>
+    </div>
+
+    <!-- Game Area -->
+    <div id="game-area" class="w-full space-y-4">
+        <!-- Items injected here -->
+    </div>
+
+    <!-- Feedback Area -->
+    <div id="feedback" class="h-10 mt-6 text-center font-bold text-xl"></div>
+
+    <!-- Next Button -->
+    <button id="next-btn" onclick="nextLevel()" class="primary-btn mt-6 px-10 py-3 rounded-full font-bold text-xl shadow-2xl hidden w-full md:w-auto">
+        આગળ વધો ➡️
+    </button>
+
+    <!-- End Screen (Hidden by default) -->
+    <div id="end-screen" class="hidden text-center w-full mt-10 p-6 bg-white rounded-2xl shadow-2xl">
+        <div class="text-7xl mb-4 animate-bounce">🏆</div>
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-4">ગેમ પૂરી થઈ!</h2>
+        <p class="text-2xl text-gray-600 mb-8">તમારો સ્કોર: <span id="final-score" class="font-extrabold text-pink-600"></span> / 100</p>
+        <button onclick="restartGame()" class="secondary-btn px-10 py-3 rounded-full font-bold text-xl shadow-xl">
+            ફરીથી રમો 🔄
+        </button>
+    </div>
+
+    <div class="mt-auto pt-8 text-gray-400 text-xs font-medium text-center">
+        Created by: Rajesh barochia
+    </div>
+</div>
+
+<script>
+    // --- Game Config ---
+    const TOTAL_QUESTIONS = 10;
+    
+    // --- SVG Generators (10 Distinct Types) ---
+    // 1. Pencil, 2. Ruler, 3. Spoon, 4. Brush, 5. Carrot, 6. Snake, 7. Caterpillar, 8. Bat, 9. Bone, 10. Comb
+    
+    function getSVG(type, width) {
+        const height = 50; // Fixed height for consistency
+        let svg = '';
+        const w = width; // alias
+
+        switch(type) {
+            case 'pencil':
+                svg = `
+                    <path d="M0 25 L${w-15} 25 L${w-15} 15 L0 15 Z" fill="#FCD34D" stroke="#B45309" stroke-width="2"/>
+                    <path d="M${w-15} 15 L${w} 20 L${w-15} 25 Z" fill="#FDE68A" stroke="#B45309" stroke-width="2"/>
+                    <path d="M${w-5} 18.5 L${w} 20 L${w-5} 21.5 Z" fill="#374151"/>
+                    <rect x="0" y="15" width="10" height="10" fill="#F87171" stroke="#B45309" stroke-width="2"/>
+                `; 
+                break;
+            case 'ruler':
+                svg = `
+                    <rect x="0" y="10" width="${w}" height="30" rx="4" fill="#86EFAC" stroke="#15803D" stroke-width="2"/>
+                    <line x1="10" y1="10" x2="10" y2="20" stroke="#15803D" stroke-width="2"/>
+                    <line x1="${w*0.3}" y1="10" x2="${w*0.3}" y2="20" stroke="#15803D" stroke-width="2"/>
+                    <line x1="${w*0.6}" y1="10" x2="${w*0.6}" y2="20" stroke="#15803D" stroke-width="2"/>
+                    <line x1="${w-10}" y1="10" x2="${w-10}" y2="20" stroke="#15803D" stroke-width="2"/>
+                `;
+                break;
+            case 'spoon':
+                svg = `
+                    <path d="M0 23 L${w*0.7} 23 L${w*0.7} 27 L0 27 Z" fill="#CBD5E1" stroke="#475569" stroke-width="2"/>
+                    <ellipse cx="${w*0.85}" cy="25" rx="${w*0.15}" ry="10" fill="#CBD5E1" stroke="#475569" stroke-width="2"/>
+                    <path d="M${w*0.8} 20 Q${w*0.85} 25 ${w*0.8} 30" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+                `;
+                break;
+            case 'brush':
+                svg = `
+                    <rect x="0" y="20" width="${w*0.7}" height="10" rx="2" fill="#A78BFA" stroke="#5B21B6" stroke-width="2"/>
+                    <path d="M${w*0.7} 18 Q${w*0.75} 18, ${w*0.8} 25 T${w} 35 L${w*0.7} 30 Z" fill="#FDE047" stroke="#B45309" stroke-width="2"/>
+                `;
+                break;
+            case 'carrot':
+                svg = `
+                    <path d="M5 25 Q${w*0.5} 15, ${w} 25 Q${w*0.5} 35, 5 25 Z" fill="#FB923C" stroke="#C2410C" stroke-width="2"/>
+                    <path d="M${w} 25 L${w+10} 15" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M${w} 25 L${w+15} 25" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M${w} 25 L${w+10} 35" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="20" y1="22" x2="30" y2="22" stroke="rgba(0,0,0,0.1)" stroke-width="2"/>
+                    <line x1="40" y1="28" x2="50" y2="28" stroke="rgba(0,0,0,0.1)" stroke-width="2"/>
+                `;
+                break;
+            case 'snake':
+                // Adjusted path for better visual
+                svg = `
+                    <path d="M5 25 Q${w*0.3} 5, ${w*0.6} 25 T${w-15} 25" fill="none" stroke="#4ADE80" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="${w-5}" cy="25" r="8" fill="#4ADE80" stroke="#166534" stroke-width="2"/>
+                    <circle cx="${w-2}" cy="23" r="1.5" fill="black"/> 
+                    <path d="M${w+3} 25 L${w+7} 22 M${w+3} 25 L${w+7} 28" stroke="red" stroke-width="1"/>
+                `;
+                break;
+            case 'caterpillar':
+                let circles = '';
+                const r = 10;
+                const count = Math.floor(w / 15);
+                for(let i=0; i<count; i++) {
+                    let cx = 10 + (i * 15);
+                    let color = i % 2 === 0 ? '#A3E635' : '#4ADE80';
+                    if (i === count-1) { // Head
+                        circles += `<circle cx="${cx}" cy="25" r="12" fill="#84CC16" stroke="#3F6212" stroke-width="2"/>`;
+                        circles += `<circle cx="${cx+4}" cy="22" r="1.5" fill="black"/>`;
+                        circles += `<path d="M${cx+2} 30 Q${cx+6} 32 ${cx+8} 28" fill="none" stroke="black" stroke-width="1"/>`;
+                    } else {
+                        circles += `<circle cx="${cx}" cy="25" r="10" fill="${color}" stroke="#3F6212" stroke-width="2"/>`;
+                    }
+                }
+                svg = circles;
+                break;
+            case 'bat':
+                const handleLen = w * 0.3;
+                svg = `
+                    <rect x="0" y="22" width="${handleLen}" height="6" fill="#1F2937"/>
+                    <rect x="${handleLen}" y="15" width="${w-handleLen}" height="20" rx="4" fill="#FCD34D" stroke="#92400E" stroke-width="2"/>
+                    <line x1="${handleLen+5}" y1="15" x2="${handleLen+5}" y2="35" stroke="#92400E" stroke-width="1"/>
+                `;
+                break;
+            case 'bone':
+                // Path adjusted to make bone ends more distinct
+                svg = `
+                    <path d="M15 15 Q0 15 0 25 Q0 35 15 35 L${w-15} 35 Q${w} 35 ${w} 25 Q${w} 15 ${w-15} 15 Z" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2"/>
+                    <circle cx="10" cy="25" r="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2"/>
+                    <circle cx="${w-10}" cy="25" r="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2"/>
+                `;
+                break;
+            case 'comb':
+                svg = `
+                    <rect x="0" y="15" width="${w}" height="8" rx="2" fill="#F472B6" stroke="#BE185D" stroke-width="2"/>
+                    <!-- Comb back -->
+                    <rect x="0" y="23" width="${w}" height="12" fill="none" stroke="#BE185D" stroke-width="2"/>
+                    <!-- Teeth -->
+                    ${Array.from({length: Math.floor(w/10) - 1}, (_, i) => `<line x1="${10 + i*10}" y1="23" x2="${10 + i*10}" y2="35" stroke="#BE185D" stroke-width="1.5"/>`).join('')}
+                    <line x1="5" y1="23" x2="5" y2="35" stroke="#BE185D" stroke-width="1.5"/>
+                    <line x1="${w-5}" y1="23" x2="${w-5}" y2="35" stroke="#BE185D" stroke-width="1.5"/>
+                `;
+                break;
+        }
+
+        return `<svg width="${w+20}" height="50" viewBox="-5 0 ${w+20} 50" class="object-svg mx-auto">${svg}</svg>`;
+    }
+
+    // --- Game Logic ---
+    let currentLevel = 1;
+    let score = 0;
+    let gameQueue = []; 
+    let currentItems = [];
+    let selectedSequence = [];
+    let isLocked = false;
+
+    const allObjectTypes = [
+        'pencil', 'ruler', 'spoon', 'brush', 'carrot', 
+        'snake', 'caterpillar', 'bat', 'bone', 'comb'
+    ];
+
+    // Shuffle array
+    function shuffle(array) {
+        return array.sort(() => Math.random() - 0.5);
+    }
+
+    function startGame() {
+        score = 0;
+        currentLevel = 1;
+        
+        // Ensure all 10 types are used
+        gameQueue = shuffle([...allObjectTypes]);
+        
+        document.getElementById('end-screen').classList.add('hidden');
+        document.getElementById('score').innerText = '0';
+        // Ensure other elements are visible
+        document.querySelector('h1').parentElement.classList.remove('hidden'); 
+        document.querySelector('.progress-container').classList.remove('hidden');
+        document.querySelector('.flex.justify-between').classList.remove('hidden'); 
+
+        loadLevel();
+    }
+
+    function loadLevel() {
+        const gameArea = document.getElementById('game-area');
+        const feedback = document.getElementById('feedback');
+        const nextBtn = document.getElementById('next-btn');
+        
+        // Reset UI
+        gameArea.innerHTML = '';
+        feedback.innerHTML = '';
+        nextBtn.classList.add('hidden');
+        selectedSequence = [];
+        isLocked = false;
+
+        // Update Progress
+        document.getElementById('current-q').innerText = currentLevel;
+        const progressPct = ((currentLevel - 1) / TOTAL_QUESTIONS) * 100;
+        document.getElementById('progress-bar').style.width = `${progressPct}%`;
+
+        // Get current object type
+        const currentType = gameQueue[currentLevel - 1];
+
+        // Define sizes: ID 3 (Longest), ID 2 (Medium), ID 1 (Shortest)
+        const baseW = 260; // Slightly increased base width
+        const items = [
+            { id: 3, size: 'Long', width: baseW, type: currentType },
+            { id: 2, size: 'Med', width: baseW * 0.7, type: currentType },
+            { id: 1, size: 'Short', width: baseW * 0.4, type: currentType }
+        ];
+
+        // Randomize display order
+        currentItems = shuffle([...items]);
+
+        currentItems.forEach((item, index) => {
+            const div = document.createElement('div');
+            // Increased h-24 to h-28 for better touch target height
+            div.className = 'item-card p-4 rounded-2xl shadow-lg flex items-center justify-center relative h-28'; 
+            div.onclick = (event) => handleItemClick(index, div, item.id, event);
+            
+            div.innerHTML = `
+                ${getSVG(item.type, item.width)}
+                <div class="number-badge" id="badge-${index}"></div>
+            `;
+            gameArea.appendChild(div);
+        });
+    }
+
+    function handleItemClick(index, element, actualSizeId, event) {
+        if (isLocked) return;
+        if (selectedSequence.some(s => s.index === index)) return;
+
+        // Add to sequence
+        selectedSequence.push({ index: index, sizeId: actualSizeId });
+        
+        // UI Update
+        element.classList.add('selected');
+        const badge = document.getElementById(`badge-${index}`);
+        badge.innerText = selectedSequence.length;
+
+        // Check if all 3 selected
+        if (selectedSequence.length === 3) {
+            checkAnswer();
+        }
+    }
+
+    function checkAnswer() {
+        isLocked = true;
+        const feedback = document.getElementById('feedback');
+        
+        // Logic: Longest (3) -> Medium (2) -> Shortest (1)
+        const userOrder = selectedSequence.map(s => s.sizeId);
+        const isCorrect = JSON.stringify(userOrder) === JSON.stringify([3, 2, 1]);
+        
+        const cards = document.querySelectorAll('.item-card');
+
+        if (isCorrect) {
+            score += 10;
+            document.getElementById('score').innerText = score;
+            feedback.innerHTML = "<span class='text-green-600'>🎉 શાબાશ! સાચો ક્રમ!</span>";
+            
+            cards.forEach(c => c.classList.remove('selected'));
+            setTimeout(() => {
+                cards.forEach(c => c.classList.add('correct'));
+            }, 100);
+            
+            document.getElementById('next-btn').classList.remove('hidden');
+        } else {
+            feedback.innerHTML = "<span class='text-red-500'>❌ ખોટો ક્રમ! ફરી પ્રયાસ કરો.</span>";
+            
+            // Highlight wrong choice
+            cards.forEach((c, idx) => {
+                const selected = selectedSequence.find(s => s.index === idx);
+                if (selected) {
+                    c.classList.remove('selected');
+                    c.classList.add('wrong');
+                }
+            });
+
+            setTimeout(() => {
+                resetSelection();
+            }, 1500);
+        }
+    }
+
+    function resetSelection() {
+        selectedSequence = [];
+        isLocked = false;
+        feedback.innerHTML = '';
+        document.querySelectorAll('.item-card').forEach((card, idx) => {
+            card.classList.remove('selected', 'correct', 'wrong');
+            document.getElementById(`badge-${idx}`).innerText = '';
+        });
+    }
+
+    function nextLevel() {
+        // Update progress bar to reflect completion of the current level
+        const progressPct = (currentLevel / TOTAL_QUESTIONS) * 100;
+        document.getElementById('progress-bar').style.width = `${progressPct}%`;
+        
+        if (currentLevel < TOTAL_QUESTIONS) {
+            currentLevel++;
+            loadLevel();
+        } else {
+            showEndScreen();
+        }
+    }
+
+    function showEndScreen() {
+        document.getElementById('game-area').innerHTML = '';
+        document.getElementById('feedback').innerHTML = '';
+        document.getElementById('next-btn').classList.add('hidden');
+        document.querySelector('h1').parentElement.classList.add('hidden'); 
+        document.querySelector('.progress-container').classList.add('hidden');
+        document.querySelector('.flex.justify-between').classList.add('hidden'); 
+
+        const endScreen = document.getElementById('end-screen');
+        endScreen.classList.remove('hidden');
+        document.getElementById('final-score').innerText = score;
+        
+        // Final progress bar update (should be 100% now)
+        document.getElementById('progress-bar').style.width = `100%`;
+    }
+
+    function restartGame() {
+        startGame();
+    }
+
+    // Initialize
+    startGame();
+
+</script>
+
+</body>
+</html>
