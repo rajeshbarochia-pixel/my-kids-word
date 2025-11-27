@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>પહેલા અને પછીની સંખ્યા</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background-color: #e0f2fe; /* Sky blue light */
+            touch-action: manipulation; /* Prevent double-tap zoom */
+        }
+
+        /* Truck Animation: Now enters from the RIGHT and slows down to 1.5s */
+        @keyframes driveIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .drive-in {
+            /* Slower animation duration */
+            animation: driveIn 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* Box Styles */
+        .number-box {
+            width: 55px;
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 900;
+            border: 3px solid #374151;
+            background-color: white;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        @media (min-width: 768px) {
+            .number-box {
+                width: 75px;
+                height: 75px;
+                font-size: 2.5rem;
+            }
+        }
+
+        .active-box {
+            border-color: #f59e0b; /* Amber 500 */
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+            transform: scale(1.1);
+            background-color: #fffbeb;
+            z-index: 10;
+        }
+
+        .filled-correct {
+            background-color: #d1fae5; /* Green 100 */
+            color: #059669;
+            border-color: #059669;
+        }
+
+        .filled-wrong {
+            animation: shake 0.5s;
+            background-color: #fee2e2; /* Red 100 */
+            border-color: #dc2626;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .keypad-btn {
+            background: white;
+            border-bottom: 4px solid #e5e7eb;
+            transition: all 0.1s;
+        }
+        .keypad-btn:active {
+            transform: translateY(2px);
+            border-bottom: 0px;
+        }
+
+        /* Wheel Animation */
+        .wheel-spin {
+            animation: spin 0.2s linear infinite; /* Increased speed for better effect */
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Modal for Final Score */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            animation: zoomIn 0.3s;
+        }
+        @keyframes zoomIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col justify-between overflow-hidden">
+
+    <!-- Header -->
+    <div class="bg-blue-600 text-white p-2 md:p-3 text-center shadow-lg z-10">
+        <h1 class="text-xl md:text-3xl font-bold">પહેલા અને પછીની સંખ્યા</h1>
+        <div class="text-xs md:text-sm opacity-90 mt-1">વચ્ચેની સંખ્યા જુઓ અને ખાલી જગ્યા ભરો</div>
+    </div>
+
+    <!-- Game Area (Truck) -->
+    <div class="flex-grow flex flex-col items-center justify-center relative p-4 w-full max-w-4xl mx-auto">
+        
+        <!-- Score & Message -->
+        <div class="absolute top-2 w-full flex justify-between px-6 text-gray-700 font-bold text-lg z-20">
+            <!-- Updated Score Display to show progress -->
+            <span id="score-display" class="bg-white/80 px-3 py-1 rounded-full shadow-sm">Score: 0 | Q: 0/10</span>
+            <span id="message-display" class="text-blue-600 bg-white/80 px-3 py-1 rounded-full shadow-sm h-8"></span>
+        </div>
+
+        <!-- The Truck Container (Now Correct Forward Motion: Cabin then Trailer) -->
+        <div id="truck-container" class="flex items-end justify-center drive-in relative mt-4 mb-10 scale-95 md:scale-100">
+            
+            <!-- 1. Engine/Cabin (Front - Left Side - LEADS) -->
+            <div class="w-24 h-28 md:w-32 md:h-36 bg-red-500 border-4 border-gray-800 rounded-l-3xl rounded-br-none relative z-10 flex flex-col justify-between overflow-hidden shadow-lg">
+                <!-- Window: rounded-tl-xl is correct for front-left cab -->
+                <div class="w-full h-14 md:h-16 bg-blue-200 border-b-4 border-gray-800 rounded-tl-xl relative">
+                    <!-- Reflection: top-2 right-2 rotates-12 (looks correct for light coming from front) -->
+                    <div class="absolute top-2 right-2 w-16 h-2 bg-white opacity-60 rotate-12 rounded-full"></div>
+                </div>
+                <!-- Door Handle: on the side (right-4) -->
+                <div class="w-6 h-2 bg-gray-800 rounded-full absolute top-20 right-4"></div>
+                <!-- Bumper Area: Headlight on the front (left) -->
+                <div class="w-full h-8 bg-gray-300 border-t-4 border-gray-800 flex items-center justify-start px-2">
+                    <!-- Headlight -->
+                    <div class="w-6 h-4 bg-yellow-300 rounded-sm border-2 border-yellow-500 animate-pulse"></div> 
+                </div>
+            </div>
+
+            <!-- 2. Connector -->
+            <!-- Adjusted margins to properly connect Cabin (right) to Trailer (left) -->
+            <div class="w-4 h-8 bg-gray-800 z-0 self-end mb-8 -ml-1 -mr-1"></div>
+
+            <!-- 3. Cargo/Trailer (Back - Right Side - FOLLOWS) -->
+            <div class="w-[280px] md:w-[380px] h-32 md:h-40 bg-yellow-400 border-4 border-gray-800 rounded-r-xl rounded-bl-lg relative z-10 flex items-center justify-evenly p-2 shadow-xl">
+                <!-- Decorative Lines -->
+                <div class="absolute top-2 left-0 w-full h-1 bg-yellow-500/50"></div>
+                <div class="absolute bottom-2 left-0 w-full h-1 bg-yellow-500/50"></div>
+
+                <!-- Before Box -->
+                <div class="flex flex-col items-center z-10">
+                    <span class="text-[10px] md:text-xs font-bold text-gray-700 mb-1 bg-yellow-200 px-2 rounded">પહેલા</span>
+                    <div id="box-before" class="number-box cursor-pointer" onclick="setActiveBox('before')"></div>
+                </div>
+
+                <!-- Middle Box (Fixed) -->
+                <div class="flex flex-col items-center z-10">
+                    <span class="text-[10px] md:text-xs font-bold text-gray-700 mb-1 bg-yellow-200 px-2 rounded">વચ્ચે</span>
+                    <div id="box-middle" class="number-box bg-gray-100 text-gray-800 shadow-inner"></div>
+                </div>
+
+                <!-- After Box -->
+                <div class="flex flex-col items-center z-10">
+                    <span class="text-[10px] md:text-xs font-bold text-gray-700 mb-1 bg-yellow-200 px-2 rounded">પછી</span>
+                    <div id="box-after" class="number-box cursor-pointer" onclick="setActiveBox('after')"></div>
+                </div>
+            </div>
+
+            <!-- Wheels (Absolute to container) - POSITIONS ADJUSTED FOR FORWARD MOTION -->
+            
+            <!-- Front Wheel (Under Cabin - LEFT SIDE) -->
+            <div id="wheel-front" class="absolute -bottom-6 md:-bottom-8 left-3 md:left-4 w-16 h-16 md:w-20 md:h-20 bg-gray-900 border-[6px] border-gray-400 rounded-full z-20 flex items-center justify-center shadow-2xl">
+                <div class="w-6 h-6 md:w-8 md:h-8 bg-gray-500 rounded-full border-2 border-gray-700 border-dashed"></div>
+            </div>
+
+            <!-- Rear Wheel 1 (Under Trailer - Closer to Cabin) -->
+            <div id="wheel-rear-1" class="absolute -bottom-6 md:-bottom-8 right-36 md:right-48 w-16 h-16 md:w-20 md:h-20 bg-gray-900 border-[6px] border-gray-400 rounded-full z-20 flex items-center justify-center shadow-2xl">
+                 <div class="w-6 h-6 md:w-8 md:h-8 bg-gray-500 rounded-full border-2 border-gray-700 border-dashed"></div>
+            </div>
+
+            <!-- Rear Wheel 2 (Under Trailer End - RIGHT SIDE) -->
+             <div id="wheel-rear-2" class="absolute -bottom-6 md:-bottom-8 right-4 md:right-8 w-16 h-16 md:w-20 md:h-20 bg-gray-900 border-[6px] border-gray-400 rounded-full z-20 flex items-center justify-center shadow-2xl">
+                 <div class="w-6 h-6 md:w-8 md:h-8 bg-gray-500 rounded-full border-2 border-gray-700 border-dashed"></div>
+            </div>
+
+        </div>
+
+        <!-- Start Button Overlay -->
+        <div id="start-overlay" class="absolute inset-0 bg-white/95 z-50 flex flex-col items-center justify-center rounded-xl">
+            <div class="text-8xl mb-4">🚚</div>
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center px-4">સંખ્યાની ગાડી</h2>
+            <p class="text-lg text-gray-600 mb-8">તમે કુલ ૧૦ પ્રશ્નોનો જવાબ આપશો.</p>
+            <button onclick="startGame()" class="bg-green-600 hover:bg-green-700 text-white text-xl font-bold py-4 px-10 rounded-full shadow-xl transform transition hover:scale-105 animate-bounce border-4 border-green-400">
+                રમત શરૂ કરો
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Keypad -->
+    <div class="bg-white p-3 md:p-4 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.15)] z-30">
+        <div class="max-w-md mx-auto">
+            <div class="grid grid-cols-5 gap-2 md:gap-4 mb-2">
+                <!-- Numbers 1-5 -->
+                <button onclick="handleInput(1)" class="keypad-btn text-2xl md:text-3xl font-bold text-blue-600 p-2 md:p-3 rounded-xl shadow-sm border border-gray-200">૧</button>
+                <button onclick="handleInput(2)" class="keypad-btn text-2xl md:text-3xl font-bold text-blue-600 p-2 md:p-3 rounded-xl shadow-sm border border-gray-200">૨</button>
+                <button onclick="handleInput(3)" class="keypad-btn text-2xl md:text-3xl font-bold text-blue-600 p-2 md:p-3 rounded-xl shadow-sm border border-gray-200">૩</button>
+                <button onclick="handleInput(4)" class="keypad-btn text-2xl md:text-3xl font-bold text-blue-600 p-2 md:p-3 rounded-xl shadow-sm border border-gray-200">૪</button>
+                <button onclick="handleInput(5)" class="keypad-btn text-2xl md:text-3xl font-bold text-blue-600 p-2 md:p-3 rounded-xl shadow-sm border border-gray-200">૫</button>
+            </div>
+            <div class="grid grid-cols-5 gap-2 md:gap-4">
+                <!-- Numbers 6-0 -->
+                <button onclick="handleInput(6)" class="keypad-btn text-2xl md:text-3xl font-bold text-blue-600 p-2 md:p-3 rounded-xl shadow-sm border border-gray-200">૬</button>
+                <button onclick="handleInput(7)" class="keypad-btn text-2xl md:text-3xl font-bold text-blue-600 p-2 md:p-3 rounded-xl shadow-sm border border-gray-200">૭</button>
+                <button onclick="handleInput(8)" class="keypad-btn text-2xl md:text-3xl font-bold text-blue-600 p-2 md:p-3 rounded-xl shadow-sm border border-gray-200">૮</button>
+                <button onclick="handleInput(9)" class="keypad-btn text-2xl md:text-3xl font-bold text-blue-600 p-2 md:p-3 rounded-xl shadow-sm border border-gray-200">૯</button>
+                <button onclick="handleInput(0)" class="keypad-btn text-2xl md:text-3xl font-bold text-blue-600 p-2 md:p-3 rounded-xl shadow-sm border border-gray-200">૦</button>
+            </div>
+            <div class="mt-3 text-center">
+                <button id="skip-btn" onclick="skipQuestion()" class="text-gray-400 text-sm underline hover:text-gray-600">આગળનો પ્રશ્ન</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Final Score Modal -->
+    <div id="final-score-modal" class="modal">
+        <div class="modal-content">
+            <div class="text-5xl mb-4">🏆</div>
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">રમત સમાપ્ત!</h2>
+            <p class="text-xl text-gray-700 mb-6">તમારો કુલ સ્કોર:</p>
+            <p id="final-score-display" class="text-6xl font-black text-green-600 mb-8">0</p>
+            <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-3 px-8 rounded-full shadow-lg transition">
+                ફરીથી રમો
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-gray-100 text-center py-1 text-[10px] md:text-xs text-gray-500">
+        Created by: Rajesh barochia
+    </div>
+
+    <script>
+        // Gujarati Numbers Map
+        const enToGu = {
+            '0': '૦', '1': '૧', '2': '૨', '3': '૩', '4': '૪',
+            '5': '૫', '6': '૬', '7': '૭', '8': '૮', '9': '૯', '10': '૧૦'
+        };
+        const guToEn = {
+            '૦': 0, '૧': 1, '૨': 2, '૩': 3, '૪': 4,
+            '૫': 5, '૬': 6, '૭': 7, '૮': 8, '૯': 9
+        };
+
+        // --- NEW GLOBAL VARIABLES ---
+        let maxQuestions = 10;
+        let questionCounter = 0;
+        let correctAttempts = 0; // Track only correctly answered questions for percentage display
+
+        let currentNumber = 5;
+        let score = 0;
+        let activeTarget = 'before'; // 'before' or 'after'
+        let isBeforeSolved = false;
+        let isAfterSolved = false;
+
+        const boxBefore = document.getElementById('box-before');
+        const boxMiddle = document.getElementById('box-middle');
+        const boxAfter = document.getElementById('box-after');
+        const msgDisplay = document.getElementById('message-display');
+        const scoreDisplay = document.getElementById('score-display');
+        const truckContainer = document.getElementById('truck-container');
+        const finalScoreModal = document.getElementById('final-score-modal');
+        
+        // References for the wheels
+        const wheelFront = document.getElementById('wheel-front');
+        const wheelRear1 = document.getElementById('wheel-rear-1');
+        const wheelRear2 = document.getElementById('wheel-rear-2');
+
+        // Functions to manage wheel spin
+        function startWheelSpin() {
+            wheelFront.classList.add('wheel-spin');
+            wheelRear1.classList.add('wheel-spin');
+            wheelRear2.classList.add('wheel-spin');
+        }
+
+        function stopWheelSpin() {
+            wheelFront.classList.remove('wheel-spin');
+            wheelRear1.classList.remove('wheel-spin');
+            wheelRear2.classList.remove('wheel-spin');
+        }
+
+
+        // Web Speech API for simple TTS
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'gu-IN';
+                utterance.rate = 0.9; // Slightly slower for kids
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+        
+        // --- NEW FUNCTION: END GAME ---
+        function endGame() {
+            // Stop speech and show final score
+            window.speechSynthesis.cancel();
+            
+            document.getElementById('final-score-display').textContent = `${score} / ${maxQuestions * 20}`; // Max score is 20 points per question (10 for before, 10 for after)
+            finalScoreModal.style.display = 'block';
+            
+            // Disable game interaction
+            document.querySelectorAll('.keypad-btn').forEach(btn => btn.disabled = true);
+            document.getElementById('skip-btn').disabled = true;
+        }
+
+
+        function startGame() {
+            document.getElementById('start-overlay').style.display = 'none';
+            score = 0;
+            questionCounter = 0;
+            correctAttempts = 0;
+            updateScore();
+            nextLevel();
+        }
+
+        function nextLevel() {
+            // 1. Check if max questions reached
+            if (questionCounter >= maxQuestions) {
+                endGame();
+                return;
+            }
+            
+            questionCounter++; // Increment question counter for the new level
+
+            // Reset State
+            isBeforeSolved = false;
+            isAfterSolved = false;
+            
+            // Animation reset (Make truck drive in again)
+            truckContainer.classList.remove('drive-in');
+            void truckContainer.offsetWidth; // trigger reflow
+            truckContainer.classList.add('drive-in');
+            
+            // Start wheels spinning when truck starts moving
+            startWheelSpin();
+
+            // Stop the wheel spin after the truck animation duration (1.5s)
+            setTimeout(() => {
+                stopWheelSpin();
+            }, 1500); 
+
+            // Generate Random Number between 2 and 8 (so that after number is max 9)
+            currentNumber = Math.floor(Math.random() * 7) + 2; // Generates 0-6, adds 2 -> 2 to 8
+            
+            // Update UI
+            boxMiddle.textContent = enToGu[currentNumber];
+            boxBefore.textContent = '?';
+            boxBefore.style.color = '#cbd5e1'; // Light gray for placeholder
+            boxAfter.textContent = '?';
+            boxAfter.style.color = '#cbd5e1';
+            
+            boxBefore.className = 'number-box cursor-pointer';
+            boxAfter.className = 'number-box cursor-pointer';
+
+            // Set initial active box to 'before'
+            setActiveBox('before');
+            
+            msgDisplay.textContent = '';
+            
+            // Speak instruction
+            setTimeout(() => {
+                speak(`${enToGu[currentNumber]} ની પહેલા શું આવે?`);
+            }, 1000); // Speaking slightly before truck stops
+            
+            updateScore(); // Update question counter display
+        }
+
+        function setActiveBox(target) {
+            if (target === 'before' && isBeforeSolved) return;
+            if (target === 'after' && isAfterSolved) return;
+
+            activeTarget = target;
+            
+            // UI Updates for Active State
+            if (activeTarget === 'before') {
+                boxBefore.classList.add('active-box');
+                boxBefore.style.color = '#1f2937'; // Dark gray when active
+                boxAfter.classList.remove('active-box');
+            } else {
+                boxAfter.classList.add('active-box');
+                boxAfter.style.color = '#1f2937';
+                boxBefore.classList.remove('active-box');
+            }
+        }
+
+        function handleInput(num) {
+            // Visual feedback on keypad press (optional, handled by CSS active state)
+            
+            if (activeTarget === 'before' && !isBeforeSolved) {
+                checkBefore(num);
+            } else if (activeTarget === 'after' && !isAfterSolved) {
+                checkAfter(num);
+            }
+        }
+
+        function checkBefore(inputNum) {
+            const correctAns = currentNumber - 1;
+            if (inputNum === correctAns) {
+                // Correct
+                boxBefore.textContent = enToGu[inputNum];
+                boxBefore.style.color = '#059669';
+                boxBefore.classList.remove('active-box');
+                boxBefore.classList.add('filled-correct');
+                isBeforeSolved = true;
+                score += 10; // 10 points for correct 'before'
+                correctAttempts++;
+                speak('સાચું!');
+                
+                // Move to next box automatically
+                setActiveBox('after');
+                setTimeout(() => {
+                     speak(`હવે, ${enToGu[currentNumber]} ની પછી શું આવે?`);
+                }, 800);
+            } else {
+                // Wrong
+                shakeBox(boxBefore);
+                speak('ફરી પ્રયાસ કરો');
+            }
+            checkLevelComplete();
+        }
+
+        function checkAfter(inputNum) {
+            const correctAns = currentNumber + 1;
+            if (inputNum === correctAns) {
+                // Correct
+                boxAfter.textContent = enToGu[inputNum];
+                boxAfter.style.color = '#059669';
+                boxAfter.classList.remove('active-box');
+                boxAfter.classList.add('filled-correct');
+                isAfterSolved = true;
+                score += 10; // 10 points for correct 'after'
+                correctAttempts++;
+                speak('ખૂબ સરસ!');
+            } else {
+                // Wrong
+                shakeBox(boxAfter);
+                speak('ફરી પ્રયાસ કરો');
+            }
+            checkLevelComplete();
+        }
+
+        function shakeBox(element) {
+            element.classList.add('filled-wrong');
+            setTimeout(() => {
+                element.classList.remove('filled-wrong');
+            }, 500);
+        }
+
+        function checkLevelComplete() {
+            if (isBeforeSolved && isAfterSolved) {
+                msgDisplay.textContent = 'શાબાશ! 🎉';
+                
+                // Celebration sound or simple delay before next
+                setTimeout(() => {
+                    nextLevel(); // Calls nextLevel, which checks for maxQuestions
+                }, 2500);
+            }
+        }
+
+        function updateScore() {
+            scoreDisplay.textContent = `Score: ${score} | Q: ${questionCounter}/${maxQuestions}`;
+        }
+
+        function skipQuestion() {
+            // If the user skips, still count the question and move on
+            msgDisplay.textContent = 'છોડી દીધો.';
+            setTimeout(() => {
+                nextLevel();
+            }, 1000);
+        }
+        
+        // Start game on window load if not in overlay (for preview testing)
+        // window.onload = function() {
+        //     // If overlay is visible, game starts on button click
+        //     if(document.getElementById('start-overlay').style.display !== 'none') return;
+        //     startGame();
+        // };
+
+    </script>
+</body>
+</html>
