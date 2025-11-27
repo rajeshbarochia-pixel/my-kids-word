@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>વિરોધી શબ્દોની રમત (Antonym Game)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font (Fallback) -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        body {
+            font-family: 'Noto Sans Gujarati', 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .option-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-button:hover:not(.disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        /* કન્ફર્મેશન પર બાજુના શબ્દ માટે એનિમેશન */
+        .antonym-transition {
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- મુખ્ય ગેમ કન્ટેનર -->
+    <div id="game-container" class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-6 md:p-8 border-t-8 border-indigo-500">
+        
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-indigo-700">વિરોધી શબ્દની રમત</h1>
+            <p class="text-gray-500 mt-1">સાચો વિરોધી શબ્દ પસંદ કરો.</p>
+            <!-- અહીં નવું એલિમેન્ટ ઉમેર્યું છે -->
+            <p class="text-sm text-gray-400 mt-1">Created by: Rajesh barochia</p>
+        </header>
+
+        <!-- સ્કોર અને પ્રશ્ન નંબર -->
+        <div class="flex justify-between items-center mb-6 p-3 bg-indigo-50 rounded-xl shadow-inner">
+            <p class="text-lg font-medium text-indigo-600">સ્કોર: <span id="score" class="font-bold text-xl">0</span></p>
+            <p class="text-lg font-medium text-indigo-600">પ્રશ્ન: <span id="question-count" class="font-bold text-xl">1</span></p>
+        </div>
+
+        <!-- વર્તમાન પ્રશ્ન અને જવાબની જોડી -->
+        <div id="question-area" class="text-center mb-8">
+            <p class="text-xl text-gray-700 mb-4">આ શબ્દનો વિરોધી શબ્દ કયો છે?</p>
+            <div id="word-pair-container" class="flex justify-center items-center space-x-2">
+                <!-- પ્રશ્ન શબ્દ -->
+                <div id="question-word-display" class="inline-block px-6 py-3 text-2xl font-extrabold text-white bg-indigo-600 rounded-full shadow-lg transition duration-300 cursor-default">
+                    શબ્દ
+                </div>
+                
+                <!-- સેપરેટર 'X' -->
+                <span id="separator" class="hidden text-3xl font-extrabold text-indigo-700">X</span> 
+                
+                <!-- સાચો જવાબ, જે સાચો પડે ત્યારે દેખાશે -->
+                <div id="correct-antonym-display" class="hidden antonym-transition px-6 py-3 text-2xl font-extrabold text-white bg-emerald-600 rounded-full shadow-lg cursor-default opacity-0 transform translate-x-10">
+                    <!-- જવાબ અહીં આવશે -->
+                </div>
+            </div>
+        </div>
+
+        <!-- વિકલ્પો -->
+        <div id="options-container" class="grid grid-cols-4 gap-2">
+            <!-- વિકલ્પ બટનો અહીં JavaScript દ્વારા ઉમેરાશે -->
+        </div>
+        
+        <!-- પ્રતિભાવ સંદેશ -->
+        <div id="feedback-message" class="text-center mt-6 h-8 text-lg font-semibold" aria-live="polite">
+            <!-- પ્રતિભાવ સંદેશ અહીં દેખાશે -->
+        </div>
+
+        <!-- રીસ્ટાર્ટ બટન (ગેમ પૂર્ણ થયા પછી દેખાશે) -->
+        <div id="restart-area" class="text-center mt-8 hidden">
+            <button onclick="startGame()" class="px-8 py-3 bg-emerald-500 text-white font-bold rounded-full shadow-lg hover:bg-emerald-600 transition duration-200">
+                નવી રમત શરૂ કરો
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firestore માટે લોગ લેવલ સેટ કરો (વૈકલ્પિક, ડીબગિંગ માટે)
+        setLogLevel('Debug');
+
+        // Firebase ગ્લોબલ વેરિયેબલ્સનો ઉપયોગ
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        // Firebase પ્રારંભ કરો
+        if (firebaseConfig) {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // ઓથેન્ટિકેશન સ્થિતિનું નિરીક્ષણ કરો
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("વપરાશકર્તા ID:", userId);
+                    } else {
+                        // જો યુઝર લોગઆઉટ થાય, તો પણ ID સેટ રાખો
+                        userId = userId || crypto.randomUUID();
+                    }
+                    isAuthReady = true;
+                    // અહીં Firestore સંબંધિત લોડિંગ અથવા સ્નેપશોટ શરૂ કરી શકાય છે
+                    console.log("Firebase Authentication તૈયાર છે.");
+                });
+
+                // કસ્ટમ ટોકન અથવા અનામી સાઇન-ઇન દ્વારા ઓથેન્ટિકેશન
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Firebase પ્રારંભ કરવામાં અથવા ઓથેન્ટિકેટ કરવામાં ભૂલ:", error);
+            }
+        } else {
+            console.error("Firebase રૂપરેખાંકન (config) ઉપલબ્ધ નથી.");
+            // જો Firebase ઉપલબ્ધ ન હોય, તો યુઝર ID માટે Random ID નો ઉપયોગ કરો
+            userId = crypto.randomUUID();
+            isAuthReady = true;
+        }
+
+        // ગેમ લોજિક ગ્લોબલ સ્કોપમાં છે તેથી તે ઍક્સેસ કરી શકાય
+        window.startGame = startGame;
+    </script>
+
+    <script>
+        // વિરોધી શબ્દોની જોડી (છબીમાંથી લેવામાં આવેલ)
+        const ANTONYMS = [
+            ["નાનું", "મોટું"], ["કાળું", "ધોળું"], ["વધવું", "ઓછું"], ["લીલું", "સૂકું"],
+            ["સુખ", "દુઃખ"], ["ઊંચું", "નીચું"], ["જાડું", "પાતળું"], ["મોડું", "વહેલું"],
+            ["સમજ", "અણસમજ"], ["ઉપયોગી", "બિનઉપયોગી"], ["વ્યાજબી", "બિનવ્યાજબી"],
+            ["તરવું", "ડૂબવું"], ["માતા", "પિતા"], ["હસવું", "રડવું"], ["મૂર્ખ", "હોશિયાર"],
+            ["ભાઈ", "બહેન"], ["સાચું", "ખોટું"], ["રાત", "દિવસ"], ["અંદર", "બહાર"],
+            ["ગમો", "અણગમો"], ["આવડત", "અણઆવડત"], ["માનીતી", "અણમાનીતી"],
+            ["અંધારું", "અજવાળું"], ["આગળ", "પાછળ"], ["કઠણ", "નરમ"], ["ઉપર", "નીચે"],
+            ["પૂનમ", "અમાસ"], ["મારું", "તારું"], ["સારું", "ખરાબ"], ["આવવું", "જવું"],
+            ["ઝેરી", "બિનઝેરી"]
+        ];
+        
+        // ગેમની સ્થિતિ (State)
+        let score = 0;
+        let currentQuestion = 0;
+        const totalQuestions = ANTONYMS.length;
+        let currentAntonymPair = [];
+        
+        // DOM એલિમેન્ટ્સ
+        const scoreDisplay = document.getElementById('score');
+        const questionCountDisplay = document.getElementById('question-count');
+        
+        // **અહીં ફેરફાર કરેલ છે**
+        const questionWordDisplay = document.getElementById('question-word-display'); 
+        const correctAntonymDisplay = document.getElementById('correct-antonym-display'); 
+        const separator = document.getElementById('separator'); 
+        // ********************************
+
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const restartArea = document.getElementById('restart-area');
+
+        // શફલ (Shuffle) ફંક્શન
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // બધા શબ્દોની એક યાદી
+        const ALL_WORDS = ANTONYMS.flat();
+
+        // રેન્ડમ કલર ક્લાસ પસંદ કરવા માટેની યાદી
+        const COLOR_CLASSES = [
+            "bg-blue-500 hover:bg-blue-600",
+            "bg-green-500 hover:bg-green-600",
+            "bg-red-500 hover:bg-red-600",
+            "bg-yellow-500 hover:bg-yellow-600",
+            "bg-purple-500 hover:bg-purple-600",
+            "bg-pink-500 hover:bg-pink-600",
+            "bg-teal-500 hover:bg-teal-600"
+        ];
+
+        // રેન્ડમલી એક કલર ક્લાસ પસંદ કરો
+        function getRandomColor() {
+            return COLOR_CLASSES[Math.floor(Math.random() * COLOR_CLASSES.length)];
+        }
+
+        // નવો પ્રશ્ન લોડ કરો
+        function loadNewQuestion() {
+            if (currentQuestion >= totalQuestions) {
+                endGame();
+                return;
+            }
+
+            // પ્રશ્ન નંબર અપડેટ કરો
+            questionCountDisplay.textContent = currentQuestion + 1;
+            
+            // રેન્ડમલી એક જોડી પસંદ કરો
+            const pairIndex = Math.floor(Math.random() * ANTONYMS.length);
+            currentAntonymPair = ANTONYMS.splice(pairIndex, 1)[0]; // વપરાયેલી જોડી દૂર કરો
+
+            // પ્રશ્ન શબ્દ (wordA) અને સાચો જવાબ (wordB) રેન્ડમલી પસંદ કરો
+            const isReversed = Math.random() < 0.5;
+            const questionWord = isReversed ? currentAntonymPair[1] : currentAntonymPair[0];
+            const correctAnswer = isReversed ? currentAntonymPair[0] : currentAntonymPair[1];
+
+            // પ્રશ્ન શબ્દ પ્રદર્શિત કરો
+            questionWordDisplay.textContent = questionWord; // **અહીં ફેરફાર કરેલ છે**
+
+            // જવાબ અને સેપરેટર છુપાવો
+            correctAntonymDisplay.classList.add('hidden', 'opacity-0', 'translate-x-10');
+            separator.classList.add('hidden');
+            
+            // વિકલ્પો બનાવો (સાચો જવાબ + 3 ખોટા વિકલ્પો)
+            let options = [correctAnswer];
+            let distractorPool = [...ALL_WORDS].filter(word => 
+                !currentAntonymPair.includes(word) && word !== questionWord
+            );
+            shuffleArray(distractorPool);
+            
+            // 3 ખોટા વિકલ્પો ઉમેરો
+            for (let i = 0; i < 3 && i < distractorPool.length; i++) {
+                options.push(distractorPool[i]);
+            }
+            
+            shuffleArray(options); // વિકલ્પોને શફલ કરો
+
+            // વિકલ્પો પ્રદર્શિત કરો
+            optionsContainer.innerHTML = '';
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = `option-button text-white font-semibold py-4 rounded-xl shadow-md ${getRandomColor()} transform active:scale-95 disabled:opacity-75`;
+                button.onclick = () => checkAnswer(option, correctAnswer);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        // જવાબ તપાસો
+        function checkAnswer(selectedOption, correctAnswer) {
+            // બધા વિકલ્પોને અક્ષમ (disable) કરો
+            document.querySelectorAll('.option-button').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('disabled');
+            });
+
+            // પસંદ કરેલ બટન શોધો અને તેને અપડેટ કરો
+            const selectedButton = Array.from(optionsContainer.children).find(btn => btn.textContent === selectedOption);
+            
+            // સાચો જવાબ બટન શોધો
+            const correctButton = Array.from(optionsContainer.children).find(btn => btn.textContent === correctAnswer);
+
+            if (selectedOption === correctAnswer) {
+                // સાચો જવાબ
+                score++;
+                scoreDisplay.textContent = score;
+                feedbackMessage.textContent = 'સાચો જવાબ! 🎉';
+                feedbackMessage.className = 'text-center mt-6 h-8 text-lg font-semibold text-emerald-600';
+                
+                // **નવો ફેરફાર: સાચો જવાબ મુખ્ય શબ્દની બાજુમાં ગોઠવો**
+                correctAntonymDisplay.textContent = correctAnswer;
+                separator.classList.remove('hidden');
+                correctAntonymDisplay.classList.remove('hidden', 'translate-x-10');
+                correctAntonymDisplay.classList.add('opacity-100', 'translate-x-0'); // Transition effect
+                
+                // લીલો રંગ આપો
+                selectedButton.classList.remove(...selectedButton.classList);
+                selectedButton.className = 'option-button text-white font-semibold py-4 rounded-xl shadow-lg bg-emerald-500 disabled:opacity-100';
+
+            } else {
+                // ખોટો જવાબ
+                feedbackMessage.textContent = `ખોટો જવાબ. સાચો જવાબ છે: ${correctAnswer}`;
+                feedbackMessage.className = 'text-center mt-6 h-8 text-lg font-semibold text-red-600';
+                
+                // લાલ રંગ આપો
+                selectedButton.classList.remove(...selectedButton.classList);
+                selectedButton.className = 'option-button text-white font-semibold py-4 rounded-xl shadow-lg bg-red-500 disabled:opacity-100';
+
+                // સાચા જવાબને હાઇલાઇટ કરો
+                correctButton.classList.remove(...correctButton.classList);
+                correctButton.className = 'option-button text-white font-semibold py-4 rounded-xl shadow-lg bg-indigo-500 disabled:opacity-100 ring-4 ring-indigo-300';
+            }
+
+            currentQuestion++;
+            // 2 સેકન્ડ પછી નવો પ્રશ્ન લોડ કરો
+            setTimeout(loadNewQuestion, 2000);
+        }
+
+        // ગેમ સમાપ્ત કરો
+        function endGame() {
+            questionWordDisplay.textContent = 'સમાપ્ત!'; // **અહીં ફેરફાર કરેલ છે**
+            correctAntonymDisplay.classList.add('hidden'); // જવાબ છુપાવો
+            separator.classList.add('hidden'); // સેપરેટર છુપાવો
+            optionsContainer.innerHTML = ''; // વિકલ્પો દૂર કરો
+            
+            const finalScorePercentage = Math.round((score / totalQuestions) * 100);
+
+            feedbackMessage.innerHTML = `
+                તમે ${totalQuestions} માંથી ${score} પ્રશ્નોના સાચા જવાબ આપ્યા છે.
+                <br>તમારી સફળતા: <span class="text-indigo-600">${finalScorePercentage}%</span>
+            `;
+            
+            // રીસ્ટાર્ટ બટન બતાવો
+            restartArea.classList.remove('hidden');
+        }
+
+        // ગેમ શરૂ કરો
+        function startGame() {
+            // ગેમની સ્થિતિ રીસેટ કરો
+            score = 0;
+            currentQuestion = 0;
+            scoreDisplay.textContent = '0';
+            questionCountDisplay.textContent = '1';
+            
+            // મૂળ એન્ટોનીમ્સ એરેની નકલ બનાવો જેથી ગેમ રીસેટ થાય ત્યારે જોડીઓ પાછી મળે
+            // આ લાઇનને અનન્ય બનાવવા માટે, અમે તેને અસ્થાયી રૂપે નકલ બનાવીશું.
+            // (જ્યારે પણ રમત ફરીથી શરૂ થાય, ANTONYMS એરે ખાલી થઈ જાય છે. તેથી અમે તેને અહીં પુનઃસ્થાપિત કરીશું.)
+            if (ANTONYMS.length === 0) {
+                 ANTONYMS.push(
+                    ["નાનું", "મોટું"], ["કાળું", "ધોળું"], ["વધવું", "ઓછું"], ["લીલું", "સૂકું"],
+                    ["સુખ", "દુઃખ"], ["ઊંચું", "નીચું"], ["જાડું", "પાતળું"], ["મોડું", "વહેલું"],
+                    ["સમજ", "અણસમજ"], ["ઉપયોગી", "બિનઉપયોગી"], ["વ્યાજબી", "બિનવ્યાજબી"],
+                    ["તરવું", "ડૂબવું"], ["માતા", "પિતા"], ["હસવું", "રડવું"], ["મૂર્ખ", "હોશિયાર"],
+                    ["ભાઈ", "બહેન"], ["સાચું", "ખોટું"], ["રાત", "દિવસ"], ["અંદર", "બહાર"],
+                    ["ગમો", "અણગમો"], ["આવડત", "અણઆવડત"], ["માનીતી", "અણમાનીતી"],
+                    ["અંધારું", "અજવાળું"], ["આગળ", "પાછળ"], ["કઠણ", "નરમ"], ["ઉપર", "નીચે"],
+                    ["પૂનમ", "અમાસ"], ["મારું", "તારું"], ["સારું", "ખરાબ"], ["આવવું", "જવું"],
+                    ["ઝેરી", "બિનઝેરી"]
+                 );
+            }
+
+            feedbackMessage.textContent = '';
+            restartArea.classList.add('hidden');
+            
+            // પ્રથમ પ્રશ્ન લોડ કરો
+            loadNewQuestion();
+        }
+
+        // પેજ લોડ થયા પછી ગેમ શરૂ કરો
+        window.onload = startGame;
+    </script>
+</body>
+</html>
