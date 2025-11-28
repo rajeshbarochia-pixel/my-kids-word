@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>વાર્તા-1 સમજણ સાથે વાચન</title>
+    <!-- Custom CSS for colorful, responsive, and mobile-friendly design -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        
+        :root {
+            --primary-color: #EF4444; /* Red-500 */
+            --secondary-color: #FBBF24; /* Amber-400 */
+            --background-light: #FEF3C7; /* Amber-100 */
+            --text-dark: #1F2937; /* Gray-800 */
+            --success-color: #10B981; /* Emerald-500 */
+            --error-color: #DC2626; /* Red-600 */
+        }
+
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background: linear-gradient(135deg, #F9FAFB, var(--background-light));
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 600px;
+            background-color: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 5px solid var(--secondary-color);
+        }
+
+        /* Header and Credit */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 0.8rem;
+            color: #6B7280; /* Gray-500 */
+            margin-top: 5px;
+        }
+
+        /* Story Block */
+        #story-block {
+            background-color: #FFFBEB; /* Yellow-50 */
+            border: 2px dashed var(--secondary-color);
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 15px;
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+        
+        #story-block h2 {
+            text-align: center;
+            color: var(--secondary-color);
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        /* Quiz Area */
+        #quiz-area {
+            border-top: 2px solid #E5E7EB;
+            padding-top: 25px;
+        }
+
+        #question-display {
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            font-weight: 700;
+            padding: 10px;
+            background-color: #EFF6FF; /* Blue-50 */
+            border-radius: 10px;
+        }
+
+        /* Options and Button Styling (Touch-Friendly) */
+        #options-container {
+            margin-bottom: 15px;
+        }
+        
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            background-color: white;
+            color: var(--primary-color);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            text-align: left; /* Align text left for better readability */
+        }
+        
+        .option-btn:hover:not(:disabled) {
+            background-color: #FEF3C7; /* Light Amber hover */
+            border-color: var(--secondary-color);
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+            opacity: 0.9;
+        }
+
+        #restart-btn {
+            background-color: var(--secondary-color);
+            color: var(--text-dark);
+            margin-top: 10px;
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #restart-btn:hover {
+            background-color: #F59E0B; /* Amber-500 */
+            transform: translateY(-2px);
+        }
+
+        /* Feedback and Correct/Incorrect Highlighting */
+        .feedback-correct {
+            background-color: var(--success-color) !important;
+            color: white !important;
+            border-color: var(--success-color) !important;
+            animation: pulse-green 1s ease 1;
+        }
+
+        .feedback-incorrect {
+            background-color: var(--error-color) !important;
+            color: white !important;
+            border-color: var(--error-color) !important;
+            animation: shake 0.5s;
+        }
+        
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(-5px); }
+            40% { transform: translateX(5px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Feedback Message */
+        #feedback-message {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            min-height: 40px;
+        }
+
+        .success-msg {
+            background-color: #D1FAE5; /* Emerald-100 */
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .error-msg {
+            background-color: #FEE2E2; /* Red-100 */
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+
+        /* Result Screen */
+        #result-screen {
+            text-align: center;
+            padding: 20px;
+        }
+
+        #result-screen h2 {
+            color: var(--success-color);
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        #result-screen p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        
+        /* Mobile Specific Adjustments */
+        @media (max-width: 450px) {
+            .game-container {
+                padding: 15px;
+                border-radius: 15px;
+            }
+            #story-block {
+                padding: 15px;
+                font-size: 0.95rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            #question-display {
+                font-size: 1.1rem;
+            }
+            .option-btn {
+                font-size: 1rem;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="header">
+        <h1>વાર્તા-1 સમજણ સાથે વાચન</h1>
+        <p>Created by: Rajesh barochia</p>
+    </div>
+
+    <!-- Story Block -->
+    <div id="story-block">
+        <h2>ફકરો વાંચો અને આપેલા પ્રશ્નો પૂછો</h2>
+        <p id="story-text">જગતપુર નામનું એક જંગલ હતું. તેમાં એક પોપટ રહેતો હતો. જંગલમાં એક કાગડો પણ રહેતો હતો. બંને બહુ સારા મિત્રો હતા. બંને દરરોજ સફેદ જુવારના દાણા ખાય ને જલસા કરે. એક દિવસ બંનેએ વિચાર્યું કે હવે કંઈક નવું ખાવાનું જોઈએ. આમ વિચારી ખાવાની શોધમાં બંને ઉડવા લાગ્યા.</p>
+    </div>
+    
+    <!-- Quiz Area (Initially shown) -->
+    <div id="quiz-area">
+        <div id="progress-bar" style="text-align: right; margin-bottom: 10px; font-size: 0.9rem; font-weight: 700;">પ્રશ્ન: ૧/૫</div>
+
+        <div id="question-display"></div>
+        
+        <!-- Options Container -->
+        <div id="options-container">
+            <!-- Option buttons will be inserted here by JavaScript -->
+        </div>
+        
+        <div id="feedback-message"></div>
+    </div>
+
+    <!-- Result Screen (Initially hidden) -->
+    <div id="result-screen" style="display: none;">
+        <h2>તમારું પરિણામ</h2>
+        <p id="final-score-message"></p>
+        <button id="restart-btn">ફરીથી રમો</button>
+    </div>
+
+</div>
+
+<script>
+    // Story and Questions/Answers data with options
+    const quizData = [
+        { 
+            q: "જંગલનું નામ શું હતું?", 
+            a: "જગતપુર", 
+            options: ["રામનગર", "જગતપુર", "વનરાજનગર"] 
+        },
+        { 
+            q: "પોપટ ક્યાં રહેતો હતો?", 
+            a: "જંગલમાં", 
+            options: ["ગામમાં", "નગરમાં", "જંગલમાં"] 
+        },
+        { 
+            q: "કોણ કોણ ખાસ મિત્રો હતા?", 
+            a: "પોપટ અને કાગડો", 
+            options: ["પોપટ અને કબૂતર", "કાગડો અને શિયાળ", "પોપટ અને કાગડો"] 
+        },
+        { 
+            q: "બંનેને એક દિવસ શું વિચાર આવ્યો?", 
+            a: "કંઈક નવું ખાવાનું", 
+            options: ["ઝઘડો કરવાનો", "કંઈક નવું ખાવાનું", "બહાર ફરવા જવાનું"] 
+        },
+        { 
+            q: "બંને નવું ખાવાની શોધમાં શું કરવા લાગ્યા?", 
+            a: "ઉડવા લાગ્યા", 
+            options: ["સૂઈ ગયા", "ખોદવા લાગ્યા", "ઉડવા લાગ્યા"] 
+        }
+    ];
+
+    // Global Game State
+    let shuffledQuestions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    // DOM Elements
+    const quizArea = document.getElementById('quiz-area');
+    const resultScreen = document.getElementById('result-screen');
+    const questionDisplay = document.getElementById('question-display');
+    const optionsContainer = document.getElementById('options-container');
+    const feedbackMessage = document.getElementById('feedback-message');
+    const progressBar = document.getElementById('progress-bar');
+    const finalScoreMessage = document.getElementById('final-score-message');
+    const restartBtn = document.getElementById('restart-btn');
+
+    // --- Utility Functions ---
+
+    /**
+     * Shuffles an array in place (Fisher-Yates algorithm).
+     * @param {Array} array - The array to shuffle.
+     */
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    // --- Game Logic ---
+
+    /** Initializes and starts the game. */
+    function startGame() {
+        // Reset state
+        score = 0;
+        currentQuestionIndex = 0;
+        
+        // Shuffle questions for randomness
+        shuffledQuestions = [...quizData];
+        shuffleArray(shuffledQuestions);
+        
+        // Show/Hide screens
+        quizArea.style.display = 'block';
+        resultScreen.style.display = 'none';
+        
+        // Load the first question
+        loadQuestion();
+    }
+
+    /** Loads the current question and its options into the display. */
+    function loadQuestion() {
+        if (currentQuestionIndex < shuffledQuestions.length) {
+            const currentQ = shuffledQuestions[currentQuestionIndex];
+            
+            // Update UI elements
+            questionDisplay.textContent = `પ્રશ્ન: ${currentQ.q}`;
+            progressBar.textContent = `પ્રશ્ન: ${currentQuestionIndex + 1}/${shuffledQuestions.length}`;
+            
+            // Clear feedback
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = '';
+            optionsContainer.innerHTML = ''; // Clear previous options
+            
+            // Shuffle and create option buttons
+            const shuffledOptions = [...currentQ.options];
+            shuffleArray(shuffledOptions);
+
+            shuffledOptions.forEach(optionText => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = optionText;
+                btn.onclick = () => handleOptionClick(btn, optionText, currentQ.a);
+                optionsContainer.appendChild(btn);
+            });
+            
+        } else {
+            // All questions answered, end the game
+            showResults();
+        }
+    }
+
+    /** Handles the user clicking an option button. */
+    function handleOptionClick(clickedButton, selectedAnswer, correctAnswer) {
+        // Disable all buttons immediately
+        Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
+
+        let isCorrect = (selectedAnswer === correctAnswer);
+        
+        if (isCorrect) {
+            score++;
+            clickedButton.classList.add('feedback-correct');
+            feedbackMessage.textContent = 'બિલકુલ સાચું! 🎉';
+            feedbackMessage.classList.add('success-msg');
+            feedbackMessage.classList.remove('error-msg');
+        } else {
+            clickedButton.classList.add('feedback-incorrect');
+            feedbackMessage.textContent = `ખોટો જવાબ. 🤔 સાચો જવાબ છે: "${correctAnswer}"`;
+            feedbackMessage.classList.add('error-msg');
+            feedbackMessage.classList.remove('success-msg');
+            
+            // Highlight the correct answer
+            Array.from(optionsContainer.children).forEach(btn => {
+                if (btn.textContent === correctAnswer) {
+                    btn.classList.add('feedback-correct');
+                }
+            });
+        }
+
+        // Automatically move to the next question after a short delay
+        setTimeout(() => {
+            currentQuestionIndex++;
+            loadQuestion();
+        }, 2500);
+    }
+
+    /** Displays the final results screen. */
+    function showResults() {
+        quizArea.style.display = 'none';
+        resultScreen.style.display = 'block';
+
+        const total = shuffledQuestions.length;
+        const percentage = (score / total) * 100;
+
+        finalScoreMessage.innerHTML = `તમે <strong>${total}</strong> માંથી <strong>${score}</strong> પ્રશ્નોના સાચા જવાબ આપ્યા છે. <br>તમારું પ્રદર્શન: <strong>${Math.round(percentage)}%</strong>`;
+        
+        if (score === total) {
+            finalScoreMessage.innerHTML += '<br><br>ખૂબ સરસ! તમે ફકરાને સંપૂર્ણપણે સમજ્યા છો. 🌟';
+        } else if (score >= total / 2) {
+            finalScoreMessage.innerHTML += '<br><br>ઉત્તમ પ્રયાસ! તમે મોટાભાગના પ્રશ્નોના જવાબ આપ્યા છે. 💪';
+        } else {
+            finalScoreMessage.innerHTML += '<br><br>ફરીથી પ્રયાસ કરો. ફકરો ફરીથી ધ્યાનથી વાંચો. 📚';
+        }
+    }
+
+    // --- Event Listeners ---
+    restartBtn.addEventListener('click', startGame);
+
+    // Initial game launch
+    window.onload = startGame;
+</script>
+
+</body>
+</html>
