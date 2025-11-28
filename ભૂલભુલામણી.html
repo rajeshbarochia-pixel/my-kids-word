@@ -20,6 +20,7 @@
             align-items: center;
             min-height: 100vh;
             overflow: hidden;
+            padding: 10px;
         }
 
         .game-container {
@@ -169,6 +170,7 @@
             user-select: none;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .arrow-btn:active {
@@ -177,9 +179,35 @@
         }
 
         /* Show arrows only on mobile */
-        @media (max-width: 768px) {
+        @media (max-width: 768px) and (hover: none) and (pointer: coarse) {
             .arrow-controls {
                 display: flex;
+            }
+            
+            .instruction {
+                font-size: 14px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+        
+        /* For very small screens */
+        @media (max-width: 360px) {
+            .arrow-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            .game-container {
+                padding: 15px;
             }
         }
     </style>
@@ -594,6 +622,24 @@
             downArrow.addEventListener('click', () => movePlayer(40)); // Down
             leftArrow.addEventListener('click', () => movePlayer(37)); // Left
             rightArrow.addEventListener('click', () => movePlayer(39)); // Right
+            
+            // Add touch events for better mobile experience
+            upArrow.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                movePlayer(38);
+            });
+            downArrow.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                movePlayer(40);
+            });
+            leftArrow.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                movePlayer(37);
+            });
+            rightArrow.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                movePlayer(39);
+            });
         }
 
         function movePlayer(key) {
@@ -658,6 +704,14 @@
         // Initialize
         generateNewMaze();
         setupArrowControls();
+        
+        // Check if on mobile and show appropriate message
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+            statusDiv.innerHTML = '📱 એરો બટન્સ વાપરો અથવા આંગળીથી દોરો!';
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 3000);
+        }
     </script>
 </body>
 </html>
