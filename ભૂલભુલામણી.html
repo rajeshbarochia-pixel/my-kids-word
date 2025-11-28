@@ -139,6 +139,49 @@
             color: #666;
             font-size: 12px;
         }
+
+        /* Mobile Arrow Controls */
+        .arrow-controls {
+            display: none;
+            margin-top: 20px;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .arrow-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .arrow-btn {
+            width: 60px;
+            height: 60px;
+            background: #4ecdc4;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+
+        .arrow-btn:active {
+            transform: scale(0.9);
+            background: #45b7af;
+        }
+
+        /* Show arrows only on mobile */
+        @media (max-width: 768px) {
+            .arrow-controls {
+                display: flex;
+            }
+        }
     </style>
 </head>
 <body>
@@ -154,6 +197,18 @@
 
         <div class="maze-container">
             <canvas id="mazeCanvas"></canvas>
+        </div>
+
+        <!-- Mobile Arrow Controls -->
+        <div class="arrow-controls">
+            <div class="arrow-row">
+                <div class="arrow-btn" id="upArrow">⬆️</div>
+            </div>
+            <div class="arrow-row">
+                <div class="arrow-btn" id="leftArrow">⬅️</div>
+                <div class="arrow-btn" id="downArrow">⬇️</div>
+                <div class="arrow-btn" id="rightArrow">➡️</div>
+            </div>
         </div>
 
         <div class="controls">
@@ -188,6 +243,12 @@
         let endCell = {x: 0, y: 0};
         let playerCell = {x: 0, y: 0}; // Current position of player
         let keyboardMode = false; // Track if using keyboard controls
+
+        // Mobile arrow controls
+        const upArrow = document.getElementById('upArrow');
+        const downArrow = document.getElementById('downArrow');
+        const leftArrow = document.getElementById('leftArrow');
+        const rightArrow = document.getElementById('rightArrow');
 
         // Maze generation using recursive backtracking
         class Cell {
@@ -524,6 +585,26 @@
                 statusDiv.innerHTML = '';
             }
 
+            movePlayer(key);
+        }
+
+        // Mobile arrow controls
+        function setupArrowControls() {
+            upArrow.addEventListener('click', () => movePlayer(38)); // Up
+            downArrow.addEventListener('click', () => movePlayer(40)); // Down
+            leftArrow.addEventListener('click', () => movePlayer(37)); // Left
+            rightArrow.addEventListener('click', () => movePlayer(39)); // Right
+        }
+
+        function movePlayer(key) {
+            // Enable keyboard mode on first move
+            if (!keyboardMode) {
+                keyboardMode = true;
+                playerCell = {x: startCell.x, y: startCell.y};
+                userPath = [playerCell];
+                statusDiv.innerHTML = '';
+            }
+
             const oldCell = {x: playerCell.x, y: playerCell.y};
             let newCell = {x: playerCell.x, y: playerCell.y};
 
@@ -576,6 +657,7 @@
 
         // Initialize
         generateNewMaze();
+        setupArrowControls();
     </script>
 </body>
 </html>
