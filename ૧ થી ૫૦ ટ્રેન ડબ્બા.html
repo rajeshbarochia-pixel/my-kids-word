@@ -49,8 +49,6 @@
             margin-bottom: 20px;
         }
 
-
-
         .train-section {
             margin-bottom: 20px;
         }
@@ -368,16 +366,66 @@
                         input.placeholder = '?';
                         input.inputMode = 'numeric';
                         
-                        // Auto-convert English to Gujarati numerals
-                        input.addEventListener('input', function(e) {
-                            let value = e.target.value;
-                            // Convert English digits to Gujarati
-                            value = value.replace(/[0-9]/g, function(digit) {
-                                return gujaratiNumbers[parseInt(digit)];
-                            });
-                            // Remove non-numeric characters
-                            value = value.replace(/[^૦-૯]/g, '');
-                            e.target.value = value;
+                        // FIX: Only allow Gujarati numerals - prevent English numerals from appearing
+                        let processingInput = false;
+                        
+                        input.addEventListener('keydown', function(e) {
+                            // Prevent default for number keys to stop English numerals
+                            if (e.key >= '0' && e.key <= '9') {
+                                e.preventDefault();
+                                
+                                // Convert to Gujarati and add to input
+                                const gujaratiDigit = gujaratiNumbers[parseInt(e.key)];
+                                const currentValue = this.value;
+                                
+                                // Limit to 2 digits
+                                if (currentValue.length < 2) {
+                                    this.value = currentValue + gujaratiDigit;
+                                }
+                            }
+                            
+                            // Allow backspace and delete
+                            if (e.key === 'Backspace' || e.key === 'Delete') {
+                                // Let it work normally
+                                return;
+                            }
+                            
+                            // Prevent any other keys
+                            if (!(e.key >= '0' && e.key <= '9') && 
+                                e.key !== 'Backspace' && 
+                                e.key !== 'Delete' &&
+                                e.key !== 'Tab' &&
+                                e.key !== 'ArrowLeft' &&
+                                e.key !== 'ArrowRight' &&
+                                e.key !== 'Home' &&
+                                e.key !== 'End') {
+                                e.preventDefault();
+                            }
+                        });
+                        
+                        // Handle paste events
+                        input.addEventListener('paste', function(e) {
+                            e.preventDefault();
+                            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                            let value = pastedText.replace(/[^0-9]/g, '');
+                            
+                            if (value.length > 0) {
+                                // Convert to Gujarati numerals
+                                value = value.split('').map(digit => 
+                                    gujaratiNumbers[parseInt(digit)]).join('');
+                                
+                                // Limit to 2 digits
+                                if (value.length > 2) {
+                                    value = value.slice(0, 2);
+                                }
+                                
+                                this.value = value;
+                            }
+                        });
+                        
+                        // Prevent drag and drop
+                        input.addEventListener('drop', function(e) {
+                            e.preventDefault();
                         });
                         
                         trainCar.appendChild(input);
@@ -407,7 +455,7 @@
                     convertedAnswer = parseInt(userAnswer.split('').map(char => 
                         gujaratiNumbers.indexOf(char)).join(''));
                 } else {
-                    // If English numerals
+                    // If somehow English numerals get through
                     convertedAnswer = parseInt(userAnswer);
                 }
                 
