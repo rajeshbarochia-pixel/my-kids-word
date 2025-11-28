@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1 થી 100 ગુજરાતી અંકોની રમત - Created by : Rajesh Barochia</title>
+    <!-- Tailwind CSS CDN --><script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* કસ્ટમ સ્ટાઇલિંગ અને ફોન્ટ (Noto Sans Gujarati નો ઉપયોગ) */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght=400;700&display=swap');
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background-color: #ffe0f6; /* હળવો ગુલાબી રંગ */
+        }
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* મોબાઈલ પર 5 કોલમ */
+            gap: 8px;
+        }
+        @media (min-width: 640px) {
+            .number-grid {
+                grid-template-columns: repeat(10, 1fr); /* ડેસ્કટોપ/મોટા સ્ક્રીન પર 10 કોલમ */
+                gap: 12px;
+            }
+        }
+        .number-tile {
+            width: 100%;
+            padding-top: 100%; /* ચોરસ આકાર જાળવવા માટે */
+            position: relative;
+            cursor: pointer;
+            perspective: 1000px; /* 3D ફ્લિપ અસર માટે */
+        }
+        
+        /* ફ્લિપ કાર્ડ ઇનર (રોટેશન હેન્ડલર) */
+        .number-tile-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            border-radius: 12px;
+        }
+
+        /* કાર્ડને ઊંધું કરવા માટે */
+        .number-tile.is-flipped .number-tile-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* સામાન્ય ટાઇલ કન્ટેન્ટ (આગળની બાજુ) */
+        .number-tile-front {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 12px;
+            color: white;
+            /* 3D માં પાછળની બાજુ છુપાવવા માટે */
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            transition: transform 0.1s; /* એક્ટિવ સ્ટેટ માટે ટ્રાન્ઝિશન */
+        }
+        
+        /* ટાઇલની પાછળની બાજુ */
+        .number-tile-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #3b82f6; /* વાદળી રંગ */
+            color: white;
+            transform: rotateY(180deg); /* શરૂઆતમાં છુપાવવા માટે */
+            box-shadow: 0 4px #1d4ed8;
+            font-size: 2rem;
+            /* 3D માં પાછળની બાજુ છુપાવવા માટે */
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        
+        /* ટચ કરવા પર ટાઇલને નાની કરવા અને શેડો હટાવવા માટે (ફ્રન્ટ સાઇડ) */
+        .number-tile:active .number-tile-front {
+            transform: translateY(4px);
+            box-shadow: 0 0 #d6499e;
+        }
+
+        /* ક્લિક કરવા પર એનિમેટેડ અસર */
+        .number-tile.active-animate .number-tile-inner {
+            animation: tile-pop 0.6s ease-out;
+        }
+
+        /* ટાઇલ માટે કીફ્રેમ્સ (એનિમેશન) */
+        @keyframes tile-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1) translateY(-5px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); }
+            100% { transform: scale(1); }
+        }
+
+        .gujarati-num {
+            font-size: 2rem; /* ગુજરાતી અંક */
+            line-height: 1.2;
+        }
+        .loading-overlay {
+            z-index: 10;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        /* ફૂટર માટે સ્ટાઇલ */
+        .creator-info {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #fce7f3; /* હળવો પૃષ્ઠભૂમિ રંગ */
+            color: #9d174d;
+            padding: 8px 0;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 2px solid #f9a8d4;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen">
+
+    <div class="max-w-6xl mx-auto mb-16">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-center mb-6 text-pink-700 leading-tight">
+            અંકોનો જાદુ <span class="text-indigo-600"> (1-100)</span>
+        </h1>
+        <p class="text-center mb-4 text-lg text-pink-600">કોઈપણ અંક પર ટચ કરો, અને તેનો ઉચ્ચાર સાંભળો! ટચ કરવાથી કાર્ડ ઊંધું થઈ જશે.</p>
+
+        <!-- રિફ્રેશ બટન --><button id="refreshButton" class="w-full sm:w-auto px-6 py-3 mb-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 mx-auto block">
+            બધા કાર્ડ ફરી જુઓ (Refresh)
+        </button>
+
+        <!-- લોડિંગ સ્ટેટ માટે ઓવરલે --><div id="loadingOverlay" class="fixed inset-0 flex flex-col justify-center items-center loading-overlay">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-pink-500"></div>
+            <!-- પ્રીલોડિંગ મેસેજ અપડેટ કર્યો છે --><p id="loadingMessage" class="mt-4 text-xl font-semibold text-pink-600">બધા 100 અંકોનો ઑડિયો લોડ અને તૈયાર કરી રહ્યું છે... કૃપા કરીને રાહ જુઓ.</p>
+        </div>
+
+        <div id="numberGrid" class="number-grid hidden">
+            <!-- અહીં JavaScript દ્વારા નંબરો ઉમેરવામાં આવશે --></div>
+
+        <!-- ઑડિયો પ્લેબેક માટે એલિમેન્ટ --><audio id="audioPlayer" preload="auto"></audio>
+
+        <p id="errorBox" class="text-center mt-8 text-red-600 font-semibold hidden">
+            ઑડિયો લોડ કરવામાં ભૂલ આવી. કૃપા કરીને ફરી પ્રયાસ કરો.
+        </p>
+    </div>
+
+    <!-- ક્રિએટરનું નામ સ્ક્રીન પર નીચે ફૂટરમાં ઉમેર્યું છે --><div class="creator-info">
+        Created by : Rajesh Barochia
+    </div>
+
+    <script>
+        // ફાયરબેઝ અને TTS માટે API કી ખાલી રાખવામાં આવે છે, જે રનટાઇમમાં પૂરી પાડવામાં આવશે.
+        const apiKey = "";
+        const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
+
+        // ગુજરાતી અંકો અને તેમના નામનો ડેટા (1 થી 100)
+        const gujaratiNumbersData = [
+            { num: 1, guj: '૧', text: 'એક' }, { num: 2, guj: '૨', text: 'બે' }, { num: 3, guj: '૩', text: 'ત્રણ' }, { num: 4, guj: '૪', text: 'ચાર' }, { num: 5, guj: '૫', text: 'પાંચ' },
+            { num: 6, guj: '૬', text: 'છ' }, { num: 7, guj: '૭', text: 'સાત' }, { num: 8, guj: '૮', text: 'આઠ' }, { num: 9, guj: '૯', text: 'નવ' }, { num: 10, guj: '૧૦', text: 'દસ' },
+            { num: 11, guj: '૧૧', text: 'અગિયાર' }, { num: 12, guj: '૧૨', text: 'બાર' }, { num: 13, guj: '૧૩', text: 'તેર' }, { num: 14, guj: '૧૪', text: 'ચૌદ' }, { num: 15, guj: '૧૫', text: 'પંદર' },
+            { num: 16, guj: '૧૬', text: 'સોળ' }, { num: 17, guj: '૧૭', text: 'સત્તર' }, { num: 18, guj: '૧૮', text: 'અઢાર' }, { num: 19, guj: '૧૯', text: 'ઓગણિસ' }, { num: 20, guj: '૨૦', text: 'વીસ' },
+            { num: 21, guj: '૨૧', text: 'એકવીસ' }, { num: 22, guj: '૨૨', text: 'બાવીસ' }, { num: 23, guj: '૨૩', text: 'ત્રેવીસ' }, { num: 24, guj: '૨૪', text: 'ચોવીસ' }, { num: 25, guj: '૨૫', text: 'પચીસ' },
+            { num: 26, guj: '૨૬', text: 'છવીસ' }, { num: 27, guj: '૨૭', text: 'સિત્તાવીસ' }, { num: 28, guj: '૨૮', text: 'ઈઠાવીસ' }, { num: 29, guj: '૨૯', text: 'ઓગણત્રીસ' }, { num: 30, guj: '૩૦', text: 'ત્રીસ' },
+            { num: 31, guj: '૩૧', text: 'એકત્રીસ' }, { num: 32, guj: '૩૨', text: 'બત્રીસ' }, { num: 33, guj: '૩૩', text: 'તેત્રીસ' }, { num: 34, guj: '૩૪', text: 'ચોત્રીસ' }, { num: 35, guj: '૩૫', text: 'પાંત્રીસ' },
+            { num: 36, guj: '૩૬', text: 'છત્રીસ' }, { num: 37, guj: '૩૭', text: 'સાડત્રીસ' }, { num: 38, guj: '૩૮', text: 'આડત્રીસ' }, { num: 39, guj: '૩૯', text: 'ઓગણચાલીસ' }, { num: 40, guj: '૪૦', text: 'ચાલીસ' },
+            { num: 41, guj: '૪૧', text: 'એકતાલીસ' }, { num: 42, guj: '૪૨', text: 'બેતાલીસ' }, { num: 43, guj: '૪૩', text: 'ત્તેતાલીસ' }, { num: 44, guj: '૪૪', text: 'ચુમ્માલીસ' }, { num: 45, guj: '૪૫', text: 'પિસ્તાલીસ' },
+            { num: 46, guj: '૪૬', text: 'છેતાલીસ' }, { num: 47, guj: '૪૭', text: 'સુડતાલીસ' }, { num: 48, guj: '૪૮', text: 'અડતાલીસ' }, { num: 49, guj: '૪૯', text: 'ઓગણપચાસ' }, { num: 50, guj: '૫૦', text: 'પચાસ' },
+            { num: 51, guj: '૫૧', text: 'એકાવન' }, { num: 52, guj: '૫૨', text: 'બાવન' }, { num: 53, guj: '૫૩', text: 'ત્રેપન' }, { num: 54, guj: '૫૪', text: 'ચોપન' }, { num: 55, guj: '૫૫', text: 'પંચાવન' },
+            { num: 56, guj: '૫૬', text: 'છપ્પન' }, { num: 57, guj: '૫૭', text: 'સત્તાવન' }, { num: 58, guj: '૫૮', text: 'અઠ્ઠાવન' }, { num: 59, guj: '૫૯', text: 'ઓગણસાઈઠ' }, { num: 60, guj: '૬૦', text: 'સાઈઠ' },
+            { num: 61, guj: '૬૧', text: 'એકસઠ' }, { num: 62, guj: '૬૨', text: 'બાસઠ' }, { num: 63, guj: '૬૩', text: 'ત્રેસઠ' }, { num: 64, guj: '૬૪', text: 'ચોસઠ' }, { num: 65, guj: '૬૫', text: 'પાંસઠ' },
+            { num: 66, guj: '૬૬', text: 'છાસઠ' }, { num: 67, guj: '૬૭', text: 'સડસઠ' }, { num: 68, guj: '૬૮', text: 'અડસઠ' }, { num: 69, guj: '૬૯', text: 'ઓગણસિત્તેર' }, { num: 70, guj: '૭૦', text: 'સિત્તેર' },
+            { num: 71, guj: '૭૧', text: 'એકોતેર' }, { num: 72, guj: '૭૨', text: 'બોંતેર' }, { num: 73, guj: '૭૩', text: 'તોંતેર' }, { num: 74, guj: '૭૪', text: 'ચૂમોતેર' }, { num: 75, guj: '૭૫', text: 'પંચોતેર' },
+            { num: 76, guj: '૭૬', text: 'છોંતેર' }, { num: 77, guj: '૭૭', text: 'સિત્યોતેર' }, { num: 78, guj: '૭૮', text: 'ઇઠ્યોતેર' }, { num: 79, guj: '૭૯', text: 'ઓગણએંસી' }, { num: 80, guj: '૮૦', text: 'એંસી' },
+            { num: 81, guj: '૮૧', text: 'એક્યાસી' }, { num: 82, guj: '૮૨', text: 'બ્યાસી' }, { num: 83, guj: '૮૩', text: 'ત્યાસી' }, { num: 84, guj: '૮૪', text: 'ચોર્યાસી' }, { num: 85, guj: '૮૫', text: 'પંચાસી' },
+            { num: 86, guj: '૮૬', text: 'છ્યાસી' }, { num: 87, guj: '૮૭', text: 'સત્યાસી' }, { num: 88, guj: '૮૮', text: 'અઠ્યાસી' }, { num: 89, guj: '૮૯', text: 'નેવ્યાસી' }, { num: 90, guj: '૯૦', text: 'નેવું' },
+            { num: 91, guj: '૯૧', text: 'એકાણું' }, { num: 92, guj: '૯૨', text: 'બાણું' }, { num: 93, guj: '૯૩', text: 'ત્રાણું' }, { num: 94, guj: '૯૪', text: 'ચોરાણું' }, { num: 95, guj: '૯૫', text: 'પંચાણું' },
+            { num: 96, guj: '૯૬', text: 'છન્નું' }, { num: 97, guj: '૯૭', text: 'સત્તાણું' }, { num: 98, guj: '૯૮', text: 'અઠ્ઠાણું' }, { num: 99, guj: '૯૯', text: 'નવાણું' }, { num: 100, guj: '૧૦૦', text: 'સો' }
+        ];
+
+        // બાળકોને ગમે તેવા વિવિધ ઇમોજીની યાદી
+        const emojis = ['🚀', '🌈', '✨', '🌟', '🎈', '🎉', '😊', '🥳', '🦄', '❤️', '🦋', '🐳', '🍎', '🍓', '☀️', '🌙', '⭐', '💯', '✅', '🎶'];
+
+        // ઑડિયો URL ને કેશ કરવા માટેનું ઑબ્જેક્ટ
+        const audioCache = {};
+
+        const grid = document.getElementById('numberGrid');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const errorBox = document.getElementById('errorBox');
+        const refreshButton = document.getElementById('refreshButton'); 
+
+        let isAudioPlaying = false;
+        let isAudioLoading = false;
+        let isPreloadCompleted = false;
+
+        // Base64 થી ArrayBuffer માં કન્વર્ટ કરવા માટેનું ફંક્શન
+        const base64ToArrayBuffer = (base64) => {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        };
+
+        // PCM ડેટાને WAV ફોર્મેટમાં કન્વર્ટ કરવા માટેનું ફંક્શન
+        const pcmToWav = (pcm16, sampleRate = 16000) => {
+            const numChannels = 1;
+            const bytesPerSample = 2; // Int16
+            const blockAlign = numChannels * bytesPerSample;
+            const byteRate = sampleRate * blockAlign;
+            const dataSize = pcm16.length * bytesPerSample;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            let offset = 0;
+            const writeString = (str) => {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset + i, str.charCodeAt(i));
+                }
+                offset += str.length;
+            };
+            const writeUint32 = (val) => {
+                view.setUint32(offset, val, true);
+                offset += 4;
+            };
+            const writeUint16 = (val) => {
+                view.setUint16(offset, val, true);
+                offset += 2;
+            };
+
+            // RIFF chunk descriptor
+            writeString('RIFF');
+            writeUint32(36 + dataSize); // ChunkSize
+            writeString('WAVE');
+
+            // fmt sub-chunk
+            writeString('fmt ');
+            writeUint32(16); // Subchunk1Size
+            writeUint16(1); // AudioFormat (1=PCM)
+            writeUint16(numChannels); // NumChannels
+            writeUint32(sampleRate); // SampleRate
+            writeUint32(byteRate); // ByteRate
+            writeUint16(blockAlign); // BlockAlign
+            writeUint16(16); // BitsPerSample
+
+            // data sub-chunk
+            writeString('data');
+            writeUint32(dataSize); // Subchunk2Size
+
+            // Write PCM data
+            for (let i = 0; i < pcm16.length; i++) {
+                view.setInt16(offset, pcm16[i], true);
+                offset += 2;
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        };
+
+
+        // TTS API કોલ કરીને ઑડિયો URL મેળવવાનું ફંક્શન
+        const fetchAndCreateAudioUrl = async (numberText) => {
+            const payload = {
+                contents: [{
+                    parts: [{ text: `ગુજરાતીમાં બોલો: ${numberText}` }] 
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: "Leda" }
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            const fullUrl = `${apiUrl}?key=${apiKey}`;
+            const maxRetries = 3;
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(fullUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const part = result?.candidates?.[0]?.content?.parts?.[0];
+                    const audioData = part?.inlineData?.data;
+                    const mimeType = part?.inlineData?.mimeType;
+
+                    if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                        const rateMatch = mimeType.match(/rate=(\d+)/);
+                        const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 16000;
+
+                        const pcmData = base64ToArrayBuffer(audioData);
+                        const pcm16 = new Int16Array(pcmData);
+                        const wavBlob = pcmToWav(pcm16, sampleRate);
+                        return URL.createObjectURL(wavBlob); // Object URL પાછો આપો
+                    } else {
+                        throw new Error('Invalid audio data received from API.');
+                    }
+                } catch (error) {
+                    if (i < maxRetries - 1) {
+                        const delay = Math.pow(2, i) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        console.error(`Error generating audio for ${numberText}:`, error);
+                        throw error; // અંતિમ ભૂલ ફેંકો
+                    }
+                }
+            }
+        };
+
+        // બધા 100 અંકોનો ઑડિયો પ્રીલોડ કરો
+        const preloadAllAudio = async () => {
+            isAudioLoading = true;
+            refreshButton.disabled = true; // પ્રીલોડિંગ દરમિયાન બટન નિષ્ક્રિય કરો
+            errorBox.classList.add('hidden');
+            loadingOverlay.classList.remove('hidden');
+            grid.classList.add('hidden'); // ગ્રીડ છુપાવો
+
+            const audioPromises = gujaratiNumbersData.map(async (item, index) => {
+                loadingMessage.textContent = `ઑડિયો લોડ કરી રહ્યું છે: ${index + 1} / ${gujaratiNumbersData.length}`;
+                try {
+                    const audioUrl = await fetchAndCreateAudioUrl(item.text);
+                    audioCache[item.text] = audioUrl; // કેશમાં URL સ્ટોર કરો
+                } catch (error) {
+                    // જો કોઈ એક ઑડિયો લોડ ન થાય તો પણ પ્રીલોડિંગ ચાલુ રાખો
+                    audioCache[item.text] = null; // નિષ્ફળતા માટે null સ્ટોર કરો
+                    console.error(`Failed to preload audio for ${item.text}.`);
+                }
+            });
+
+            try {
+                // બધા પ્રોમિસ પૂર્ણ થવાની રાહ જુઓ
+                await Promise.all(audioPromises);
+                isPreloadCompleted = true;
+                loadingOverlay.classList.add('hidden');
+                grid.classList.remove('hidden'); // ગ્રીડ બતાવો
+                refreshButton.disabled = false; // બટન સક્રિય કરો
+                console.log('All 100 audio files preloaded successfully or failed gracefully.');
+            } catch (finalError) {
+                // આ કોડ બ્લોક ક્યારેય હિટ થવો જોઈએ નહીં કારણ કે અમે પ્રોમિસને કેચ કરી રહ્યા છીએ
+                isPreloadCompleted = false;
+                loadingOverlay.classList.add('hidden');
+                errorBox.textContent = 'પ્રારંભિક ઑડિયો લોડ કરવામાં ગંભીર ભૂલ આવી. કૃપા કરીને રીલોડ કરો.';
+                errorBox.classList.remove('hidden');
+            } finally {
+                isAudioLoading = false;
+            }
+        };
+
+
+        // કેશમાંથી ઑડિયો લઈને તરત વગાડવાનું ફંક્શન
+        const speakGujaratiNumber = async (numberText, tileElement) => {
+            // જો ઑડિયો વાગતો હોય, તો બીજી વિનંતી અવગણો
+            if (isAudioPlaying) return; 
+            
+            // ખાતરી કરો કે પ્રીલોડિંગ પૂર્ણ થયું છે
+            if (!isPreloadCompleted) {
+                 // આદર્શ રીતે આ થવું ન જોઈએ, પરંતુ સુરક્ષા માટે
+                 errorBox.textContent = 'કૃપા કરીને ઑડિયો સંપૂર્ણપણે લોડ થાય ત્યાં સુધી રાહ જુઓ.';
+                 errorBox.classList.remove('hidden');
+                 return;
+            }
+
+            // કાર્ડ ફ્લિપ કરો અને એનિમેશન શરૂ કરો
+            tileElement.classList.add('is-flipped');
+            tileElement.classList.add('active-animate');
+            
+            const audioUrl = audioCache[numberText];
+
+            if (!audioUrl) {
+                // જો ઑડિયો પ્રીલોડિંગ દરમિયાન નિષ્ફળ ગયો હોય
+                console.error(`Audio for ${numberText} is missing in cache.`);
+                errorBox.textContent = `${numberText} માટે ઑડિયો પ્લેબેક નિષ્ફળ.`;
+                errorBox.classList.remove('hidden');
+                // થોડા સમય પછી એનિમેશન દૂર કરો
+                setTimeout(() => tileElement.classList.remove('active-animate'), 600);
+                return;
+            }
+            
+            // ઑડિયો પ્લે કરો
+            try {
+                isAudioPlaying = true;
+                grid.style.pointerEvents = 'none'; // ગ્રીડને નિષ્ક્રિય કરો
+                refreshButton.disabled = true; // રિફ્રેશ બટન નિષ્ક્રિય કરો
+
+                audioPlayer.src = audioUrl;
+                await audioPlayer.play();
+                
+                // ઑડિયો સમાપ્ત થયા પછી સ્ટેટ રીસેટ કરો
+                audioPlayer.onended = () => {
+                    isAudioPlaying = false;
+                    grid.style.pointerEvents = 'auto'; // ગ્રીડને સક્રિય કરો
+                    refreshButton.disabled = false; // રિફ્રેશ બટન સક્રિય કરો
+                    tileElement.classList.remove('active-animate');
+                    errorBox.classList.add('hidden');
+                };
+                audioPlayer.onerror = () => {
+                    isAudioPlaying = false;
+                    throw new Error('Audio playback error.');
+                };
+
+            } catch (error) {
+                console.error('Playback failed:', error);
+                isAudioPlaying = false;
+                grid.style.pointerEvents = 'auto';
+                refreshButton.disabled = false;
+                tileElement.classList.remove('active-animate');
+                errorBox.textContent = 'ઑડિયો પ્લેબેક ભૂલ.';
+                errorBox.classList.remove('hidden');
+            }
+        };
+
+        // બધા કાર્ડને મૂળ સ્થિતિમાં પાછા લાવવા (અન-ફ્લિપ)
+        const refreshGrid = () => {
+            const flippedTiles = document.querySelectorAll('.number-tile.is-flipped');
+            flippedTiles.forEach(tile => {
+                tile.classList.remove('is-flipped');
+            });
+        };
+
+        // બધા નંબર ટાઇલ્સ જનરેટ કરો
+        const createNumberTiles = () => {
+            grid.innerHTML = ''; // ખાતરી કરો કે ગ્રીડ ખાલી છે
+            gujaratiNumbersData.forEach(item => {
+                const tile = document.createElement('div');
+                tile.className = 'number-tile';
+                tile.setAttribute('role', 'button');
+                tile.setAttribute('aria-label', `અંક ${item.text}`);
+                
+                // ઑડિયો હવે કેશમાંથી આવશે
+                tile.onclick = () => speakGujaratiNumber(item.text, tile);
+
+                const colorClasses = [
+                    'bg-pink-500 shadow-[0_4px_#be185d]', 
+                    'bg-blue-500 shadow-[0_4px_#2563eb]', 
+                    'bg-green-500 shadow-[0_4px_#16a34a]', 
+                    'bg-yellow-500 shadow-[0_4px_#ca8a04]',
+                    'bg-indigo-500 shadow-[0_4px_#4f46e5]'
+                ];
+                const tileColor = colorClasses[item.num % colorClasses.length];
+                
+                // રેન્ડમ ઇમોજી પસંદ કરો
+                const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+
+                // ફ્લિપ કાર્ડ માટે HTML સ્ટ્રક્ચર
+                tile.innerHTML = `
+                    <div class="number-tile-inner">
+                        <!-- FRONT SIDE (આગળની બાજુ) --><div class="number-tile-front ${tileColor} hover:brightness-110 active:brightness-90 transition-all">
+                            <span class="gujarati-num">${item.guj}</span>
+                            <span class="text-sm mt-1 opacity-90">${item.text}</span>
+                        </div>
+                        <!-- BACK SIDE (પાછળની બાજુ) --><div class="number-tile-back shadow-[0_4px_#1d4ed8]">
+                            <span class="text-5xl">${randomEmoji}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(tile);
+            });
+        };
+        
+        // રિફ્રેશ બટન પર ક્લિક ઇવેન્ટ ઉમેરો
+        refreshButton.addEventListener('click', refreshGrid);
+
+        // એપ્લિકેશન શરૂ કરો: પહેલા પ્રીલોડ કરો, પછી ટાઇલ્સ બનાવો
+        window.onload = async () => {
+            createNumberTiles(); // પહેલા ટાઇલ્સ બનાવો
+            await preloadAllAudio(); // પછી ઑડિયો પ્રીલોડ કરો
+        };
+
+    </script>
+</body>
+</html>
