@@ -15,26 +15,27 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 0; /* Use full screen */
+            padding: 0; 
             overflow: hidden; 
         }
 
         .game-container {
             position: relative;
             width: 100%;
-            max-width: 500px;
-            height: 100vh; /* Full screen height */
+            /* Increased max-width for better tablet/desktop appearance while maintaining the centered look */
+            max-width: 768px; 
+            height: 100vh; 
             max-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-end; 
-            background: linear-gradient(45deg, #a7c7e7, #b3ffb3, #ffffa0, #ffb3ff); /* Colourful gradient background */
+            background: linear-gradient(45deg, #a7c7e7, #b3ffb3, #ffffa0, #ffb3ff); 
             background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite; /* Gradient animation */
+            animation: gradientShift 15s ease infinite; 
             border-radius: 0; 
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.4); 
-            padding-bottom: 0; /* Character is flushed to the bottom */
+            padding-bottom: 0; 
         }
 
         @keyframes gradientShift {
@@ -49,7 +50,7 @@
             width: 120px; 
             height: 120px; 
             background: linear-gradient(to top, rgba(180, 180, 180, 0.9), rgba(250, 250, 250, 1));
-            border-radius: 50%; /* Circular base */
+            border-radius: 50%; 
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.8);
             z-index: 10;
             cursor: pointer;
@@ -58,15 +59,14 @@
             align-items: center; 
             justify-content: center;
             padding-bottom: 0;
-            margin-bottom: -60px; /* Pull the base slightly off-screen */
+            margin-bottom: -60px; 
         }
         
         /* The Emoji itself */
         .emoji-pot {
-            font-size: 6rem; /* Large emoji size */
+            font-size: 6rem; 
             line-height: 1;
-            /* Use the Amphora/Vase emoji 🏺 */
-            transform: translateY(-10px); /* Center the emoji visually */
+            transform: translateY(-10px); 
         }
 
         .projection-tube:hover {
@@ -90,17 +90,17 @@
         .letter {
             position: absolute;
             font-size: 2.8rem; 
-            font-weight: 900; /* Made bolder for clarity */
+            font-weight: 900; 
             opacity: 0;
             transform: translate(-50%, -50%) scale(0.1);
-            transition: all 3.5s ease-out, opacity 3.5s ease-out, transform 3.5s ease-out; /* Very slow speed */
-            /* Added white stroke and minimal glow for high visibility */
+            /* Slower transition speed for a grander effect */
+            transition: all 4s ease-out, opacity 4s ease-out, transform 4s ease-out; 
             text-shadow: 
                 1px 1px 0 #fff, 
                 -1px -1px 0 #fff, 
                 1px -1px 0 #fff, 
                 -1px 1px 0 #fff,
-                0 0 10px currentColor; /* Small glow */
+                0 0 10px currentColor; 
             will-change: transform, opacity;
         }
 
@@ -110,7 +110,7 @@
             border-radius: 50%;
             opacity: 0;
             transform: translate(-50%, -50%) scale(0.1);
-            transition: all 2.5s ease-out, opacity 2.5s ease-out, transform 2.5s ease-out; /* Slow speed */
+            transition: all 3s ease-out, opacity 3s ease-out, transform 3s ease-out; 
             will-change: transform, opacity;
         }
 
@@ -120,8 +120,8 @@
         }
         
         .message-text {
-             color: #2c5282; 
-             text-shadow: 0 0 5px rgba(255,255,255,0.5);
+            color: #2c5282; 
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
         }
 
     </style>
@@ -130,10 +130,10 @@
 
     <div class="game-container">
         
-        <div class="text-center mb-6 absolute top-4">
-            <h1 class="text-4xl font-extrabold title-text">અક્ષર જાદુ</h1>
+        <div class="text-center mb-6 absolute top-4 w-full px-4">
+            <h1 class="text-4xl sm:text-5xl font-extrabold title-text">અક્ષર જાદુ</h1>
             <p class="text-sm text-gray-700 mt-1">Creative by: Rajesh Barochia</p>
-            <p class="text-sm text-gray-600 mt-1">પાત્ર પર ક્લિક કરો અને અક્ષરોને ફેલાતા જુઓ.</p>
+            <p class="text-base text-gray-600 mt-2">પાત્ર પર ક્લિક કરો અને અક્ષરોને ફેલાતા જુઓ.</p>
             <p id="message-text" class="text-lg font-bold message-text mt-4 h-6"></p>
         </div>
 
@@ -150,19 +150,13 @@
 
     <script>
         // Gujarati letters collection
-        const GUJARATI_LETTERS = ['ન', 'મ', 'ગ', 'જ', 'ક', 'ર', 'લ', 'વ', 'પ', 'ય', 'શ', 'હ'];
+        const GUJARATI_LETTERS = ['ન', 'મ', 'ગ', 'જ', 'ક', 'ર', 'લ', 'વ', 'પ', 'ય', 'શ', 'હ', 'અ', 'ઇ', 'ઉ', 'એ', 'ઓ', 'ઋ'];
         let letterIndex = 0;
 
         // Spark colors - Made slightly darker/more saturated for better visibility
         const SPARK_COLORS = [
-            '#FF4747', // Brighter Red
-            '#477EFF', // Deeper Blue
-            '#47FF47', // Brighter Green
-            '#FFFF47', // Rich Yellow
-            '#FF47FF', // Vivid Pink
-            '#FFFFFF', // White
-            '#FF8C00', // Darker Orange
-            '#9932CC', // Darker Purple
+            '#FF4747', '#477EFF', '#47FF47', '#FFFF47', 
+            '#FF47FF', '#FFFFFF', '#FF8C00', '#9932CC',
         ];
         
         // DOM elements
@@ -175,10 +169,7 @@
             const rect = baseCube.getBoundingClientRect();
             const containerRect = skyArea.getBoundingClientRect();
             
-            // The letter should emerge from the center of the character's mouth
-            
-            // We need to calculate the point where the letters should start. 
-            // This is the top center of the visible part of the base.
+            // Calculate initial position relative to the skyArea
             const baseTop = rect.top - containerRect.top;
             const baseCenterX = rect.left + rect.width / 2 - containerRect.left;
 
@@ -189,6 +180,11 @@
             };
         }
 
+        // Get random float between min and max
+        function getRandomFloat(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
         // Get random integer between min and max
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -197,13 +193,12 @@
         // Create and animate the letter spark
         function createLetterSpark(basePos, letter, color) {
             
-            // 1. Create letter element
             const letterEl = document.createElement('div');
             letterEl.textContent = letter;
             letterEl.className = 'letter';
             letterEl.style.color = color;
 
-            // 2. Set initial position (top of the character)
+            // 1. Set initial position (top of the character)
             letterEl.style.left = `${basePos.x}px`;
             letterEl.style.top = `${basePos.y}px`;
             letterEl.style.opacity = '1';
@@ -211,25 +206,34 @@
 
             skyArea.appendChild(letterEl);
 
-            // 3. Calculate final animation targets
-            const targetX = basePos.x + getRandomInt(-180, 180); 
-            const targetY = basePos.y - getRandomInt(400, 650); /* High and slow target */
+            // 2. Calculate final animation targets based on container size (Responsive logic)
+            const containerRect = skyArea.getBoundingClientRect();
+            const containerWidth = containerRect.width;
+            const containerHeight = containerRect.height;
+            
+            // Horizontal spread: 25% to 60% of container width (spread from center)
+            const horizontalOffset = getRandomFloat(0.25, 0.6) * containerWidth * (Math.random() > 0.5 ? 1 : -1);
+            // Vertical rise: 50% to 80% of container height (always upwards)
+            const verticalOffset = getRandomFloat(0.5, 0.8) * containerHeight;
+
+            const targetX = basePos.x + horizontalOffset; 
+            const targetY = basePos.y - verticalOffset; 
             const targetRotation = getRandomInt(-720, 720); 
             
-            // 4. Start animation transition
+            // 3. Start animation transition
             setTimeout(() => {
                 letterEl.style.left = `${targetX}px`;
                 letterEl.style.top = `${targetY}px`;
                 letterEl.style.opacity = '0';
-                letterEl.style.fontSize = `${getRandomInt(30, 50)}px`; 
-                letterEl.style.transitionDuration = '3.5s'; /* Very slow speed */
+                letterEl.style.fontSize = `${getRandomInt(35, 60)}px`; // Larger spread in size
+                letterEl.style.transitionDuration = '4s'; 
                 letterEl.style.transform = `translate(-50%, -50%) scale(1.8) rotate(${targetRotation}deg)`;
             }, 50); 
 
-            // 5. Remove element after transition completes (3.5s)
+            // 4. Remove element after transition completes (4s)
             setTimeout(() => {
                 letterEl.remove();
-            }, 3500);
+            }, 4000);
         }
 
         // Create and animate the particle
@@ -247,66 +251,86 @@
 
             skyArea.appendChild(particleEl);
 
-            const targetX = basePos.x + getRandomInt(-150, 150); 
-            const targetY = basePos.y - getRandomInt(250, 450); 
-            const targetScale = getRandomInt(0.5, 1.5);
+            const containerRect = skyArea.getBoundingClientRect();
+            const containerWidth = containerRect.width;
+            const containerHeight = containerRect.height;
+
+            // Particle movement relative to container size
+            const horizontalOffset = getRandomFloat(0.15, 0.4) * containerWidth * (Math.random() > 0.5 ? 1 : -1);
+            const verticalOffset = getRandomFloat(0.3, 0.6) * containerHeight;
+
+            const targetX = basePos.x + horizontalOffset; 
+            const targetY = basePos.y - verticalOffset; 
+            const targetScale = getRandomFloat(0.5, 1.5);
 
             setTimeout(() => {
                 particleEl.style.left = `${targetX}px`;
                 particleEl.style.top = `${targetY}px`;
                 particleEl.style.opacity = '0';
-                particleEl.style.transitionDuration = '2.5s'; /* Slow speed */
+                particleEl.style.transitionDuration = '3s'; 
                 particleEl.style.transform = `translate(-50%, -50%) scale(${targetScale})`;
             }, 50);
 
             setTimeout(() => {
                 particleEl.remove();
-            }, 2500);
+            }, 3000);
         }
 
         // Character click handler
-        function handleCubeClick() {
+        let clickTimeout = null;
+        let isProcessing = false;
+
+        function handleCubeClick(event) {
+            // Prevent double click/touch while processing
+            if (isProcessing) return;
+            isProcessing = true;
+            
+            // Optional: Prevent default touch action (like scrolling)
+            if (event.type === 'touchstart') {
+                event.preventDefault();
+            }
+
             const basePos = getBasePosition();
             
-            // Select current letter and color
             const currentLetter = GUJARATI_LETTERS[letterIndex];
-            const currentColor = SPARK_COLORS[getRandomInt(0, SPARK_COLORS.length - 1)];
-
-            // Move letter index to the next
+            
             letterIndex = (letterIndex + 1) % GUJARATI_LETTERS.length;
             
-            // Update message
             messageText.textContent = `અક્ષર '${currentLetter}' બહાર નીકળ્યો!`;
             
-            // Create 5 to 7 copies of the letter for starburst effect
-            const sparkCount = getRandomInt(5, 7);
-            const finalSparkCount = Math.max(5, sparkCount); // Ensures at least 5 letters
+            // Create 6 to 9 copies of the letter for starburst effect
+            const sparkCount = getRandomInt(6, 9);
             
-            for (let i = 0; i < finalSparkCount; i++) {
+            for (let i = 0; i < sparkCount; i++) {
                 const sparkColor = SPARK_COLORS[getRandomInt(0, SPARK_COLORS.length - 1)];
                 setTimeout(() => {
                     createLetterSpark(basePos, currentLetter, sparkColor);
-                }, i * 50);
+                }, i * 40); // Slightly faster initial burst
             }
 
-            // Create 10-15 small particles for effect
-            const particleCount = getRandomInt(10, 15);
+            // Create 15-25 small particles for effect
+            const particleCount = getRandomInt(15, 25);
             for (let i = 0; i < particleCount; i++) {
                 const particleColor = SPARK_COLORS[getRandomInt(0, SPARK_COLORS.length - 1)];
                 setTimeout(() => {
                     createParticle(basePos, particleColor);
-                }, i * 30);
+                }, i * 20); // Faster particle burst
             }
+
+            // Re-enable clicks after the burst has started
+            setTimeout(() => {
+                isProcessing = false;
+            }, 500); // Short delay to prevent spamming
         }
 
         // Event Listeners
         baseCube.addEventListener('click', handleCubeClick);
+        // Use passive: false for touchstart if preventing default, but here we only prevent default inside the handler
         baseCube.addEventListener('touchstart', handleCubeClick);
         
         // Initial message on load
         window.onload = () => {
-             // Character is set to the bottom via CSS, so only display the message
-             messageText.textContent = 'રમવાનું શરૂ કરવા માટે નીચેના પાત્રને ટચ કરો.';
+            messageText.textContent = 'રમવાનું શરૂ કરવા માટે નીચેના પાત્રને ટચ કરો.';
         };
         
     </script>
