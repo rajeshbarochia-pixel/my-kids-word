@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>બાદબાકીની રમત</title>
+    <style>
+        /* Base styles */
+        body {
+            background-color: #f3f4f6; /* gray-100 */
+            min-height: 100vh;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 500px;
+            background-color: white;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* shadow-2xl */
+            border-radius: 12px; /* rounded-xl */
+            padding: 32px;
+        }
+
+        /* Header */
+        h1 {
+            font-size: 2rem;
+            font-weight: 800; /* extra-bold */
+            color: #1d4ed8; /* blue-700 */
+            text-align: center;
+            margin-bottom: 8px; /* Reduced margin */
+        }
+
+        .credit {
+            text-align: center;
+            color: #4b5563; /* gray-600 */
+            font-size: 0.75rem; /* text-xs */
+            margin-bottom: 16px; 
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #4b5563; /* gray-600 */
+            margin-bottom: 24px;
+            font-size: 0.875rem; /* text-sm */
+        }
+
+        /* Score Card */
+        .score-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #eff6ff; /* blue-50 */
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); /* shadow-inner */
+        }
+        .score-card span:first-child {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600;
+            color: #1e40af; /* blue-800 */
+        }
+        .score-card span:last-child {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 700;
+            color: #2563eb; /* blue-600 */
+        }
+
+        /* Game Problem Row */
+        .problem-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb; /* border-gray-200 */
+            padding-top: 12px;
+            padding-bottom: 12px;
+        }
+
+        /* Question Text */
+        .question-text {
+            font-size: 1.25rem; /* text-xl */
+            font-family: monospace;
+            color: #374151; /* gray-800 */
+            width: 33.3333%;
+            display: flex;
+            justify-content: flex-start;
+            padding-left: 8px;
+        }
+
+        /* Options Container */
+        .option-row {
+            display: flex;
+            justify-content: space-around;
+            width: 66.6666%;
+        }
+
+        /* Option Circle - Default State */
+        .option-circle {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px solid #3b82f6; /* Blue border default */
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            user-select: none;
+            flex-shrink: 0;
+            margin: 4px;
+            color: #374151; /* gray-800 */
+            background-color: transparent; /* Default background */
+        }
+
+        .option-circle:hover:not(.disabled) {
+            background-color: #bfdbfe; /* Light blue on hover */
+        }
+
+        .correct {
+            background-color: #10b981 !important; /* Emerald 500 */
+            color: white !important;
+            border-color: #059669 !important;
+        }
+
+        .wrong {
+            background-color: #ef4444 !important; /* Red 500 */
+            color: white !important;
+            border-color: #dc2626 !important;
+        }
+
+        /* Style for options after an answer has been given */
+        .answered-state {
+            pointer-events: none;
+            opacity: 1; /* Keep full visibility */
+        }
+
+        .answered-state:not(.correct):not(.wrong) {
+            /* Unselected incorrect options - dull them */
+            border-color: #d1d5db !important; /* gray-300 */
+            color: #9ca3af !important; /* gray-400 */
+            background-color: #f9fafb !important; /* light background */
+        }
+        
+        .disabled {
+            pointer-events: none;
+        }
+        
+        /* New Game Button */
+        #newGameButton {
+            width: 100%;
+            padding: 12px 24px;
+            background-color: #059669; /* green-600 */
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* shadow-md */
+            transition: background-color 0.3s, transform 0.3s;
+            margin-top: 32px;
+        }
+
+        #newGameButton:hover {
+            background-color: #047857; /* green-700 */
+            transform: scale(1.01);
+        }
+
+        /* Message Box Modal */
+        #messageBox {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none; /* hidden by default */
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 50;
+        }
+        .message-content {
+            background-color: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* shadow-2xl */
+            text-align: center;
+            width: 100%;
+            max-width: 384px;
+            transform: scale(1);
+            transition: transform 0.3s;
+        }
+        #messageTitle {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: bold;
+            color: #2563eb; /* blue-600 */
+            margin-bottom: 12px;
+        }
+        #messageText {
+            color: #374151; /* gray-700 */
+            margin-bottom: 16px;
+        }
+        .message-content button {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        .message-content button:hover {
+            background-color: #2563eb; /* blue-600 */
+        }
+        #messageBox.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="shadow-2xl">
+        <!-- શીર્ષક (Title) -->
+        <h1 id="mainTitle">બાદબાકીની રમત</h1>
+        <p class="credit">Created by : Rajesh Barochia</p> <!-- નવી ક્રેડિટ લાઇન -->
+        <p class="subtitle">૫ બાદબાકીના પ્રશ્નોનો જવાબ વિકલ્પોમાંથી પસંદ કરો.</p> <!-- પ્રશ્નોની સંખ્યા ૫ -->
+
+        <!-- સ્કોર કાર્ડ (Score Card) -->
+        <div class="score-card">
+            <span>સ્કોર:</span>
+            <span id="scoreDisplay">૦ / ૫</span> <!-- પ્રશ્નોની સંખ્યા ૫ -->
+        </div>
+
+        <!-- ગેમ કન્ટેનર (Game Container) -->
+        <div id="gameContainer" class="space-y-4">
+            <!-- અહીં પ્રશ્નો રેન્ડર થશે -->
+        </div>
+
+        <!-- નવી ગેમ બટન (New Game Button) -->
+        <div style="text-align: center;">
+            <button id="newGameButton">
+                નવી રમત શરૂ કરો
+            </button>
+        </div>
+    </div>
+
+    <!-- મેસેજ બોક્સ (Custom Modal for Messages) -->
+    <div id="messageBox">
+        <div class="message-content">
+            <h3 id="messageTitle">શાબાશ!</h3>
+            <p id="messageText">તમે સફળતાપૂર્વક ગેમ પૂરી કરી. તમારો સ્કોર છે: ૮/૧૦.</p>
+            <button onclick="closeMessageBox()">બંધ કરો</button>
+        </div>
+    </div>
+
+    <script>
+        // ગ્લોબલ વેરિયેબલ્સ
+        let gameProblems = [];
+        const TOTAL_PROBLEMS = 5; // અહીં ફેરફાર કર્યો છે: 10 થી 5
+        let correctCount = 0;
+        let gameFinished = false;
+
+        /**
+         * ૦ અને ૯ વચ્ચેની રેન્ડમ સંખ્યા જનરેટ કરે છે.
+         * @param {number} min - ન્યૂનતમ સંખ્યા (સમાવેશ થાય છે)
+         * @param {number} max - મહત્તમ સંખ્યા (સમાવેશ થાય છે)
+         * @returns {number} રેન્ડમ ઇન્ટિજર
+         */
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /**
+         * એરેને શફલ કરે છે (ફિશર-યેટ્સ અલ્ગોરિધમ).
+         * @param {Array} array - શફલ કરવા માટેનો એરે
+         * @returns {Array} શફલ થયેલો એરે
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /**
+         * સાચા જવાબ સહિત ૪ અનન્ય વિકલ્પો જનરેટ કરે છે.
+         * @param {number} correctAnswer - બાદબાકીનો સાચો જવાબ
+         * @returns {Array<number>} ૪ વિકલ્પોનો શફલ થયેલો એરે
+         */
+        function generateOptions(correctAnswer) {
+            let options = new Set([correctAnswer]);
+            let attempts = 0;
+            const maxAttempts = 100;
+            
+            // વિકલ્પોની રેન્જ (0 થી 9)
+            const minOption = 0;
+            const maxOption = 9; 
+
+            while (options.size < 4 && attempts < maxAttempts) {
+                let distractor;
+                // સાચા જવાબની આસપાસના વિકલ્પોને પ્રાધાન્ય આપો
+                if (attempts < 50) {
+                     distractor = correctAnswer + getRandomInt(-2, 2);
+                } else {
+                     distractor = getRandomInt(minOption, maxOption);
+                }
+                
+                // ખાતરી કરો કે વિકલ્પ 0 થી 9 ની વચ્ચે છે અને પહેલાથી હાજર નથી
+                if (distractor >= minOption && distractor <= maxOption) {
+                    options.add(distractor);
+                }
+                attempts++;
+            }
+            
+            // જો હજી પણ 4 વિકલ્પો ન મળે, તો રેન્ડમ નંબર્સ ઉમેરો
+            while (options.size < 4) {
+                options.add(getRandomInt(minOption, maxOption));
+            }
+
+            return shuffleArray(Array.from(options).slice(0, 4)); // માત્ર પ્રથમ 4 લો
+        }
+
+        /**
+         * બાદબાકીના પ્રશ્નો અને વિકલ્પોની નવી શ્રેણી જનરેટ કરે છે.
+         */
+        function generateProblems() {
+            gameProblems = [];
+            correctCount = 0;
+            gameFinished = false;
+
+            for (let i = 0; i < TOTAL_PROBLEMS; i++) {
+                let num1, num2;
+                do {
+                    // ૯ અને ૧ વચ્ચે રેન્ડમ અંકો
+                    num1 = getRandomInt(1, 9);
+                    num2 = getRandomInt(1, 9);
+                } while (num1 < num2); // ખાતરી કરો કે num1 > num2
+                
+                const answer = num1 - num2;
+                const options = generateOptions(answer);
+
+                gameProblems.push({
+                    id: i,
+                    num1: num1,
+                    num2: num2,
+                    answer: answer,
+                    options: options,
+                    status: 'pending', // 'pending', 'correct', 'wrong'
+                    selected: null // પસંદ કરેલો વિકલ્પ
+                });
+            }
+        }
+
+        /**
+         * પ્રશ્નનો જવાબ તપાસે છે અને UI અપડેટ કરે છે.
+         * @param {number} problemIndex - gameProblems એરેમાં પ્રશ્નનો ઇન્ડેક્સ
+         * @param {number} selectedAnswer - વપરાશકર્તા દ્વારા પસંદ કરાયેલ જવાબ
+         * @param {HTMLElement} selectedElement - HTML એલિમેન્ટ જે વપરાશકર્તાએ ટચ કર્યો છે
+         */
+        function checkAnswer(problemIndex, selectedAnswer, selectedElement) {
+            if (gameFinished) return;
+
+            const problem = gameProblems[problemIndex];
+            if (problem.status !== 'pending') return; // જો પહેલાથી જવાબ આપી દીધો હોય તો કશું ન કરો
+
+            problem.selected = selectedAnswer;
+            
+            const isCorrect = (selectedAnswer === problem.answer);
+            
+            // બધા વિકલ્પોને 'answered-state' ક્લાસ સાથે અક્ષમ (disable) કરો
+            const optionContainer = selectedElement.closest('.option-row');
+            const allOptions = optionContainer.querySelectorAll('.option-circle');
+            allOptions.forEach(opt => opt.classList.add('disabled', 'answered-state')); 
+
+            if (isCorrect) {
+                problem.status = 'correct';
+                correctCount++;
+                // option-circle ક્લાસ દૂર કરવાની જરૂર નથી, પણ correct ક્લાસ ઉમેરો
+                selectedElement.classList.add('correct');
+            } else {
+                problem.status = 'wrong';
+                selectedElement.classList.add('wrong');
+                
+                // સાચા જવાબને હાઇલાઇટ કરો
+                const correctAnswerElement = optionContainer.querySelector(`[data-answer="${problem.answer}"]`);
+                if (correctAnswerElement) {
+                    correctAnswerElement.classList.add('correct');
+                }
+            }
+
+            // સ્કોર અપડેટ કરો
+            document.getElementById('scoreDisplay').textContent = `${correctCount} / ${TOTAL_PROBLEMS}`;
+
+            // ચેક કરો કે ગેમ પૂરી થઈ ગઈ છે કે નહીં
+            if (gameProblems.every(p => p.status !== 'pending')) {
+                gameFinished = true;
+                showEndGameMessage();
+            }
+        }
+
+        /**
+         * ગેમ પૂરી થયાનો મેસેજ બોક્સ દર્શાવે છે.
+         */
+        function showEndGameMessage() {
+            const titleElement = document.getElementById('messageTitle');
+            const textElement = document.getElementById('messageText');
+            const messageBox = document.getElementById('messageBox');
+            
+            titleElement.classList.remove('text-red-600', 'text-green-600');
+            
+            if (correctCount === TOTAL_PROBLEMS) {
+                titleElement.textContent = "ઉત્તમ કાર્ય! 🎉";
+                textElement.textContent = `તમે બધા ૫ પ્રશ્નોના સાચા જવાબ આપ્યા છે. તમારો સ્કોર છે: ${correctCount}/${TOTAL_PROBLEMS}.`; // અહીં ફેરફાર કર્યો છે: 10 થી 5
+                titleElement.style.color = '#059669'; /* green-600 */
+            } else {
+                titleElement.textContent = "ગેમ પૂરી થઈ!";
+                textElement.textContent = `તમારો અંતિમ સ્કોર: ${correctCount}/${TOTAL_PROBLEMS}. વધુ પ્રેક્ટિસ માટે ફરી પ્રયાસ કરો!`;
+                titleElement.style.color = '#2563eb'; /* blue-600 */
+            }
+            
+            messageBox.classList.add('active'); // show modal
+        }
+
+        /**
+         * મેસેજ બોક્સ બંધ કરે છે.
+         */
+        function closeMessageBox() {
+            document.getElementById('messageBox').classList.remove('active');
+        }
+
+        /**
+         * પ્રશ્નોને HTML માં રેન્ડર કરે છે.
+         */
+        function renderGame() {
+            const container = document.getElementById('gameContainer');
+            container.innerHTML = ''; // કન્ટેનર સાફ કરો
+
+            gameProblems.forEach((problem, index) => {
+                const problemDiv = document.createElement('div');
+                problemDiv.className = 'problem-row';
+                
+                // પ્રશ્ન ભાગ (e.g., 6 - 2 =)
+                const questionTextDiv = document.createElement('div');
+                questionTextDiv.className = 'question-text';
+                questionTextDiv.innerHTML = `<span>${problem.num1} - ${problem.num2} =</span>`;
+                problemDiv.appendChild(questionTextDiv);
+
+                // વિકલ્પો ભાગ
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'option-row';
+
+                let optionsDisabled = problem.status !== 'pending';
+
+                problem.options.forEach(option => {
+                    const optionElement = document.createElement('div');
+                    
+                    let classes = 'option-circle';
+                    
+                    if (optionsDisabled) {
+                        // બધા વિકલ્પો પર disable અને answered-state ક્લાસ ઉમેરો
+                        classes += ' disabled answered-state';
+                        
+                        // સાચો જવાબ
+                        if (option === problem.answer) {
+                            classes += ' correct';
+                        } 
+                        // ખોટો પસંદ કરેલો જવાબ
+                        else if (option === problem.selected) {
+                            classes += ' wrong';
+                        }
+                        // બાકીના અનસેલેક્ટેડ વિકલ્પો માટે કોઈ વિશેષ ક્લાસ નહીં
+                    }
+
+                    optionElement.className = classes;
+                    optionElement.textContent = option;
+                    optionElement.setAttribute('data-index', index);
+                    optionElement.setAttribute('data-answer', option);
+
+                    if (!optionsDisabled) {
+                        optionElement.addEventListener('click', (e) => {
+                            // સ્ટ્રિંગમાંથી સંખ્યામાં રૂપાંતર
+                            const selectedValue = parseInt(e.target.textContent);
+                            const problemIdx = parseInt(e.target.getAttribute('data-index'));
+                            checkAnswer(problemIdx, selectedValue, e.target);
+                        });
+                    }
+
+                    optionsDiv.appendChild(optionElement);
+                });
+
+                problemDiv.appendChild(optionsDiv);
+                container.appendChild(problemDiv);
+            });
+        }
+
+        /**
+         * નવી ગેમ શરૂ કરે છે.
+         */
+        function initGame() {
+            generateProblems();
+            renderGame();
+            document.getElementById('scoreDisplay').textContent = `૦ / ${TOTAL_PROBLEMS}`;
+        }
+
+        // ઇવેન્ટ લિસનર્સ
+        document.getElementById('newGameButton').addEventListener('click', initGame);
+
+        // પેજ લોડ થવા પર ગેમ શરૂ કરો
+        window.onload = function() {
+            initGame();
+        };
+
+    </script>
+</body>
+</html>
