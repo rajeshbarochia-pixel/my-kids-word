@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>तिरंगा झंडा - शब्द पूर्ति (हिन्दी)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f3e8; /* Light background */
+            background-image: linear-gradient(to top, #ffeebb, #f7f3e8);
+            min-height: 100vh;
+        }
+        .word-button {
+            transition: all 0.2s;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .word-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.15);
+        }
+        .word-button.selected {
+            border: 3px solid #ef4444; /* Red border for selected */
+            background-color: #fca5a5;
+            transform: scale(0.95);
+        }
+        /* Hidden-word class is just for logic, display: none handles visibility */
+        .word-button.correct-filled {
+            /* This class is not actively used in current logic, but kept for consistency */
+            pointer-events: none;
+            cursor: default;
+        }
+        .blank {
+            display: inline-block;
+            min-width: 6rem;
+            height: 1.5rem;
+            background-color: #fff;
+            border-bottom: 2px solid #3b82f6; /* Blue line */
+            text-align: center;
+            font-weight: 600;
+            color: #1f2937;
+            cursor: pointer;
+            margin: 0 0.25rem;
+            border-radius: 4px 4px 0 0;
+            transition: background-color 0.1s;
+        }
+        .blank.filled {
+            border-color: #10b981;
+            background-color: #d1fae5;
+        }
+        .blank.highlight {
+            outline: 2px solid #ef4444;
+            outline-offset: 2px;
+        }
+        .feedback {
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .feedback.show {
+            transform: scale(1);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="p-4 flex flex-col items-center">
+
+    <div class="max-w-xl w-full">
+        <!-- Header -->
+        <header class="text-center mb-6 p-4 bg-white rounded-xl shadow-lg border-b-4 border-indigo-500">
+            <h1 class="text-3xl font-bold text-indigo-700 mb-2">🇮🇳 तिरंगा झंडा क्विज़ 🇮🇳</h1>
+            <p class="text-lg text-gray-600">बॉक्स से सही शब्द चुनकर खाली जगह भरें।</p>
+        </header>
+
+        <!-- Word Bank Section -->
+        <section id="word-bank" class="mb-8 p-4 bg-yellow-100 rounded-xl shadow-inner border border-yellow-300">
+            <h2 class="text-xl font-semibold text-yellow-800 mb-3 text-center">शब्द संग्रह (Word Bank)</h2>
+            <div id="word-container" class="flex flex-wrap justify-center gap-3">
+                <!-- Words will be injected here -->
+            </div>
+        </section>
+
+        <!-- Sentences Section -->
+        <section id="quiz-sentences" class="mb-6 p-6 bg-white rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold text-indigo-700 mb-4 border-b pb-2">खाली जगह भरें</h2>
+            <div id="sentence-container" class="space-y-4 text-gray-800 text-lg leading-relaxed">
+                <!-- Sentences with blanks will be injected here -->
+            </div>
+        </section>
+
+        <!-- Controls and Feedback -->
+        <div class="flex flex-col items-center space-y-4">
+            <button id="check-button" onclick="checkAnswers()" class="px-6 py-3 bg-green-500 text-white font-bold text-xl rounded-full shadow-lg hover:bg-green-600 transition duration-300 transform hover:scale-105 active:scale-95">
+                उत्तर जाँचें (Check)
+            </button>
+            <div id="feedback-message" class="feedback p-3 rounded-lg text-center font-semibold w-full max-w-xs"></div>
+            <button id="reset-button" onclick="initGame()" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded-full shadow hover:bg-blue-600 transition duration-300 transform hover:scale-105 active:scale-95 hidden">
+                फिर से शुरू करें (Restart)
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-300 text-center text-sm text-gray-500">
+            Created by: Rajesh barochia
+        </footer>
+    </div>
+
+    <script>
+        // Global variables
+        let selectedWordButton = null;
+        let score = 0;
+        let isGameFinished = false;
+
+        // Data for the game (Hindi translation based on the image provided)
+        const sentences = [
+            // Original line: हमारे देश के झंडे का नाम ........... है।
+            { text: "हमारे देश के झंडे का नाम [BLANK] है।", answer: "तिरंगा" },
+            // Original line: यह हमारा ............ झंडा है।
+            { text: "यह हमारा [BLANK] झंडा है।", answer: "राष्ट्रीय" },
+            // Original line: इसमें ............ रंग हैं।
+            { text: "इसमें [BLANK] रंग हैं।", answer: "तीन" },
+            // Original line: सबसे ऊपर ............ रंग है।
+            { text: "सबसे ऊपर [BLANK] रंग है।", answer: "केसरिया" },
+            // Original line: बीच में ............ और सबसे नीचे ............ है। (Split into two)
+            { text: "बीच में [BLANK] रंग है।", answer: "सफेद" },
+            { text: "और सबसे नीचे [BLANK] रंग है।", answer: "हरा" },
+            // Corrected sentence: केसरिया रंग 'वीरता' और 'त्याग' का प्रतीक है।
+            { text: "झंडे का केसरिया रंग [BLANK] और त्याग का प्रतीक है।", answer: "वीरता" }, 
+            // Original line: तिरंगे का सफेद रंग ............ का ............ देता है। (Split into two)
+            { text: "तिरंगे का सफेद रंग [BLANK] का संदेश देता है।", answer: "शांति" },
+            // Original line: इसका हरा रंग हमारी ............ और समृद्धि को दर्शाता है।
+            { text: "इसका हरा रंग हमारी [BLANK] और समृद्धि को दर्शाता है।", answer: "खुशहाली" },
+            // Original line: सफेद रंग के बीच में एक ............ है।
+            { text: "सफेद रंग के बीच में एक [BLANK] है।", answer: "चक्र" },
+            // Original line: इसमें ............ तीलियाँ हैं।
+            { text: "इस चक्र में [BLANK] तीलियाँ हैं।", answer: "चौबीस" },
+            // Original line: यह हमें ............ करने का संदेश देता है।
+            { text: "यह हमें [BLANK] करने का संदेश देता है।", answer: "प्रगति" },
+            // Original line: तिरंगा झंडा हमारे देश की ............ है।
+            { text: "तिरंगा झंडा हमारे देश की [BLANK] है।", answer: "शान" },
+            // Original line: हमें अपने झंडे का ............ करना चाहिए।
+            { text: "हमें अपने झंडे का [BLANK] करना चाहिए।", answer: "सम्मान" } 
+        ];
+
+        // Combine all answers to form the initial word bank, ensuring unique words where possible
+        let wordBank = sentences.map(s => s.answer);
+        
+        // Add "सन्देश" (sandesh) to make the word bank slightly larger and more challenging (optional)
+        if (!wordBank.includes("सन्देश")) wordBank.push("सन्देश");
+
+        /**
+         * Shuffles an array (Fisher-Yates algorithm).
+         * @param {Array} array The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /**
+         * Initializes or resets the game state.
+         */
+        function initGame() {
+            score = 0;
+            selectedWordButton = null;
+            isGameFinished = false;
+
+            // 1. Shuffle and render words
+            const shuffledWords = shuffle([...wordBank]); // Create a copy and shuffle
+            renderWordBank(shuffledWords);
+
+            // 2. Render sentences with blanks
+            renderSentences();
+
+            // 3. Reset UI state
+            document.getElementById('check-button').classList.remove('hidden');
+            document.getElementById('reset-button').classList.add('hidden');
+            const feedback = document.getElementById('feedback-message');
+            feedback.classList.remove('show', 'bg-red-500', 'bg-green-500', 'text-white');
+            feedback.textContent = '';
+        }
+
+        /**
+         * Renders the word bank buttons.
+         * @param {Array<string>} words - Array of words to render.
+         */
+        function renderWordBank(words) {
+            const container = document.getElementById('word-container');
+            container.innerHTML = '';
+            words.forEach(word => {
+                const button = document.createElement('div');
+                button.textContent = word;
+                button.className = 'word-button bg-blue-300 text-blue-900 font-semibold p-2 rounded-lg text-lg border-2 border-blue-400';
+                button.setAttribute('data-word', word);
+                button.onclick = () => selectWord(button);
+                container.appendChild(button);
+            });
+        }
+
+        /**
+         * Renders the sentences with interactive blanks.
+         */
+        function renderSentences() {
+            const container = document.getElementById('sentence-container');
+            container.innerHTML = '';
+            sentences.forEach((item, index) => {
+                const p = document.createElement('p');
+                // Replace [BLANK] with an interactive span
+                const htmlContent = item.text.replace('[BLANK]', `<span id="blank-${index}" class="blank" data-answer="${item.answer}" data-filled-with="" onclick="fillBlank(this)"></span>`);
+                p.innerHTML = htmlContent;
+                container.appendChild(p);
+            });
+        }
+
+        /**
+         * Handles the selection of a word from the bank.
+         * @param {HTMLElement} button - The clicked word button.
+         */
+        function selectWord(button) {
+            if (isGameFinished) return;
+
+            // Deselect previous word if any
+            if (selectedWordButton) {
+                selectedWordButton.classList.remove('selected');
+            }
+
+            // If the same word is clicked again, deselect it and clear the selection
+            if (selectedWordButton === button) {
+                selectedWordButton = null;
+            } else {
+                // Select the new word
+                button.classList.add('selected');
+                selectedWordButton = button;
+            }
+        }
+
+        /**
+         * Handles filling the blank space.
+         * @param {HTMLElement} blank - The clicked blank span.
+         */
+        function fillBlank(blank) {
+            if (isGameFinished) return;
+
+            const currentContent = blank.getAttribute('data-filled-with');
+
+            if (selectedWordButton) {
+                const newWord = selectedWordButton.getAttribute('data-word');
+
+                // 1. Return the old word to the bank (if it was filled)
+                if (currentContent) {
+                    // Find the word button that was used to fill this blank
+                    const oldWordButton = document.querySelector(`[data-word="${currentContent}"]`);
+                    if (oldWordButton && oldWordButton.classList.contains('hidden-word')) {
+                        oldWordButton.classList.remove('hidden-word');
+                        oldWordButton.onclick = () => selectWord(oldWordButton); // Re-enable clicking
+                        oldWordButton.style.display = 'block'; // Show it
+                    }
+                }
+
+                // 2. Fill the blank with the new word
+                blank.textContent = newWord;
+                blank.setAttribute('data-filled-with', newWord);
+                blank.classList.add('filled');
+
+                // 3. Mark the selected word as used (hidden)
+                selectedWordButton.classList.remove('selected');
+                selectedWordButton.classList.add('hidden-word'); // Use a class to identify and manage visibility
+                selectedWordButton.onclick = null; // Disable clicking on used words
+                selectedWordButton.style.display = 'none'; // Visually hide it
+
+                // 4. Clear the current selection
+                selectedWordButton = null;
+
+            } else if (currentContent) {
+                // If no word is selected, clicking an already filled blank removes the word
+                // 1. Return the word to the bank
+                const oldWordButton = document.querySelector(`[data-word="${currentContent}"]`);
+                if (oldWordButton && oldWordButton.classList.contains('hidden-word')) {
+                    oldWordButton.classList.remove('hidden-word');
+                    oldWordButton.onclick = () => selectWord(oldWordButton); // Re-enable clicking
+                    oldWordButton.style.display = 'block'; // Show it
+                }
+
+                // 2. Clear the blank
+                blank.textContent = '';
+                blank.setAttribute('data-filled-with', '');
+                blank.classList.remove('filled');
+            }
+        }
+
+        /**
+         * Checks all the answers and updates the score/UI.
+         */
+        function checkAnswers() {
+            if (isGameFinished) return;
+
+            score = 0;
+            const blanks = document.querySelectorAll('.blank');
+            let allCorrect = true;
+
+            blanks.forEach(blank => {
+                const filledWord = blank.getAttribute('data-filled-with');
+                const correctWord = blank.getAttribute('data-answer');
+
+                // Reset feedback classes
+                blank.classList.remove('bg-green-300', 'bg-red-300', 'highlight');
+
+                if (filledWord === correctWord) {
+                    score++;
+                    blank.style.backgroundColor = '#d1fae5'; // Correct color (green-100/200)
+                    blank.style.borderColor = '#10b981'; // Correct border (emerald-500)
+                    blank.style.color = '#065f46';
+                } else {
+                    allCorrect = false;
+                    blank.classList.add('highlight'); // Highlight incorrect ones
+                    blank.style.backgroundColor = '#fee2e2'; // Incorrect color (red-100/200)
+                    blank.style.borderColor = '#f87171';
+                    blank.style.color = '#b91c1c';
+                }
+            });
+
+            // Update feedback message
+            const total = sentences.length;
+            const feedback = document.getElementById('feedback-message');
+            feedback.classList.add('show', 'text-white');
+
+            if (score === total) {
+                feedback.textContent = `बधाई! 🎉 आपने सभी ${total} उत्तर सही दिए!`;
+                feedback.classList.remove('bg-red-500');
+                feedback.classList.add('bg-green-500');
+                isGameFinished = true;
+                document.getElementById('check-button').classList.add('hidden');
+                document.getElementById('reset-button').classList.remove('hidden');
+            } else {
+                feedback.textContent = `आपके ${total} में से ${score} उत्तर सही हैं। फिर से प्रयास करें!`;
+                feedback.classList.remove('bg-green-500');
+                feedback.classList.add('bg-red-500');
+            }
+        }
+
+        // Start the game when the window loads
+        window.onload = function() {
+            initGame();
+        };
+
+    </script>
+</body>
+</html>
