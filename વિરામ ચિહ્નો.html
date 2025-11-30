@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>વિરામચિહ્ન શીખો: ઇન્ટરેક્ટિવ ડેમો</title>
+    <style>
+        /* --- CSS શૈલીઓ --- */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f3f4f6; /* હળવો ગ્રે બેકગ્રાઉન્ડ */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 700px;
+            width: 100%;
+            border: 4px solid #0d9488; /* ટીલ રંગની બોર્ડર */
+        }
+
+        h1 {
+            color: #115e59; /* ડાર્ક ટીલ */
+            margin-bottom: 5px; /* ઘટાડીને 5px */
+            font-size: 2em;
+        }
+
+        #subtitle {
+            color: #4b5563; /* ઘાટો ગ્રે */
+            font-size: 1.1em;
+            margin-bottom: 20px; /* ટાઇટલ પછી જગ્યા */
+            font-weight: 500;
+        }
+        
+        #instruction {
+            color: #374151;
+            font-size: 1.1em;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        #question-area {
+            background-color: #f0fdfa; /* ખૂબ હળવો ટીલ */
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px dashed #99f6e4;
+        }
+
+        #sentence {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #1f2937;
+            min-height: 50px;
+            line-height: 1.6;
+            direction: ltr;
+        }
+
+        /* --- બ્લિંકિંગ ઇફેક્ટ માટે CSS --- */
+        @keyframes blink {
+            0%, 100% { opacity: 1; background-color: #fff; transform: scale(1.1); }
+            50% { opacity: 0.3; background-color: #fcd34d; transform: scale(1.0); } /* પીળાશ પડતો બેકગ્રાઉન્ડ */
+        }
+
+        .blinking {
+            animation: blink 0.7s ease-in-out infinite;
+            display: inline-block;
+            padding: 2px 4px;
+            border-radius: 5px;
+            color: #b91c1c; /* લાલ રંગનું ચિહ્ન */
+            transition: all 0.3s;
+        }
+        /* --------------------------------- */
+
+        #result {
+            margin-top: 25px;
+            font-size: 1.4em;
+            font-weight: bold;
+            min-height: 30px;
+            color: #059669; /* ગ્રીન */
+        }
+        
+        .usage-text {
+            display: block;
+            font-size: 0.75em;
+            font-weight: normal;
+            color: #4b5563;
+            margin-top: 5px;
+            line-height: 1.4;
+            padding: 5px 0;
+            border-top: 1px dashed #e5e7eb;
+            
+        }
+
+        #info {
+            margin-top: 15px;
+            font-size: 1.1em;
+            color: #4b5563;
+        }
+        
+        #creator-info {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #9ca3af;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 10px;
+            line-height: 1.5; /* નવી લાઇન માટે જગ્યા આપવા */
+        }
+
+        /* --- બટન સ્ટાઇલ અને ગ્રુપિંગ --- */
+        #button-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px; /* બટનો વચ્ચેની જગ્યા */
+            margin-top: 30px;
+        }
+        
+        #prev-button, #next-button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+            min-width: 150px;
+            box-shadow: 0 4px #0f766e;
+        }
+
+        #next-button {
+            background-color: #0d9488; /* ટીલ રંગ */
+            color: white;
+            box-shadow: 0 4px #0f766e;
+        }
+
+        #next-button:hover:not(:disabled) {
+            background-color: #0f766e;
+            transform: translateY(-2px);
+            box-shadow: 0 6px #0d9488;
+        }
+        
+        #next-button:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 2px #0d9488;
+        }
+        
+        #prev-button {
+            background-color: #4b5563; /* ગ્રે રંગ */
+            color: white;
+            box-shadow: 0 4px #374151;
+        }
+
+        #prev-button:hover:not(:disabled) {
+            background-color: #374151;
+            transform: translateY(-2px);
+            box-shadow: 0 6px #4b5563;
+        }
+        
+        #prev-button:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 2px #4b5563;
+        }
+
+        #prev-button:disabled {
+            background-color: #d1d5db; /* નિષ્ક્રિય હોય ત્યારે આછો ગ્રે */
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ વિરામચિહ્ન શીખો</h1>
+        <!-- નવો પેટા-શીર્ષક અહીં ઉમેરાયેલ છે -->
+        <p id="subtitle">Created by : Rajesh Barochia</p>
+
+        <div id="question-area">
+            <p id="instruction">વિરામચિહ્નને તેના યોગ્ય સ્થાને જુઓ. લબક-ઝબક થતું ચિહ્ન ઓળખો.</p>
+            <div id="sentence">વાક્ય લોડ થઈ રહ્યું છે...</div>
+        </div>
+
+        <div id="result">વિરામચિહ્નનું નામ</div>
+        <p id="info">ઉદાહરણ: ૧ | કુલ ઉદાહરણો: ૧</p>
+        
+        <!-- બટન ગ્રુપ ઉમેરવામાં આવ્યું -->
+        <div id="button-group">
+            <button id="prev-button" disabled>⬅️ પાછલું ઉદાહરણ</button>
+            <button id="next-button">આગળનું ઉદાહરણ ➡️</button>
+        </div>
+        
+        <!-- ક્રિએટર માહિતી -->
+        <p id="creator-info">
+            Created by : Rajesh Barochia
+            </p>
+    </div>
+
+    <script>
+        /* --- JavaScript તર્ક --- */
+
+        // અપડેટ કરેલો ગેમ ડેટા: વાક્ય, યોગ્ય ચિહ્ન, તેનું નામ અને તેનો ઉપયોગ
+        const questions = [
+            // દરેક વાક્યમાં '___' એ જગ્યાનું માર્કર છે જ્યાં ચિહ્ન મૂકવામાં આવશે.
+            { sentence: "આજે સૂર્ય ઊગ્યો___", correct: '.', name: 'પૂર્ણ વિરામ', explanation: 'વાક્ય પૂર્ણ થાય ત્યારે વપરાય છે.' }, 
+            { sentence: "તેણે પુસ્તક___ પેન અને કાગળ ખરીદ્યા.", correct: ',', name: 'અલ્પ વિરામ', explanation: 'એક જ પ્રકારના શબ્દો કે વાક્યાંશોને અલગ કરવા અને ટૂંકા વિરામ માટે.' }, 
+            { sentence: "તમારી ઉંમર કેટલી છે___", correct: '?', name: 'પ્રશ્નચિહ્ન', explanation: 'પ્રશ્ન પૂછવામાં આવ્યો હોય ત્યારે વપરાય છે.' }, 
+            { sentence: "અદ્ભુત___ કેવો ભવ્ય નજારો!", correct: '!', name: 'ઉદ્‌ગારચિહ્ન', explanation: 'આશ્ચર્ય, આનંદ, દુઃખ, કે લાગણીના ભાવ વ્યક્ત કરવા માટે.' }, 
+            { sentence: "તેણે સખત મહેનત કરી___ છતાં તે પાસ ન થયો.", correct: ';', name: 'અર્ધ વિરામ', explanation: 'બે સ્વતંત્ર વાક્યોને જોડવા, જ્યાં વિરામ પૂર્ણ વિરામ કરતાં ઓછો અને અલ્પ વિરામ કરતાં વધુ હોય.' }, 
+            { sentence: "આવશ્યક ચીજો___ બ્રેડ, ઈંડા અને દૂધ.", correct: ':', name: 'ગુરુ વિરામ', explanation: 'કોઈ યાદી, ઉદાહરણ, કે અવતરણ આપતા પહેલાં વપરાય છે.' }, 
+            { sentence: "નહેરુ (૧૮૮૯–૧૯૬૪) ભારતના પ્રથમ વડાપ્રધાન હતા.", correct: '–', name: 'વિગ્રહરેખા (ડૅશ)', type: 'fixed', explanation: 'બે સંખ્યા, સમયગાળો કે સ્થળ વચ્ચેની મર્યાદા દર્શાવવા માટે (જેમ કે \'થી\').' }, 
+            { sentence: "મેં તેને જોયો નહીં___ તે ક્યાંક ગાયબ થઈ ગયો હતો.", correct: '—', name: 'ગુરુ રેખા (એમ ડૅશ)', explanation: 'વાક્યમાં અચાનક બદલાવ, સ્પષ્ટતા, અથવા ભાર આપવા માટે.' }, 
+            { sentence: "તેણે કહ્યું___ 'હું આ કરીશ.'", correct: '“ ”', name: 'ડબલ અવતરણચિહ્ન', explanation: 'કોઈ વ્યક્તિના કહેલા શબ્દોને સીધેસીધા દર્શાવવા માટે.' }, 
+            { sentence: "મારું પ્રિય પુસ્તક 'યુદ્ધ અને શાંતિ' છે.", correct: '‘ ’', name: 'સિંગલ અવતરણચિહ્ન', explanation: 'કોઈ શબ્દ કે શીર્ષકને ખાસ ભાર આપવા અથવા વ્યાખ્યાયિત કરવા માટે.' }, 
+            
+            // --- બાળ-મૈત્રીપૂર્ણ ઉદાહરણો ---
+            { sentence: "મારી બેનપણી (જેનું નામ ટીના છે) આજે આવશે.", correct: '()', name: 'નાનો કૌંસ', type: 'fixed', explanation: 'વાક્યમાં વધારાની કે ગૌણ માહિતી આપવા માટે.' },
+            { sentence: "તેણે કહ્યું કે તે [ગાંધીનગર] ગયો હતો.", correct: '[]', name: 'ચોરસ કૌંસ', type: 'fixed', explanation: 'કોઈ અવતરણમાં બહારથી સ્પષ્ટતા કે માહિતી ઉમેરવા માટે.' },
+            { sentence: "હું કાલે બજાર જઈશ.", correct: '^', name: 'કાકપાદ (શબ્દ ઉમેરવા માટે)', explanation: 'લખતી વખતે ભૂલાયેલો શબ્દ ક્યાં ઉમેરવો તે દર્શાવવા માટે.' }
+        ];
+
+        let currentQuestionIndex = 0;
+        const sentenceDisplay = document.getElementById('sentence');
+        const resultDisplay = document.getElementById('result');
+        const infoDisplay = document.getElementById('info');
+        const nextButton = document.getElementById('next-button');
+        const prevButton = document.getElementById('prev-button'); // નવું બટન મેળવો
+
+        function goToPreviousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        }
+
+        function goToNextQuestion() {
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+
+        function loadQuestion() {
+            // બટન સ્ટેટ અપડેટ કરો (Disable/Enable)
+            prevButton.disabled = currentQuestionIndex === 0;
+            prevButton.onclick = goToPreviousQuestion;
+
+            if (currentQuestionIndex >= questions.length) {
+                // ગેમ સમાપ્ત
+                sentenceDisplay.innerHTML = "🎉 **પાઠ પૂર્ણ!** તમે બધા ઉદાહરણો પૂર્ણ કર્યા.";
+                resultDisplay.textContent = "હવે તમે વિરામચિહ્નોનો ઉપયોગ જાણો છો.";
+                infoDisplay.textContent = "";
+                nextButton.textContent = "શરૂઆતથી જુઓ";
+                nextButton.onclick = () => {
+                    currentQuestionIndex = 0;
+                    loadQuestion();
+                };
+                prevButton.disabled = true;
+                prevButton.onclick = null;
+                return;
+            }
+
+            const currentQ = questions[currentQuestionIndex];
+            
+            // 1. બલિંકિંગ સ્પાન ટૅગ તૈયાર કરો અને વાક્ય અપડેટ કરો
+            let punctuationHTML;
+            let sentenceHTML = currentQ.sentence; // Default to full sentence
+            const explanationText = currentQ.explanation ? `<span class="usage-text">ઉપયોગ: ${currentQ.explanation}</span>` : '';
+
+            // 'આગળનું ઉદાહરણ' બટન ટેક્સ્ટ અપડેટ કરો
+            nextButton.textContent = (currentQuestionIndex === questions.length - 1) 
+                ? "પુનઃ શરૂ કરો 🔄" 
+                : "આગળનું ઉદાહરણ ➡️";
+            nextButton.onclick = goToNextQuestion;
+
+
+            if (currentQuestionIndex === 10) { // નાનો કૌંસ ()
+                // "(જેનું નામ ટીના છે)" ને કૌંસમાં અને બલિંક કરો
+                sentenceHTML = currentQ.sentence.replace(
+                    "(જેનું નામ ટીના છે)",
+                    `<span class="blinking">(</span>જેનું નામ ટીના છે<span class="blinking">)</span>`
+                );
+            } else if (currentQuestionIndex === 11) { // ચોરસ કૌંસ []
+                // "[ગાંધીનગર]" ને કૌંસમાં અને બલિંક કરો
+                sentenceHTML = currentQ.sentence.replace(
+                    "[ગાંધીનગર]",
+                    `<span class="blinking">[</span>ગાંધીનગર<span class="blinking">]</span>`
+                );
+            } else if (currentQuestionIndex === 12) { // કાકપાદ ^
+                // "કાલે" અને "બજાર" વચ્ચે કાકપાદને બલિંક કરો
+                sentenceHTML = currentQ.sentence.replace(
+                    "હું કાલે બજાર જઈશ.",
+                    `હું કાલે <span class="blinking">^</span> બજાર જઈશ.`
+                );
+                // કાકપાદ માટે ખાસ સમજૂતી
+                resultDisplay.innerHTML = `${currentQ.name} (${currentQ.correct}) - (અહીં 'સવારે' શબ્દ ઉમેરવાની નિશાની છે)${explanationText}`;
+            } else if (currentQ.correct === '“ ”') {
+                // ડબલ અવતરણચિહ્ન
+                punctuationHTML = `<span class="blinking">“</span>હું આ કરીશ.<span class="blinking">”</span>`;
+                sentenceHTML = currentQ.sentence.replace("___ 'હું આ કરીશ.'", punctuationHTML);
+            } else if (currentQ.correct === '‘ ’') {
+                // સિંગલ અવતરણચિહ્ન
+                sentenceHTML = currentQ.sentence.replace(
+                    "'યુદ્ધ અને શાંતિ'",
+                    `<span class="blinking">‘</span>યુદ્ધ અને શાંતિ<span class="blinking">’</span>`
+                );
+            } else if (currentQ.correct === '–' && currentQ.type === 'fixed') {
+                // વિગ્રહરેખા (ડૅશ)
+                 sentenceHTML = currentQ.sentence.replace(
+                    "૧૮૮૯–૧૯૬૪",
+                    `૧૮૮૯<span class="blinking">–</span>૧૯૬૪`
+                );
+            }
+             else {
+                // મોટા ભાગના એકલ ચિહ્નો માટે જ્યાં '___' માર્કર છે
+                punctuationHTML = `<span class="blinking">${currentQ.correct}</span>`;
+                sentenceHTML = currentQ.sentence.replace('___', punctuationHTML);
+            }
+
+            // વાક્ય અને વિરામચિહ્નનું નામ ડિસ્પ્લે કરો
+            sentenceDisplay.innerHTML = sentenceHTML;
+            
+            // જો કાકપાદ ન હોય તો નામ અને ઉપયોગ રીસેટ કરો
+            if (currentQuestionIndex !== 12) {
+                resultDisplay.innerHTML = `${currentQ.name} (${currentQ.correct})${explanationText}`;
+            }
+            resultDisplay.style.color = '#10b981';
+
+            // પ્રશ્ન ગણતરી અપડેટ કરો
+            infoDisplay.textContent = `ઉદાહરણ: ${currentQuestionIndex + 1} | કુલ ઉદાહરણો: ${questions.length}`;
+            
+        }
+
+        // ગેમ શરૂ કરો
+        loadQuestion();
+    </script>
+</body>
+</html>
