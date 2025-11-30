@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ખૂણો માપો - શીખવાની મજા</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the game appearance */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue/grey background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        #game-container {
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            width: 500px;
+            padding: 20px;
+        }
+        canvas {
+            border-radius: 10px;
+            margin-bottom: 20px;
+            width: 100%; 
+            height: auto; 
+            max-width: 460px; /* Match container size */
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Style for the feedback message */
+        #feedback {
+            min-height: 40px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .correct {
+            background-color: #d1fae5; /* Green light */
+            color: #059669; /* Green dark */
+        }
+        .incorrect {
+            background-color: #fee2e2; /* Red light */
+            color: #ef4444; /* Red dark */
+        }
+        /* Button styling */
+        button {
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        button:hover:not(:disabled) {
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-1px);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* High Score Table Styling */
+        #high-scores-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 10px;
+        }
+        #high-scores-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #high-scores-list li:last-child {
+            border-bottom: none;
+        }
+        .user-id-text {
+            word-break: break-all;
+            font-size: 0.75rem; /* text-xs */
+            color: #6b7280; /* text-gray-500 */
+        }
+        /* Creator name styling */
+        .creator-info {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.875rem; /* text-sm */
+            color: #4b5563; /* text-gray-600 */
+            padding-top: 10px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1 class="text-3xl font-bold text-center text-blue-600 mb-4">📐 ખૂણો માપો 📐</h1>
+        
+        <!-- Score Display -->
+        <div class="flex justify-between items-center bg-yellow-100 p-3 rounded-xl mb-4">
+            <span class="text-lg font-semibold text-gray-700">🏆 Score:</span>
+            <span id="score-display" class="text-2xl font-extrabold text-red-600">0</span>
+        </div>
+        
+        <!-- Question Counter (NEW) -->
+        <div class="flex justify-center items-center bg-blue-100 p-2 rounded-xl mb-4">
+            <span id="question-display" class="text-lg font-bold text-blue-800">પ્રશ્ન: 1/5</span>
+        </div>
+
+        <!-- Canvas for Angle Drawing -->
+        <canvas id="angleCanvas" width="460" height="230"></canvas>
+        
+        <!-- User Input and Controls -->
+        <div class="mb-4">
+            <label for="answer-input" class="block text-sm font-medium text-gray-700 mb-2">તમારો જવાબ (ડિગ્રીમાં):</label>
+            <input type="number" id="answer-input" placeholder="ખૂણો અહીં દાખલ કરો" 
+                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 text-lg">
+        </div>
+
+        <div class="flex space-x-4 mb-4">
+            <button id="submit-button" 
+                    class="flex-1 bg-green-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-green-600 active:bg-green-700">
+                સબમિટ કરો
+            </button>
+            <button id="new-game-button" 
+                    class="flex-1 bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-indigo-600 active:bg-indigo-700">
+                નવી ગેમ
+            </button>
+        </div>
+
+        <!-- Feedback Message -->
+        <div id="feedback" class="mb-4"></div>
+
+        <!-- High Scores Section -->
+        <div class="mt-8">
+            <h2 class="text-xl font-bold text-gray-800 border-b-2 border-gray-300 pb-2 mb-3">🏅 High Scores (Top 5)</h2>
+            <ul id="high-scores-list" class="divide-y divide-gray-200">
+                <!-- High scores will be inserted here by JavaScript -->
+                <li class="text-center text-gray-500">Loading...</li>
+            </ul>
+        </div>
+
+        <!-- Creator Info -->
+        <div class="creator-info">
+            Created by: - Rajesh Barochia
+        </div>
+        
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, limit, serverTimestamp, setLogLevel, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-angle-game-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        // Game State
+        let currentAngle = 0;
+        let score = 0;
+        const scoreKey = 'angleGameScore';
+        const maxAngle = 175; // Max angle to generate (to avoid touching 180 or 0 exactly)
+        const minAngle = 5;
+        
+        // New Game State for 5 questions
+        const totalQuestions = 5; // Total questions in a game round
+        let questionsAnswered = 0; // Questions answered in the current round
+        
+        // UI Elements
+        const canvas = document.getElementById('angleCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score-display');
+        const answerInput = document.getElementById('answer-input');
+        const submitButton = document.getElementById('submit-button');
+        const newGameButton = document.getElementById('new-game-button');
+        const feedbackDiv = document.getElementById('feedback');
+        const highScoresList = document.getElementById('high-scores-list');
+        const questionDisplay = document.getElementById('question-display'); // New UI element
+        
+        // Protractor Center Point (Fixed)
+        let protractor_center_x;
+        let protractor_center_y;
+        let protractor_radius;
+
+        // --- Utility Functions for Firebase/Auth ---
+
+        const initializeFirebase = async () => {
+            try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.error("Firebase configuration is missing.");
+                    // Fallback to local game logic without persistence
+                    isAuthReady = true; 
+                    startGame();
+                    return;
+                }
+                
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('error'); // Set log level
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        console.log("Authentication successful. User ID:", userId);
+                        loadInitialScore();
+                        listenForHighScores();
+                        startGame();
+                    } else {
+                        // Attempt to sign in
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase or signing in:", error);
+                isAuthReady = true; // Still allow game to start locally
+                startGame();
+            }
+        };
+
+        const getScoreDocRef = (id) => doc(db, 'artifacts', appId, 'users', id, 'game_data', scoreKey);
+        const getPublicScoresCollection = () => collection(db, 'artifacts', appId, 'public', 'data', 'angle_game_scores');
+
+        const loadInitialScore = async () => {
+            if (!db || !userId) return;
+            try {
+                const docRef = getScoreDocRef(userId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    score = docSnap.data().score || 0;
+                } else {
+                    // Initialize if no doc exists
+                    await setDoc(docRef, { score: 0, timestamp: serverTimestamp() });
+                }
+                scoreDisplay.textContent = score;
+            } catch (e) {
+                console.error("Error loading score:", e);
+                // Keep score at 0 if loading fails
+            }
+        };
+
+        const updateScoreInFirestore = async (newScore) => {
+            if (!db || !userId) {
+                console.warn("Firestore not ready. Score not saved.");
+                return;
+            }
+            try {
+                const docRef = getScoreDocRef(userId);
+                await updateDoc(docRef, {
+                    score: newScore,
+                    timestamp: serverTimestamp()
+                });
+                console.log("Personal score updated.");
+            } catch (e) {
+                console.error("Error updating personal score:", e);
+            }
+        };
+        
+        const saveHighScore = async (finalScore) => {
+            // Only save high scores if the final score is greater than 0
+            if (!db || !userId || finalScore <= 0) return; 
+            try {
+                // Check if the current user already has a high score entry
+                const q = query(getPublicScoresCollection(), where("userId", "==", userId));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    // No existing score, add new one
+                    await addDoc(getPublicScoresCollection(), {
+                        userId: userId,
+                        score: finalScore,
+                        timestamp: serverTimestamp(),
+                    });
+                    console.log("New high score added.");
+                } else {
+                    // Existing score found, update if the new score is higher
+                    const docToUpdate = querySnapshot.docs[0];
+                    if (finalScore > docToUpdate.data().score) {
+                        await updateDoc(doc(db, docToUpdate.ref.path), {
+                            score: finalScore,
+                            timestamp: serverTimestamp(),
+                        });
+                        console.log("Existing high score updated.");
+                    }
+                }
+            } catch (e) {
+                console.error("Error saving high score:", e);
+            }
+        };
+
+        const listenForHighScores = () => {
+            if (!db) return;
+            // IMPORTANT: Remove orderBy for firestore to avoid index creation issues, sort client side
+            const q = query(getPublicScoresCollection(), limit(5));
+            
+            onSnapshot(q, (snapshot) => {
+                let scores = [];
+                snapshot.forEach((doc) => {
+                    scores.push(doc.data());
+                });
+
+                // Sort scores client-side
+                scores.sort((a, b) => b.score - a.score);
+                scores = scores.slice(0, 5); // Take top 5 after sorting
+
+                highScoresList.innerHTML = '';
+                // The "No scores yet" message has been removed.
+                
+                scores.forEach((data) => {
+                    const li = document.createElement('li');
+                    
+                    // Determine the display name: 'તમે' (You) for the current user, or the full ID for others.
+                    let displayName = data.userId;
+                    let scoreHtml = `<span class="text-xl font-extrabold text-blue-800">${data.score}</span>`;
+                    
+                    // Highlight the current user's score in red and use 'તમે' as the name
+                    if (data.userId === userId) {
+                         displayName = 'તમે'; // 'You' in Gujarati
+                         scoreHtml = `<span class="text-xl font-extrabold text-red-600">${data.score}</span>`;
+                    }
+                    
+                    li.innerHTML = `
+                        <div class="flex flex-col items-start">
+                            <span class="font-semibold text-gray-800 ${data.userId !== userId ? 'user-id-text' : ''}">${displayName}</span>
+                        </div>
+                        ${scoreHtml}
+                    `;
+                    highScoresList.appendChild(li);
+                });
+            }, (error) => {
+                console.error("Error listening to high scores:", error);
+                highScoresList.innerHTML = '<li class="text-center text-red-500">Error loading scores.</li>';
+            });
+        };
+
+        // --- Game Logic ---
+
+        // Function to update the question display (e.g., "પ્રશ્ન: 3/5")
+        function updateQuestionDisplay() {
+            if (questionsAnswered >= totalQuestions) {
+                 questionDisplay.textContent = `ગેમ સમાપ્ત`;
+            } else {
+                 questionDisplay.textContent = `પ્રશ્ન: ${questionsAnswered + 1}/${totalQuestions}`;
+            }
+        }
+
+        function generateNewAngle() {
+            // Generate a random angle between minAngle and maxAngle (inclusive) that is a multiple of 5
+            const range = maxAngle - minAngle;
+            const randomMultipleOfFive = Math.floor(Math.random() * (Math.floor(range / 5) + 1)) * 5;
+            currentAngle = minAngle + randomMultipleOfFive;
+            
+            // Set fixed protractor geometry
+            protractor_center_x = canvas.width / 2;
+            protractor_center_y = canvas.height;
+            protractor_radius = canvas.width / 2 - 20;
+            
+            drawGame();
+            answerInput.value = '';
+            feedbackDiv.className = 'correct';
+            feedbackDiv.textContent = 'ખૂણાનું માપન કરો અને જવાબ દાખલ કરો.';
+            
+            // Ensure inputs are enabled for the new question
+            submitButton.disabled = false;
+            answerInput.disabled = false;
+            
+            updateQuestionDisplay();
+        }
+        
+        // Helper function to highlight a specific tick on the protractor scale
+        function highlightTick(center_x, center_y, radius, angle, color, length) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            // Convert angle to protractor's internal radians (0 at right, increasing counter-clockwise)
+            const protractorAngleRad = (180 - angle) * (Math.PI / 180); 
+            
+            // Start point on the protractor arc
+            ctx.moveTo(
+                center_x + radius * Math.cos(protractorAngleRad),
+                center_y - radius * Math.sin(protractorAngleRad)
+            );
+            // End point inside the protractor
+            ctx.lineTo(
+                center_x + (radius - length) * Math.cos(protractorAngleRad),
+                center_y - (radius - length) * Math.sin(protractorAngleRad)
+            );
+            ctx.stroke();
+        }
+        
+        // Draws the angle arc and highlighted measurement marks
+        function drawMeasurementMarks(center_x, center_y, radius, angle) {
+            
+            // --- 1. Draw Angle Arc ---
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)'; // Semi-transparent red
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            // Arc starts at 0 rad (right side) and goes counter-clockwise to the target angle
+            ctx.arc(center_x, center_y, radius / 3, 0, -angle * (Math.PI / 180), true);
+            ctx.stroke();
+
+            // --- 2. Highlight Measurement Ticks on Protractor ---
+            // Highlight 0 degree base (Green line/tick)
+            highlightTick(center_x, center_y, radius, 0, '#059669', 15); 
+
+            // Highlight current angle mark (Red line/tick)
+            highlightTick(center_x, center_y, radius, angle, '#ef4444', 15); 
+        }
+
+        function drawGame() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Protractor center is the angle vertex (fixed)
+            const v_x = protractor_center_x;
+            const v_y = protractor_center_y;
+
+            // Draw the fixed protractor
+            drawProtractor(protractor_center_x, protractor_center_y, protractor_radius);
+            
+            // Draw measurement marks and arc (always visible now)
+            drawMeasurementMarks(protractor_center_x, protractor_center_y, protractor_radius, currentAngle);
+
+            // Draw the angle rays (fixed at center)
+            drawAngle(v_x, v_y, protractor_radius);
+        }
+
+        // Draws the protractor grid
+        function drawProtractor(center_x, center_y, radius) {
+            // --- Draw Protractor (Semi-Circle) ---
+            ctx.strokeStyle = '#000000'; // Change protractor line color to black
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            // Semi-circle arc
+            ctx.arc(center_x, center_y, radius, Math.PI, 0, false); 
+            ctx.stroke();
+            
+            // Baseline (0-180 degrees)
+            ctx.beginPath();
+            ctx.moveTo(center_x - radius, center_y);
+            ctx.lineTo(center_x + radius, center_y);
+            ctx.stroke();
+
+            // --- Draw Degree Markers and Labels ---
+            ctx.fillStyle = '#000000'; // Change text color to black
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '12px Inter';
+
+            for (let i = 0; i <= 180; i += 5) { // Loop every 5 degrees
+                // angleRad defines the position on the semi-circle (0 right, 180 left)
+                const angleRad = (180 - i) * (Math.PI / 180); 
+                let markLength = 0;
+                let isLabel = false;
+
+                if (i % 30 === 0) {
+                    markLength = 12; // Longest mark for 30, 60, 90...
+                    isLabel = true;
+                } else if (i % 10 === 0) {
+                    markLength = 8; // Medium mark for 10, 20, 40...
+                    isLabel = true; // Label every 10 degrees
+                } else {
+                    markLength = 5; // Shortest mark for 5, 15, 25...
+                }
+                
+                const markRadius = radius;
+
+                // 1. Mark line 
+                ctx.beginPath();
+                ctx.moveTo(
+                    center_x + markRadius * Math.cos(angleRad),
+                    center_y - markRadius * Math.sin(angleRad)
+                );
+                ctx.lineTo(
+                    center_x + (markRadius - markLength) * Math.cos(angleRad),
+                    center_y - (markRadius - markLength) * Math.sin(angleRad)
+                );
+                ctx.stroke();
+
+                // 2. Outer Label (0, 30, 60... Left-to-Right Scale)
+                if (isLabel) {
+                    // Outer Label (i)
+                    const outerTextRadius = radius - 15;
+                    ctx.fillText(i.toString(), 
+                        center_x + outerTextRadius * Math.cos(angleRad),
+                        center_y - outerTextRadius * Math.sin(angleRad)
+                    );
+
+                    // 3. Inner Label (180, 150, 120... Right-to-Left Scale)
+                    const innerLabel = 180 - i;
+                    const innerTextRadius = radius - 35; // Place it further inside
+                    
+                    // Avoid redrawing the label at 90 degrees (where innerLabel == i)
+                    if (innerLabel !== i) { 
+                        ctx.fillText(innerLabel.toString(), 
+                            center_x + innerTextRadius * Math.cos(angleRad),
+                            center_y - innerTextRadius * Math.sin(angleRad)
+                        );
+                    }
+                }
+            }
+            
+            // Draw the Protractor Center Marker (Angle Vertex)
+            ctx.fillStyle = '#22c55e'; // Bright green for the fixed center/vertex
+            ctx.beginPath();
+            ctx.arc(center_x, center_y, 7, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        // Draws the two rays of the angle (fixed at protractor center)
+        function drawAngle(v_x, v_y, radius) {
+            // --- Draw the Target Angle Rays ---
+            
+            // 1. Draw the Base Ray (0 degrees)
+            ctx.strokeStyle = '#059669'; // Green ray
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(v_x, v_y);
+            ctx.lineTo(v_x + radius, v_y);
+            ctx.stroke();
+            
+            // 2. Draw the Second Ray (Target Angle)
+            ctx.strokeStyle = '#ef4444'; // Red ray
+            ctx.lineWidth = 4;
+            
+            // Convert angle to radians, rotating counter-clockwise from the positive x-axis (0 degrees)
+            const targetAngleRad = currentAngle * (Math.PI / 180); 
+
+            ctx.beginPath();
+            ctx.moveTo(v_x, v_y);
+            ctx.lineTo(
+                v_x + radius * Math.cos(targetAngleRad),
+                v_y - radius * Math.sin(targetAngleRad) // Y decreases upwards
+            );
+            ctx.stroke();
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(answerInput.value, 10);
+            const tolerance = 2; // Allow a small margin of error (e.g., +/- 2 degrees)
+            
+            if (submitButton.disabled || answerInput.disabled) return; // Prevent submission after game end
+            
+            if (isNaN(userAnswer)) {
+                feedbackDiv.className = 'incorrect';
+                feedbackDiv.textContent = 'કૃપા કરીને એક નંબર દાખલ કરો.';
+                return;
+            }
+            
+            // Check if the angle answer is within the tolerance range
+            const isCorrect = Math.abs(userAnswer - currentAngle) <= tolerance;
+            
+            if (isCorrect) {
+                score++;
+                questionsAnswered++; // Increment question count
+                feedbackDiv.className = 'correct';
+                feedbackDiv.textContent = `સાચું! (+1 પોઈન્ટ)`;
+                updateScoreInFirestore(score);
+                
+                // Check for game end condition (5 questions completed)
+                if (questionsAnswered >= totalQuestions) {
+                    saveHighScore(score); // Save the final score
+                    feedbackDiv.className = 'correct';
+                    feedbackDiv.textContent = `🎉 અભિનંદન! તમે ${totalQuestions} પ્રશ્નો પૂર્ણ કર્યા. તમારો ફાઇનલ સ્કોર: ${score} 🎉`;
+                    
+                    // Disable input/submit until new game is started
+                    submitButton.disabled = true;
+                    answerInput.disabled = true;
+                } else {
+                    // Move to the next question after a brief delay
+                    setTimeout(generateNewAngle, 1000);
+                }
+
+            } else {
+                saveHighScore(score); // Save the high score before resetting the game
+                
+                feedbackDiv.className = 'incorrect';
+                feedbackDiv.textContent = `ખોટું. સાચો જવાબ છે: ${currentAngle}° (ગેમ રીસેટ)`;
+                
+                // Reset score and question counter for a new game
+                score = 0;
+                questionsAnswered = 0;
+                updateScoreInFirestore(0); 
+                scoreDisplay.textContent = score;
+                
+                // Start a new game immediately
+                setTimeout(startGame, 2000); // Call startGame to reset game state fully
+            }
+            scoreDisplay.textContent = score;
+            updateQuestionDisplay();
+        }
+
+        function startGame() {
+            // Check if Firebase is ready before interacting with score logic
+            if (isAuthReady) {
+                loadInitialScore(); // Reload the score in case it's a game restart
+            } else {
+                // If not authenticated (should be rare), start game with score 0
+                score = 0;
+                scoreDisplay.textContent = score;
+            }
+            
+            questionsAnswered = 0; // Reset question counter
+            submitButton.disabled = false; // Enable buttons
+            answerInput.disabled = false;
+            
+            generateNewAngle();
+        }
+
+        // --- Event Listeners ---
+        
+        // Use 'click' for buttons
+        submitButton.addEventListener('click', checkAnswer);
+        newGameButton.addEventListener('click', () => {
+             // Save the current score as a high score before resetting, only if the game was running
+            if (questionsAnswered > 0 && questionsAnswered < totalQuestions) {
+                saveHighScore(score);
+            }
+            
+            score = 0;
+            updateScoreInFirestore(0);
+            scoreDisplay.textContent = score;
+            
+            questionsAnswered = 0; 
+            
+            startGame();
+        });
+
+        // Use 'Enter' key on the input field
+        answerInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        // Start the process of initializing the app when the window loads
+        window.onload = initializeFirebase;
+
+    </script>
+</body>
+</html>
