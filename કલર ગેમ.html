@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>રંગોના નામ શોધો - Word Search Game</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
+            background-color: #f0f8ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            touch-action: manipulation; /* Improves touch on mobile */
+        }
+
+        h1 {
+            color: #ff4500;
+            text-shadow: 2px 2px #ffd700;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .instructions {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 15px;
+            background: #fff;
+            padding: 10px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        /* Game Container */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 100%;
+        }
+
+        /* Word Grid */
+        #grid-container {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            border: 5px solid #8a2be2;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            user-select: none;
+        }
+
+        .cell {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #e6e6fa;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: transform 0.1s;
+        }
+
+        .cell:active {
+            transform: scale(0.9);
+        }
+
+        .cell.selected {
+            background-color: #ffd700; /* Yellow highlight for selection */
+            color: #000;
+        }
+
+        .cell.found {
+            background-color: #32cd32; /* Green for found words */
+            color: white;
+            animation: pop 0.3s ease;
+        }
+
+        /* Word List */
+        #word-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            max-width: 400px;
+        }
+
+        .word-item {
+            padding: 5px 10px;
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 20px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .word-item.found {
+            background-color: #32cd32;
+            color: white;
+            text-decoration: line-through;
+            border-color: #32cd32;
+        }
+
+        /* Controls */
+        button {
+            padding: 10px 25px;
+            font-size: 1.2rem;
+            background-color: #ff4500;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px #c03500;
+            transition: transform 0.1s;
+            margin-top: 20px;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 #c03500;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: bold;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 500px) {
+            .cell {
+                width: 28px;
+                height: 28px;
+                font-size: 1rem;
+            }
+            #grid-container {
+                gap: 2px;
+            }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎨 રંગોના નામ શોધો 🎨</h1>
+    <div class="instructions">નીચેના બોક્સમાંથી અંગ્રેજી રંગોના નામ શોધો! (પહેલા અને છેલ્લા અક્ષર પર ક્લિક કરો)</div>
+
+    <div class="game-container">
+        <div id="word-list"></div>
+        <div id="grid-container"></div>
+    </div>
+
+    <button onclick="initGame()">નવી ગેમ (New Game)</button>
+
+    <div class="footer">Created by: Rajesh barochia</div>
+
+    <script>
+        const words = ["RED", "BLUE", "GREEN", "YELLOW", "PINK", "ORANGE", "PURPLE", "BROWN", "WHITE", "GREY"];
+        const gridSize = 10;
+        let grid = [];
+        let selectedCells = [];
+
+        function initGame() {
+            const gridContainer = document.getElementById('grid-container');
+            const wordListContainer = document.getElementById('word-list');
+            
+            gridContainer.innerHTML = '';
+            wordListContainer.innerHTML = '';
+            grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
+            selectedCells = [];
+
+            // Place words
+            const placedWords = [];
+            words.forEach(word => {
+                if (placeWord(word)) {
+                    placedWords.push(word);
+                }
+            });
+
+            // Fill empty spaces
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (grid[y][x] === '') {
+                        grid[y][x] = letters.charAt(Math.floor(Math.random() * letters.length));
+                    }
+                }
+            }
+
+            // Render Grid
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.innerText = grid[y][x];
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.addEventListener('click', handleCellClick);
+                    gridContainer.appendChild(cell);
+                }
+            }
+
+            // Render Word List
+            placedWords.forEach(word => {
+                const div = document.createElement('div');
+                div.classList.add('word-item');
+                div.id = `word-${word}`;
+                div.innerText = word;
+                // Add color hint
+                div.style.borderLeft = `5px solid ${word.toLowerCase()}`;
+                wordListContainer.appendChild(div);
+            });
+        }
+
+        function placeWord(word) {
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]]; // Horizontal, Vertical, Diagonals
+            // Simplified for kids: Mostly Horizontal and Vertical
+            const simpleDirections = [[0, 1], [1, 0]]; 
+            
+            // Try 50 times to place a word
+            for (let i = 0; i < 50; i++) {
+                const dir = simpleDirections[Math.floor(Math.random() * simpleDirections.length)];
+                const startX = Math.floor(Math.random() * gridSize);
+                const startY = Math.floor(Math.random() * gridSize);
+
+                if (canPlace(word, startX, startY, dir)) {
+                    for (let j = 0; j < word.length; j++) {
+                        grid[startY + j * dir,[object Object],][startX + j * dir,[object Object],] = word[j];
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function canPlace(word, x, y, dir) {
+            if (x + (word.length - 1) * dir,[object Object], >= gridSize || x + (word.length - 1) * dir,[object Object], < 0) return false;
+            if (y + (word.length - 1) * dir,[object Object], >= gridSize || y + (word.length - 1) * dir,[object Object], < 0) return false;
+
+            for (let j = 0; j < word.length; j++) {
+                const charAtPos = grid[y + j * dir,[object Object],][x + j * dir,[object Object],];
+                if (charAtPos !== '' && charAtPos !== word[j]) return false;
+            }
+            return true;
+        }
+
+        function handleCellClick(e) {
+            const cell = e.target;
+            
+            // If word is already found in this cell, ignore (optional logic)
+            if (cell.classList.contains('found')) return;
+
+            // Toggle selection
+            if (cell.classList.contains('selected')) {
+                cell.classList.remove('selected');
+                selectedCells = selectedCells.filter(c => c !== cell);
+            } else {
+                // Logic: Only allow selecting 2 points (Start and End) to form a line
+                if (selectedCells.length >= 2) {
+                    selectedCells.forEach(c => c.classList.remove('selected'));
+                    selectedCells = [];
+                }
+                cell.classList.add('selected');
+                selectedCells.push(cell);
+            }
+
+            if (selectedCells.length === 2) {
+                checkSelection();
+            }
+        }
+
+        function checkSelection() {
+            const [start, end] = selectedCells;
+            const x1 = parseInt(start.dataset.x);
+            const y1 = parseInt(start.dataset.y);
+            const x2 = parseInt(end.dataset.x);
+            const y2 = parseInt(end.dataset.y);
+
+            // Determine direction
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const dist = Math.max(Math.abs(dx), Math.abs(dy));
+            
+            const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
+            const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
+
+            // Check if it's a straight line (horizontal, vertical, or perfect diagonal)
+            if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) {
+                // Invalid line
+                setTimeout(clearSelection, 500);
+                return;
+            }
+
+            let formedWord = "";
+            let pathCells = [];
+
+            for (let i = 0; i <= dist; i++) {
+                const cx = x1 + i * stepX;
+                const cy = y1 + i * stepY;
+                const cell = document.querySelector(`.cell[data-x='${cx}'][data-y='${cy}']`);
+                formedWord += cell.innerText;
+                pathCells.push(cell);
+            }
+
+            // Check if word exists (forward or backward)
+            const reversedWord = formedWord.split('').reverse().join('');
+            
+            if (document.getElementById(`word-${formedWord}`)) {
+                markFound(formedWord, pathCells);
+            } else if (document.getElementById(`word-${reversedWord}`)) {
+                markFound(reversedWord, pathCells);
+            } else {
+                setTimeout(clearSelection, 500);
+            }
+        }
+
+        function markFound(word, cells) {
+            cells.forEach(cell => {
+                cell.classList.remove('selected');
+                cell.classList.add('found');
+            });
+            const wordElement = document.getElementById(`word-${word}`);
+            if (!wordElement.classList.contains('found')) {
+                wordElement.classList.add('found');
+                checkWin();
+            }
+            selectedCells = [];
+        }
+
+        function clearSelection() {
+            selectedCells.forEach(c => c.classList.remove('selected'));
+            selectedCells = [];
+        }
+
+        function checkWin() {
+            const allWords = document.querySelectorAll('.word-item');
+            const foundWords = document.querySelectorAll('.word-item.found');
+            if (allWords.length === foundWords.length) {
+                setTimeout(() => alert("અભિનંદન! તમે બધા રંગો શોધી લીધા! (Congratulations!)"), 300);
+            }
+        }
+
+        // Start game on load
+        initGame();
+
+    </script>
+</body>
+</html>
