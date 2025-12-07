@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગુજરાતી અંક જોડી રમત</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Updated Tone.js CDN link for better reliability -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhai+2:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Baloo Bhai 2', cursive;
+            background-color: #fdfdfd;
+            user-select: none;
+        }
+        .card {
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 2px solid #d1d5db;
+            background-color: white;
+            border-radius: 0.75rem;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+        .card.selected {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+        .card.correct {
+            border-color: #22c55e;
+            background-color: #f0fdf4;
+            pointer-events: none;
+            cursor: default;
+            transform: scale(0.95);
+            box-shadow: none;
+        }
+        .card.incorrect {
+            border-color: #ef4444;
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .object-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            line-height: 1;
+            gap: 2px;
+        }
+        /* Styles for the completed section */
+        #completed-container {
+            min-height: 100px;
+            background-color: #f3f4f6;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .matched-pair {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+            animation: slideDown 0.5s ease forwards;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 bg-gray-50">
+
+    <div class="w-full max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Cardinal Numbers Worksheet</h1>
+            <p class="text-gray-500 mt-2 text-md">Match the following numbers to the corresponding objects</p>
+        </header>
+
+        <!-- Message Display -->
+        <div id="message-box" class="h-10 flex items-center justify-center mb-4 text-xl font-bold transition-opacity duration-300">
+        </div>
+
+        <!-- Game Board -->
+        <div id="game-board" class="grid grid-cols-[1fr_3fr] gap-6 md:gap-12 min-h-[300px]">
+            <div id="numbers-container" class="space-y-4">
+                <!-- Gujarati numbers will be injected here -->
+            </div>
+            <div id="objects-container" class="space-y-4">
+                <!-- Objects will be injected here -->
+            </div>
+        </div>
+
+        <!-- Completed Section -->
+        <div class="mt-8">
+            <h2 class="text-center text-xl font-bold text-green-600 mb-2">પૂરી થયેલી જોડીઓ (Completed Pairs)</h2>
+            <div id="completed-container">
+                <p class="text-gray-400 italic text-sm w-full text-center" id="empty-msg">હજુ સુધી કોઈ જોડી બની નથી...</p>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <footer class="text-center mt-8">
+            <button id="reset-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg text-lg shadow-md transition-transform transform hover:scale-105">
+                ફરીથી રમો
+            </button>
+            <button id="next-level-btn" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg text-lg shadow-md transition-transform transform hover:scale-105 ml-2">
+                આગળના અંકો રમો ->
+            </button>
+            <p class="text-gray-500 text-sm mt-4">Created by: Rajesh Barochia</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const numbersContainer = document.getElementById('numbers-container');
+            const objectsContainer = document.getElementById('objects-container');
+            const completedContainer = document.getElementById('completed-container');
+            const messageBox = document.getElementById('message-box');
+            const resetButton = document.getElementById('reset-button');
+            const nextLevelBtn = document.getElementById('next-level-btn');
+            const emptyMsg = document.getElementById('empty-msg');
+
+            let synth;
+            const setupSound = async () => {
+                // Check if Tone is defined before using it
+                if (typeof Tone !== 'undefined') {
+                    try {
+                        if (Tone.context.state !== 'running') { await Tone.start(); }
+                        synth = new Tone.Synth().toDestination();
+                    } catch (e) {
+                        console.error("Audio init error:", e);
+                    }
+                } else {
+                    console.warn("Tone.js not loaded. Audio disabled.");
+                }
+            };
+            document.body.addEventListener('click', setupSound, { once: true });
+            
+            function playSound(note, duration = '8n') {
+                if (synth && typeof Tone !== 'undefined') { 
+                    try {
+                        synth.triggerAttackRelease(note, duration); 
+                    } catch (e) {
+                        console.error("Audio play error:", e);
+                    }
+                }
+            }
+
+            const allGameItems = [
+                { number: '૧', count: 1, emoji: '🍎' }, { number: '૨', count: 2, emoji: '🐱' },
+                { number: '૩', count: 3, emoji: '🐶' }, { number: '૪', count: 4, emoji: '🧢' },
+                { number: '૫', count: 5, emoji: '⚫' }, { number: '૬', count: 6, emoji: '☕' },
+                { number: '૭', count: 7, emoji: '🍋' }, { number: '૮', count: 8, emoji: '🥣' },
+                { number: '૯', count: 9, emoji: '👗' }, { number: '૧૦', count: 10, emoji: '⚽' }
+            ];
+
+            let firstSelection = null;
+            let secondSelection = null;
+            let lockBoard = false;
+            let currentRoundPairs = 0;
+            
+            // Game State
+            let round1Items = [];
+            let round2Items = [];
+            let currentRound = 1;
+
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            function initializeGame() {
+                // Shuffle all items and split into two sets of 5
+                const shuffledAll = shuffle([...allGameItems]);
+                round1Items = shuffledAll.slice(0, 5);
+                round2Items = shuffledAll.slice(5, 10);
+                
+                // Start Round 1
+                startRound(1);
+            }
+
+            function startRound(round) {
+                currentRound = round;
+                currentRoundPairs = 0;
+                resetTurn();
+                
+                numbersContainer.innerHTML = '';
+                objectsContainer.innerHTML = '';
+                
+                // Clear completed section only on full reset (Round 1), 
+                // but we can choose to keep previous round's matches if we want.
+                // Let's clear it for a clean board each round as requested "next 5 come".
+                completedContainer.innerHTML = '';
+                completedContainer.appendChild(emptyMsg);
+                emptyMsg.style.display = 'block';
+
+                showMessage(round === 1 ? 'લેવલ ૧: જોડી બનાવો!' : 'લેવલ ૨: બાકીની જોડી બનાવો!', 'text-blue-600');
+                
+                resetButton.style.display = 'inline-block';
+                nextLevelBtn.classList.add('hidden');
+
+                const itemsToPlay = round === 1 ? round1Items : round2Items;
+
+                // Create shuffled display lists so numbers and objects aren't in same order
+                const displayNumbers = shuffle([...itemsToPlay]);
+                const displayObjects = shuffle([...itemsToPlay]);
+
+                displayNumbers.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'card number-card';
+                    card.dataset.value = item.count;
+                    card.innerHTML = `<span class="text-3xl font-bold text-gray-700">${item.number}</span>`;
+                    numbersContainer.appendChild(card);
+                });
+
+                displayObjects.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'card object-card';
+                    card.dataset.value = item.count;
+                    card.innerHTML = `<div class="object-grid text-xl md:text-2xl">${item.emoji.repeat(item.count)}</div>`;
+                    objectsContainer.appendChild(card);
+                });
+
+                attachCardListeners();
+            }
+
+            function attachCardListeners() {
+                document.querySelectorAll('.card').forEach(card => {
+                    card.removeEventListener('click', handleCardClick);
+                    card.addEventListener('click', handleCardClick);
+                });
+            }
+            
+            function handleCardClick(event) {
+                if (lockBoard) return;
+                const clickedCard = event.currentTarget;
+
+                if (clickedCard === firstSelection || clickedCard.classList.contains('correct')) return;
+
+                clickedCard.classList.add('selected');
+                playSound('A4', '16n');
+
+                if (!firstSelection) {
+                    firstSelection = clickedCard;
+                } else {
+                    if ((firstSelection.classList.contains('number-card') && clickedCard.classList.contains('number-card')) ||
+                        (firstSelection.classList.contains('object-card') && clickedCard.classList.contains('object-card'))) {
+                        firstSelection.classList.remove('selected');
+                        firstSelection = clickedCard;
+                        return;
+                    }
+                    secondSelection = clickedCard;
+                    checkForMatch();
+                }
+            }
+
+            function checkForMatch() {
+                lockBoard = true;
+                const isMatch = firstSelection.dataset.value === secondSelection.dataset.value;
+
+                if (isMatch) {
+                    handleCorrectMatch();
+                } else {
+                    handleIncorrectMatch();
+                }
+            }
+
+            function handleCorrectMatch() {
+                playSound('C5');
+                showMessage('સરસ! સાચો જવાબ!', 'text-green-500');
+
+                emptyMsg.style.display = 'none';
+
+                const numberCard = firstSelection.classList.contains('number-card') ? firstSelection : secondSelection;
+                const objectCard = firstSelection.classList.contains('object-card') ? firstSelection : secondSelection;
+
+                numberCard.classList.add('correct');
+                numberCard.classList.remove('selected');
+                objectCard.classList.add('correct');
+                objectCard.classList.remove('selected');
+
+                const pairContainer = document.createElement('div');
+                pairContainer.className = 'matched-pair';
+                pairContainer.appendChild(numberCard);
+                pairContainer.appendChild(objectCard);
+                completedContainer.appendChild(pairContainer);
+
+                currentRoundPairs++;
+                resetTurn();
+
+                // Check if round is complete (5 pairs per round)
+                if (currentRoundPairs === 5) {
+                    handleRoundComplete();
+                }
+            }
+
+            function handleRoundComplete() {
+                if (currentRound === 1) {
+                    playSound('G5', '4n');
+                    showMessage('ખૂબ સરસ! પ્રથમ ભાગ પૂરો થયો.', 'text-blue-600');
+                    
+                    // Show "Next Level" button instead of automatically switching immediately, 
+                    // giving user time to realize they finished.
+                    resetButton.style.display = 'none';
+                    nextLevelBtn.classList.remove('hidden');
+                    
+                    // Auto advance after 2 seconds if they don't click
+                    setTimeout(() => {
+                        if(!nextLevelBtn.classList.contains('hidden')) {
+                           // nextLevelBtn.click(); // Uncomment to auto-advance
+                        }
+                    }, 2000);
+
+                } else {
+                    // Game Over
+                    playSound('C6', '2n');
+                    showMessage('અભિનંદન! તમે સંપૂર્ણ રમત જીતી ગયા!', 'text-purple-600');
+                    resetButton.textContent = "ફરીથી આખી રમત રમો";
+                    resetButton.style.display = 'inline-block';
+                }
+            }
+
+            function handleIncorrectMatch() {
+                playSound('C3', '4n');
+                showMessage('ફરી પ્રયાસ કરો!', 'text-red-500');
+
+                firstSelection.classList.add('incorrect');
+                secondSelection.classList.add('incorrect');
+
+                setTimeout(() => {
+                    firstSelection.classList.remove('selected', 'incorrect');
+                    secondSelection.classList.remove('selected', 'incorrect');
+                    resetTurn();
+                }, 1000);
+            }
+
+            function showMessage(text, colorClass) {
+                messageBox.textContent = text;
+                messageBox.className = `h-10 flex items-center justify-center mb-4 text-xl font-bold transition-opacity duration-300 ${colorClass || 'text-gray-700'}`;
+            }
+
+            function resetTurn() {
+                [firstSelection, secondSelection, lockBoard] = [null, null, false];
+            }
+
+            resetButton.addEventListener('click', initializeGame);
+            nextLevelBtn.addEventListener('click', () => {
+                startRound(2);
+            });
+
+            // Start the game initially
+            initializeGame();
+        });
+    </script>
+
+</body>
+</html>
