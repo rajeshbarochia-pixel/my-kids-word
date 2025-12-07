@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>અપૂર્ણાંક કલર ગેમ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for better Gujarati display */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans Gujarati', 'Inter', sans-serif;
+            background-color: #f7f9f9;
+        }
+        
+        /* Custom styling for the number line container */
+        .number-line-container {
+            position: relative;
+            height: 48px; /* Fixed height for the line */
+            border: 3px solid #3b82f6; /* Blue border */
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* Styling for the color fill area */
+        .color-fill {
+            height: 100%;
+            background-color: #f87171; /* Bright red color */
+            transition: width 0.1s linear; /* Quick update on slide */
+            width: 0%; /* Start at 0% */
+        }
+
+        /* Styling for the tick marks */
+        .tick-mark {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #1f2937; /* Dark gray for visibility */
+            z-index: 10;
+        }
+
+        /* Styling for the fraction labels (Only 0 and 1 remain) */
+        .label {
+            position: absolute;
+            bottom: -25px;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #1f2937;
+            white-space: nowrap;
+        }
+
+        /* Button styling */
+        .game-button {
+            padding: 12px 24px;
+            font-weight: 700;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-button:hover {
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
+
+    <div class="max-w-xl w-full bg-white p-6 md:p-10 rounded-xl shadow-2xl border-b-8 border-yellow-500">
+        <!-- Title -->
+        <h1 class="text-3xl md:text-4xl font-extrabold text-blue-600 mb-2 text-center">
+            અપૂર્ણાંક કલર ગેમ
+        </h1>
+        <p class="text-sm text-gray-500 text-center mb-6">
+            શાળાના બાળકો માટે ઇન્ટરેક્ટિવ પ્રવૃત્તિ
+        </p>
+
+        <!-- Challenge Display -->
+        <div class="bg-indigo-100 p-4 rounded-lg shadow-inner mb-6 text-center">
+            <p class="text-lg md:text-xl font-semibold text-indigo-800">
+                આ અપૂર્ણાંક સુધી કલર પૂરો:
+            </p>
+            <!-- VERTICAL FRACTION DISPLAY -->
+            <div id="fraction-display" class="mt-2 flex justify-center">
+                <!-- Fraction will be inserted here by JS in vertical format -->
+            </div>
+        </div>
+        
+        <!-- Feedback Message Area -->
+        <div id="feedback-message" class="text-center text-lg font-semibold h-8 mb-4">
+            <!-- Messages like Success/Try Again will go here -->
+        </div>
+
+        <!-- Number Line Visualization Area - Now Relative -->
+        <div class="p-2 mb-12 relative mt-4">
+            <!-- The actual number line visualization -->
+            <div class="number-line-container w-full" id="number-line">
+                <div class="color-fill" id="color-fill"></div>
+            </div>
+            
+            <!-- User Input Range Slider (Invisible, placed over the number line) -->
+            <input type="range" min="0" value="0" id="user-input-range" 
+                   class="absolute top-0 left-0 w-full h-12 opacity-0 cursor-pointer z-20"
+                   style="margin: 0; padding: 0; -webkit-appearance: none; appearance: none;">
+                   
+            <!-- Labels for the number line (Only 0 and 1 remain) -->
+            <div id="labels-container" class="relative h-10">
+                <span class="label left-0">0</span>
+                <span class="label right-0" id="whole-label">1</span>
+                <!-- Dynamic tick marks are only on the line -->
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col space-y-4 md:flex-row md:space-x-4 md:space-y-0 justify-center">
+            
+            <button id="check-button" 
+                    class="game-button bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                જવાબ ચકાસો
+            </button>
+            
+            <button id="new-button" 
+                    class="game-button bg-yellow-500 text-gray-800 hover:bg-yellow-600 focus:outline-none focus:ring-4 focus:ring-yellow-300">
+                નવો અપૂર્ણાંક
+            </button>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-8 pt-4 border-t border-gray-200 text-center">
+            <p class="text-xs text-gray-400">
+                Created by: Rajesh barochia
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // ગ્લોબલ વેરીએબલ્સ
+        let currentNumerator = 0;
+        let currentDenominator = 0;
+        
+        // DOM એલિમેન્ટ્સ
+        const fractionDisplay = document.getElementById('fraction-display');
+        const colorFill = document.getElementById('color-fill');
+        const numberLine = document.getElementById('number-line');
+        const labelsContainer = document.getElementById('labels-container');
+        const checkButton = document.getElementById('check-button'); 
+        const newButton = document.getElementById('new-button');
+        const wholeLabel = document.getElementById('whole-label');
+        const userInputRange = document.getElementById('user-input-range'); 
+        const feedbackMessage = document.getElementById('feedback-message'); 
+
+        /**
+         * 1/4, 1/8, 1/10, 1/2 જેવા સામાન્ય અપૂર્ણાંક માટે રેન્ડમ છેદ (denominator) પસંદ કરે છે.
+         * @returns {number} રેન્ડમ છેદ (2, 4, 8, or 10)
+         */
+        function getRandomDenominator() {
+            const denominators = [2, 4, 8, 10];
+            const randomIndex = Math.floor(Math.random() * denominators.length);
+            return denominators[randomIndex];
+        }
+
+        /**
+         * આપેલ છેદ માટે રેન્ડમ અંશ (numerator) જનરેટ કરે છે, જે છેદ કરતાં નાનો હોય.
+         * @param {number} denominator અપૂર્ણાંકનો છેદ
+         * @returns {number} રેન્ડમ અંશ
+         */
+        function getRandomNumerator(denominator) {
+            // અંશ 1 થી (છેદ - 1) સુધીનો હોવો જોઈએ.
+            return Math.floor(Math.random() * (denominator - 1)) + 1;
+        }
+
+        /**
+         * નંબર લાઇન પરના તમામ જૂના ટિક માર્ક્સ અને લેબલ્સ દૂર કરે છે.
+         */
+        function clearLabels() {
+            // નંબર લાઇનમાંથી ટિક માર્ક્સ દૂર કરો
+            const ticksToRemove = numberLine.querySelectorAll('.tick-mark');
+            ticksToRemove.forEach(el => el.remove());
+            
+            // ડાયનેમિક લેબલ્સ દૂર કરો (જો ભૂલથી ઉમેરાયા હોય તો)
+            const labelsToRemove = labelsContainer.querySelectorAll('.dynamic-label');
+            labelsToRemove.forEach(el => el.remove());
+        }
+
+        /**
+         * અપૂર્ણાંક માટે નંબર લાઇન અને ટિક માર્ક્સ સેટ કરે છે.
+         */
+        function setupNumberLine() {
+            clearLabels();
+            
+            // જમણી બાજુના લેબલને '1' તરીકે સેટ કરો.
+            wholeLabel.textContent = '1';
+
+            for (let i = 1; i < currentDenominator; i++) {
+                const fractionValue = i / currentDenominator;
+                const percentage = fractionValue * 100;
+
+                // ટિક માર્ક (Tick Mark) ઉમેરો
+                const tickMark = document.createElement('div');
+                tickMark.className = 'tick-mark';
+                tickMark.style.left = `${percentage}%`;
+                numberLine.appendChild(tickMark);
+
+                // અપૂર્ણાંક લેબલ્સ (ઓપ્શન) દૂર કરવામાં આવ્યા છે.
+            }
+        }
+
+        /**
+         * રેન્જ સ્લાઇડરના ઇનપુટના આધારે કલર ફિલને અપડેટ કરે છે.
+         */
+        function handleRangeInput() {
+            // સ્લાઇડર મૂલ્ય મેળવો (જે અંશનું પ્રતિનિધિત્વ કરે છે)
+            const userNumerator = parseInt(userInputRange.value);
+            const denominator = currentDenominator;
+            
+            // ટકાવારીની ગણતરી કરો
+            const fractionValue = userNumerator / denominator;
+            const percentage = fractionValue * 100;
+
+            // કલર ફિલની લંબાઈ અપડેટ કરો
+            colorFill.style.width = `${percentage}%`;
+            
+            // ફીડબેક સંદેશ રીસેટ કરો
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = 'text-center text-lg font-semibold h-8 mb-4';
+        }
+
+        /**
+         * યુઝરના અપૂર્ણાંકને સાચા જવાબ સાથે સરખાવે છે.
+         */
+        function checkAnswer() {
+            const userNumerator = parseInt(userInputRange.value);
+            
+            if (userNumerator === currentNumerator) {
+                // સાચો જવાબ
+                feedbackMessage.textContent = 'સાચો જવાબ! ખૂબ સરસ!';
+                feedbackMessage.className = 'text-center text-xl font-bold h-8 mb-4 text-green-600';
+                checkButton.disabled = true; // જવાબ સાચો હોવાથી બટન Disable કરો
+            } else {
+                // ખોટો જવાબ
+                feedbackMessage.textContent = `ફરી પ્રયાસ કરો. તમે ${userNumerator}/${currentDenominator} પર છો.`;
+                feedbackMessage.className = 'text-center text-xl font-bold h-8 mb-4 text-red-600';
+            }
+        }
+
+
+        /**
+         * નવો રેન્ડમ અપૂર્ણાંક જનરેટ કરે છે અને ગેમ સેટઅપ અપડેટ કરે છે.
+         */
+        function startNewChallenge() {
+            // કલર ફિલને શૂન્ય પર રીસેટ કરો
+            colorFill.style.width = '0%';
+            
+            // નવો રેન્ડમ અપૂર્ણાંક જનરેટ કરો
+            currentDenominator = getRandomDenominator();
+            currentNumerator = getRandomNumerator(currentDenominator);
+
+            // VERTICAL અપૂર્ણાંક ડિસ્પ્લે અપડેટ કરો
+            fractionDisplay.innerHTML = `
+                <div class="flex flex-col items-center justify-center text-red-500">
+                    <span class="text-6xl font-extrabold leading-none">${currentNumerator}</span>
+                    <div class="w-16 h-1 bg-red-500 my-1 rounded"></div>
+                    <span class="text-6xl font-extrabold leading-none">${currentDenominator}</span>
+                </div>
+            `;
+            
+            // સ્લાઇડર સેટઅપ કરો
+            userInputRange.max = currentDenominator;
+            userInputRange.value = 0; // સ્લાઇડરને શરૂઆતમાં 0 પર સેટ કરો
+            
+            // નંબર લાઇન અને લેબલ્સ સેટઅપ કરો
+            setupNumberLine();
+            
+            // ફીડબેક અને બટન રીસેટ કરો
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = 'text-center text-lg font-semibold h-8 mb-4';
+            checkButton.disabled = false;
+        }
+
+        // ઇવેન્ટ લિસનર્સ
+        checkButton.addEventListener('click', checkAnswer);
+        newButton.addEventListener('click', startNewChallenge);
+        userInputRange.addEventListener('input', handleRangeInput); 
+
+        // પેજ લોડ થવા પર ગેમ શરૂ કરો
+        window.onload = startNewChallenge;
+    </script>
+</body>
+</html>
