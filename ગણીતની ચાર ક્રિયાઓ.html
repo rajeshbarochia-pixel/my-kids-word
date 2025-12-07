@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગુજરાતી ગણિતની રમત</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0f2fe;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .title {
+            color: #1e3a8a;
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #4b5563;
+            font-size: 1.25rem;
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+        }
+        .operation-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .operation-button {
+            background-color: #d1d5db;
+            color: #1f2937;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .operation-button.active {
+            background-color: #3b82f6;
+            color: #ffffff;
+        }
+        .operation-button:hover:not(.active) {
+            background-color: #9ca3af;
+        }
+        .question-box {
+            background-color: #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .question-text {
+            /* Keep question font size at 3rem */
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        .input-box {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            width: 100%;
+            justify-content: center;
+        }
+        .input-field {
+            /* Now type="text" to allow custom character conversion */
+            background-color: #ffffff;
+            border: 2px solid #9ca3af;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            font-size: 1.5rem;
+            width: 100px;
+            text-align: center;
+            /* Ensure the font supports Gujarati digits well */
+        }
+        .action-button {
+            background-color: #3b82f6;
+            color: #ffffff;
+            font-weight: 700;
+            padding: 0.75rem 2rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .action-button:hover {
+            background-color: #2563eb;
+        }
+        .feedback-box {
+            margin-top: 1.5rem;
+            /* Changed from 2rem to 3rem to match question size */
+            font-size: 3rem; 
+            font-weight: 700;
+            min-height: 2rem;
+        }
+        .correct {
+            color: #16a34a;
+        }
+        .incorrect {
+            color: #dc2626;
+        }
+        .creator-info {
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body class="bg-blue-200 flex items-center justify-center min-h-screen">
+
+    <div class="container p-8 rounded-3xl shadow-2xl">
+        <h1 class="title">ચાલો ગણિત કરીએ!</h1>
+        <p class="subtitle">ગણતરીનો પ્રકાર પસંદ કરો.</p>
+
+        <div class="operation-buttons">
+            <button id="addBtn" class="operation-button active" data-op="addition">સરવાળો</button>
+            <button id="subBtn" class="operation-button" data-op="subtraction">બાદબાકી</button>
+            <button id="mulBtn" class="operation-button" data-op="multiplication">ગુણાકાર</button>
+            <button id="divBtn" class="operation-button" data-op="division">ભાગાકાર</button>
+        </div>
+
+        <div class="question-box">
+            <!-- Question uses Gujarati digits for display -->
+            <div id="question" class="question-text">? + ? =</div>
+            <div class="input-box">
+                <!-- Changed to type="text" to allow for live Gujarati digit conversion -->
+                <input type="text" id="userAnswer" class="input-field" placeholder="જવાબ">
+            </div>
+        </div>
+
+        <button id="checkButton" class="action-button">ચેક કરો</button>
+
+        <div id="feedback" class="feedback-box"></div>
+        
+        <!-- Added Creator Information -->
+        <div class="creator-info">
+            Created by : Rajesh Barochia
+        </div>
+    </div>
+
+    <script>
+        // Gujarati digits mapping
+        const gujaratiDigits = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'];
+        
+        // Function to convert a number to a Gujarati string for display
+        function toGujarati(number) {
+            return String(number).split('').map(digit => gujaratiDigits[digit]).join('');
+        }
+
+        // Function to convert a Gujarati number string back to a standard number string
+        function fromGujarati(gujaratiString) {
+            const gujaratiToEnglish = {
+                '૦': '0', '૧': '1', '૨': '2', '૩': '3', '૪': '4', '૫': '5',
+                '૬': '6', '૭': '7', '૮': '8', '૯': '9'
+            };
+            return gujaratiString.split('').map(char => gujaratiToEnglish[char] || char).join('');
+        }
+
+        // DOM element references
+        const questionEl = document.getElementById('question');
+        const userAnswerEl = document.getElementById('userAnswer');
+        const checkButton = document.getElementById('checkButton');
+        const feedbackEl = document.getElementById('feedback');
+        const opButtons = document.querySelectorAll('.operation-button');
+
+        // State variables
+        let num1, num2, answer;
+        let currentOperation = 'addition';
+
+        // Event listener to convert standard digits to Gujarati digits as the user types
+        userAnswerEl.addEventListener('input', (event) => {
+            let value = event.target.value;
+            
+            // 1. Convert any newly typed standard digits (0-9) to Gujarati digits (૦-૯)
+            value = value.replace(/[0-9]/g, (match) => {
+                return gujaratiDigits[parseInt(match, 10)];
+            });
+
+            // 2. Ensure only Gujarati digits remain in the field (remove any non-digit chars)
+            value = value.replace(/[^૦-૯]/g, '');
+
+            event.target.value = value;
+        });
+
+
+        // Function to generate a new question based on the selected operation
+        function generateQuestion() {
+            let operatorSymbol;
+
+            if (currentOperation === 'addition') {
+                num1 = Math.floor(Math.random() * 21) + 10;
+                num2 = Math.floor(Math.random() * 21) + 10;
+                answer = num1 + num2;
+                // Keep sum between 21 and 50
+                while (answer < 21 || answer > 50) {
+                    num1 = Math.floor(Math.random() * 21) + 10;
+                    num2 = Math.floor(Math.random() * 21) + 10;
+                    answer = num1 + num2;
+                }
+                operatorSymbol = '+';
+            } else if (currentOperation === 'subtraction') {
+                num1 = Math.floor(Math.random() * 30) + 21; // Generate a larger number first (21-50)
+                num2 = Math.floor(Math.random() * (num1 - 10)) + 1; // Ensure a positive result (at least 10)
+                answer = num1 - num2;
+                operatorSymbol = '-';
+            } else if (currentOperation === 'multiplication') {
+                num1 = Math.floor(Math.random() * 10) + 2; // numbers from 2 to 11
+                num2 = Math.floor(Math.random() * 10) + 2;
+                answer = num1 * num2;
+                operatorSymbol = '×';
+            } else if (currentOperation === 'division') {
+                num2 = Math.floor(Math.random() * 10) + 2; // divisor from 2 to 11
+                answer = Math.floor(Math.random() * 10) + 2; // quotient from 2 to 11
+                num1 = num2 * answer; // dividend is a multiple of divisor
+                operatorSymbol = '÷';
+            }
+
+            // Display the new question using Gujarati digits
+            questionEl.textContent = `${toGujarati(num1)} ${operatorSymbol} ${toGujarati(num2)} =`;
+            userAnswerEl.value = ''; // Clear the input field
+            feedbackEl.textContent = ''; // Clear feedback message
+            userAnswerEl.focus(); // Set focus to the input field
+        }
+
+        // Function to check the user's answer
+        function checkAnswer() {
+            // Convert the displayed Gujarati digits back to a standard number string for parsing
+            const standardAnswerString = fromGujarati(userAnswerEl.value);
+            const userAnswer = parseInt(standardAnswerString);
+
+            if (isNaN(userAnswer)) {
+                feedbackEl.textContent = 'કૃપા કરીને નંબર લખો.';
+                feedbackEl.className = 'feedback-box incorrect';
+                return;
+            }
+
+            let correctAnswer;
+            if (currentOperation === 'addition') {
+                correctAnswer = num1 + num2;
+            } else if (currentOperation === 'subtraction') {
+                correctAnswer = num1 - num2;
+            } else if (currentOperation === 'multiplication') {
+                correctAnswer = num1 * num2;
+            } else if (currentOperation === 'division') {
+                correctAnswer = num1 / num2;
+            }
+
+            if (userAnswer === correctAnswer) {
+                // Correct feedback
+                feedbackEl.textContent = 'સાચો જવાબ! ખૂબ સરસ! 🎉';
+                feedbackEl.className = 'feedback-box correct';
+                // Wait a bit before generating a new question
+                setTimeout(generateQuestion, 1500);
+            } else {
+                // Incorrect feedback (shows the correct answer in Gujarati for learning)
+                feedbackEl.textContent = `ખોટો જવાબ. ફરી પ્રયાસ કરો! (સાચો જવાબ: ${toGujarati(correctAnswer)})`;
+                feedbackEl.className = 'feedback-box incorrect';
+                userAnswerEl.focus();
+            }
+        }
+
+        // Event listeners
+        checkButton.addEventListener('click', checkAnswer);
+
+        // Allow 'Enter' key to check the answer
+        userAnswerEl.addEventListener('keypress', (event) => {
+            // Check based on the standard number representation of the key code
+            if (event.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        // Event listeners for operation buttons
+        opButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                opButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to the clicked button
+                button.classList.add('active');
+                // Set the current operation
+                currentOperation = button.dataset.op;
+                // Generate a new question for the selected operation
+                generateQuestion();
+            });
+        });
+
+        // Initialize the game
+        window.onload = generateQuestion;
+    </script>
+</body>
+</html>
