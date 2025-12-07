@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>શબ્દ લેખન - Word Building Game</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the notebook paper look */
+        .notebook-paper {
+            background-color: #fff9e6; /* Light yellow/cream paper color */
+            background-image: repeating-linear-gradient(to bottom, #d6d6d6 1px, transparent 1px, transparent 20px);
+            background-size: 100% 21px;
+            padding-top: 2rem;
+            min-height: 100vh;
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            position: relative;
+        }
+
+        /* Red margin line on the left */
+        .notebook-paper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 20px;
+            width: 1px;
+            height: 100%;
+            background-color: #ff8e8e;
+        }
+
+        /* Confetti effect CSS */
+        @keyframes confetti-fall {
+            0% { transform: translate(0, -100px) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--x), 100vh) rotate(var(--rot)); opacity: 0.5; }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 8px;
+            height: 16px;
+            background-color: var(--color);
+            border-radius: 2px;
+            animation: confetti-fall var(--duration) linear infinite;
+            z-index: 50;
+        }
+
+        /* Responsive letter button size */
+        .letter-button {
+            transition: all 0.2s ease-in-out;
+            font-size: 1.5rem; /* Base size */
+            padding: 0.75rem 1.25rem;
+        }
+        @media (min-width: 640px) {
+            .letter-button {
+                font-size: 2rem;
+                padding: 1rem 1.5rem;
+            }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans Gujarati', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-red': '#cc0033',
+                        'star-yellow': '#ffc107',
+                        'answer-green': '#4caf50',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center">
+
+    <div id="game-container" class="notebook-paper w-full max-w-lg mx-auto shadow-2xl relative overflow-hidden">
+        
+        <!-- Header: Score and Title -->
+        <div class="flex justify-between items-center px-4 mb-8 sticky top-0 bg-white/80 backdrop-blur-sm z-10 py-3 border-b border-gray-200">
+            <div id="score-display" class="flex items-center bg-star-yellow text-white font-bold p-2 rounded-full shadow-lg">
+                <span class="text-xl mr-2">⭐</span>
+                <span class="text-2xl" id="current-score">0</span>
+            </div>
+            <h1 class="text-4xl font-extrabold text-primary-red">શબ્દ લેખન</h1>
+            <button id="reset-button" onclick="initializeGame()" class="text-gray-600 hover:text-primary-red transition duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0h5m-9 9v-5h.582m15.356-2a8.001 8.001 0 01-15.356 2m0 0h5" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Instructions and Audio Button -->
+        <div class="text-center mb-12 px-4">
+            <p class="text-xl font-semibold text-gray-700 mb-1 flex justify-center items-center">
+                અક્ષરો જોડીને શબ્દ બનાવો!
+                <!-- Audio Play Button -->
+                <button id="audio-play-button" onclick="playCurrentWordAudio()" class="ml-3 p-2 bg-primary-red text-white rounded-full shadow-lg hover:bg-red-700 transition duration-300 disabled:bg-gray-400" disabled title="શબ્દનો ઉચ્ચાર સાંભળો">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </p>
+            <p class="text-sm italic text-gray-500">(અક્ષરોને ટચ કરીને ખાનું ભરો)</p>
+        </div>
+
+        <!-- Letter Buttons Container -->
+        <div id="shuffled-letters-container" class="flex justify-center space-x-4 mb-16 px-4 min-h-[100px] items-center">
+            <!-- Letter buttons will be inserted here by JavaScript -->
+        </div>
+        
+        <!-- Hidden Confetti Container -->
+        <div id="confetti-container" class="absolute inset-0 pointer-events-none z-50 overflow-hidden"></div>
+
+
+        <!-- Answer Box -->
+        <div id="answer-section" class="mx-4 p-4 rounded-xl border-4 border-blue-300 shadow-xl bg-white transition duration-300">
+            <p class="text-xs font-bold text-blue-500 mb-2">ANSWER</p>
+            <div id="answer-slots-container" class="flex justify-center space-x-2 sm:space-x-4 h-16 sm:h-20 items-center">
+                <!-- Answer slots will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Feedback Message / Correct Word Display -->
+        <div class="text-center my-8 min-h-[50px] px-4">
+            <p id="feedback-message" class="text-3xl font-extrabold text-primary-red hidden"></p>
+        </div>
+
+        <!-- Game Controls (For try again) -->
+        <div class="text-center mt-4 mb-16">
+            <button id="try-again-button" onclick="resetAnswer()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-full shadow-lg text-xl transition duration-300 scale-90 hidden">
+                ફરી પ્રયાસ કરો (Try Again)
+            </button>
+        </div>
+
+
+        <!-- Footer Credit -->
+        <div class="text-center text-sm text-gray-500 mt-10 pb-4">
+            Created by: Rajesh barochia
+        </div>
+
+    </div>
+
+    <script>
+        // Gujarati word list for the game: { correct word, [parts of the word] }
+        const wordList = [
+            { word: "પાકી", parts: ["પા", "કી"] },
+            { word: "વાણી", parts: ["વા", "ણી"] },
+            { word: "રાણી", parts: ["રા", "ણી"] },
+            { word: "સાડી", parts: ["સા", "ડી"] },
+            { word: "વાત", parts: ["વા", "ત"] },
+            { word: "કિસાન", parts: ["કિ", "સા", "ન"] },
+            { word: "વરસાદ", parts: ["વ", "ર", "સા", "દ"] },
+            { word: "મીઠી", parts: ["મી", "ઠી"] },
+            { word: "નાવડી", parts: ["ના","વ","ડી"] },
+            { word: "બાજરી", parts: ["બા","જ","રી"] }
+        ];
+
+        let currentWord = {};
+        let shuffledParts = [];
+        let userAnswer = [];
+        let score = 0;
+        let originalOrder = [];
+        let answerSlotsContainer;
+        let shuffledLettersContainer;
+        let feedbackMessage;
+        let tryAgainButton;
+        let confettiContainer;
+        let currentScoreDisplay;
+
+        // New audio variables
+        let audioPlayButton;
+        let isAudioPlaying = false;
+
+
+        // Utility function to shuffle an array (Fisher-Yates) - kept but not used for ordered letters
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Function to create confetti elements
+        function createConfetti() {
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.setProperty('--color', colors[Math.floor(Math.random() * colors.length)]);
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.top = `${-20 + Math.random() * 10}vh`; // Start slightly above view
+                confetti.style.setProperty('--duration', `${Math.random() * 2 + 3}s`);
+                confetti.style.setProperty('--x', `${(Math.random() - 0.5) * 50}px`);
+                confetti.style.setProperty('--rot', `${Math.random() * 720}deg`);
+                confettiContainer.appendChild(confetti);
+            }
+            // Remove confetti after animation completes
+            setTimeout(() => {
+                confettiContainer.innerHTML = '';
+            }, 5000);
+        }
+        
+        // --- TTS Helper Functions ---
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcm16, sampleRate) {
+            const numChannels = 1;
+            const bytesPerSample = 2; // Int16 is 2 bytes
+            const numSamples = pcm16.length;
+            const wavData = new DataView(new ArrayBuffer(44 + numSamples * bytesPerSample));
+            let offset = 0;
+
+            // RIFF chunk
+            function writeString(s) {
+                for (let i = 0; i < s.length; i++) {
+                    wavData.setUint8(offset++, s.charCodeAt(i));
+                }
+            }
+            writeString('RIFF');
+            wavData.setUint32(offset, 36 + numSamples * bytesPerSample, true); offset += 4;
+            writeString('WAVE');
+
+            // FMT chunk
+            writeString('fmt ');
+            wavData.setUint32(offset, 16, true); offset += 4; // Subchunk1Size
+            wavData.setUint16(offset, 1, true); offset += 2;  // AudioFormat (1 for PCM)
+            wavData.setUint16(offset, numChannels, true); offset += 2;
+            wavData.setUint32(offset, sampleRate, true); offset += 4;
+            wavData.setUint32(offset, sampleRate * numChannels * bytesPerSample, true); offset += 4; // ByteRate
+            wavData.setUint16(offset, numChannels * bytesPerSample, true); offset += 2; // BlockAlign
+            wavData.setUint16(offset, bytesPerSample * 8, true); offset += 2; // BitsPerSample
+
+            // DATA chunk
+            writeString('data');
+            wavData.setUint32(offset, numSamples * bytesPerSample, true); offset += 4;
+            
+            // Write PCM data
+            const pcmBytes = new Uint8Array(pcm16.buffer);
+            for (let i = 0; i < pcmBytes.length; i++) {
+                wavData.setUint8(offset++, pcmBytes[i]);
+            }
+
+            return new Blob([wavData.buffer], { type: 'audio/wav' });
+        }
+
+        // Handles the API call and playback
+        async function generateTtsAudio(text) {
+            if (isAudioPlaying) return;
+            isAudioPlaying = true;
+            audioPlayButton.disabled = true;
+
+            const speakerName = "Kore"; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=`;
+            const apiKey = ""; 
+            let audioUrl = null;
+
+            const payload = {
+                contents: [{
+                    // The prompt includes guidance for tone/style
+                    parts: [{ text: `Say in a clear, friendly voice: ${text}` }] 
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        // Using 'Kore' voice
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: speakerName }
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            const maxRetries = 3;
+            let delay = 1000;
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(apiUrl + apiKey, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const part = result?.candidates?.[0]?.content?.parts?.[0];
+                    const audioData = part?.inlineData?.data;
+                    const mimeType = part?.inlineData?.mimeType;
+                    
+                    if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                        const sampleRate = 16000; // Standard sample rate for PCM16 from this model
+                        const pcmData = base64ToArrayBuffer(audioData);
+                        const pcm16 = new Int16Array(pcmData);
+                        const wavBlob = pcmToWav(pcm16, sampleRate);
+                        audioUrl = URL.createObjectURL(wavBlob);
+                        break; // Success, break the loop
+                    } else {
+                        throw new Error("Invalid audio data received or model output structure changed.");
+                    }
+                } catch (error) {
+                    console.error("TTS API Call failed (attempt " + (i + 1) + "):", error);
+                    if (i < maxRetries - 1) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2; // Exponential backoff
+                    } else {
+                        // Use window.alert() only as a fallback for user feedback on critical errors
+                        console.error("Critical error generating audio."); 
+                    }
+                }
+            }
+            
+            if (audioUrl) {
+                const audio = new Audio(audioUrl);
+                audio.play();
+                audio.onended = () => {
+                    URL.revokeObjectURL(audioUrl);
+                    isAudioPlaying = false;
+                    audioPlayButton.disabled = false;
+                };
+            } else {
+                isAudioPlaying = false;
+                audioPlayButton.disabled = false;
+            }
+        }
+
+        // Function called by the play button
+        function playCurrentWordAudio() {
+            if (currentWord && currentWord.word) {
+                generateTtsAudio(currentWord.word);
+            }
+        }
+
+        // Function to set up a new round
+        function initializeGame() {
+            // 1. Reset state
+            originalOrder = [];
+            
+            // FIX 1: Ensure previous checkmark is removed if a new game starts
+            const existingCheckmark = document.querySelector('#answer-section > .absolute.top-4.right-4');
+            if (existingCheckmark) {
+                existingCheckmark.remove();
+            }
+            
+            // 2. Select a random word
+            currentWord = wordList[Math.floor(Math.random() * wordList.length)];
+            
+            // FIX 2: Initialize userAnswer array with 'undefined' slots for the correct length
+            userAnswer = Array(currentWord.parts.length).fill(undefined);
+            
+            // 3. Parts are kept in order as requested by the user
+            shuffledParts = [...currentWord.parts];
+
+            // 4. Clear UI containers and hide controls/feedback
+            shuffledLettersContainer.innerHTML = '';
+            answerSlotsContainer.innerHTML = '';
+            feedbackMessage.textContent = '';
+            feedbackMessage.classList.add('hidden');
+            tryAgainButton.classList.add('hidden');
+            answerSlotsContainer.parentElement.classList.remove('border-answer-green', 'border-primary-red');
+            answerSlotsContainer.parentElement.classList.add('border-blue-300');
+
+            // 5. Render letter buttons in the correct order
+            shuffledParts.forEach((part, index) => {
+                const button = document.createElement('button');
+                button.textContent = part;
+                button.classList.add(
+                    'letter-button',
+                    'bg-white', 'text-gray-800', 'font-extrabold', 'rounded-xl',
+                    'shadow-md', 'hover:bg-yellow-50', 'active:shadow-lg',
+                    'transform', 'active:scale-95', 'z-10'
+                );
+                button.setAttribute('data-index', index);
+                button.onclick = () => handleLetterClick(part, index);
+                shuffledLettersContainer.appendChild(button);
+
+                originalOrder.push({ part: part, used: false, element: button });
+            });
+
+            // 6. Render empty answer slots
+            currentWord.parts.forEach((_, index) => {
+                const slot = document.createElement('div');
+                slot.classList.add(
+                    'flex', 'items-center', 'justify-center',
+                    'w-1/4', 'max-w-20', 'h-full',
+                    'border-b-4', 'border-dashed', 'border-gray-400',
+                    'text-3xl', 'font-extrabold', 'text-gray-700',
+                    'transition', 'duration-300'
+                );
+                slot.setAttribute('data-slot-index', index);
+                // Tap on slot resets the attempt. This is now handled by resetAnswer()
+                slot.onclick = () => resetAnswer(); 
+                answerSlotsContainer.appendChild(slot);
+            });
+            
+            // 7. Enable audio button
+            if (audioPlayButton) {
+                audioPlayButton.disabled = false;
+            }
+        }
+
+        // Handle click on a letter button
+        function handleLetterClick(part, originalIndex) {
+            // Find the first empty slot (where the value is undefined)
+            const emptySlotIndex = userAnswer.findIndex(item => item === undefined);
+            
+            // Only proceed if there is an empty slot
+            if (emptySlotIndex !== -1) {
+                // Mark the original letter button as used and hide it
+                const buttonToHide = shuffledLettersContainer.querySelector(`[data-index="${originalIndex}"]`);
+                if (buttonToHide) {
+                    buttonToHide.classList.add('invisible', 'pointer-events-none', 'scale-75');
+                    buttonToHide.disabled = true;
+                }
+
+                // Update the state
+                userAnswer[emptySlotIndex] = { part: part, originalIndex: originalIndex };
+                
+                // Update the UI slot
+                const slotElement = answerSlotsContainer.querySelector(`[data-slot-index="${emptySlotIndex}"]`);
+                if (slotElement) {
+                    slotElement.textContent = part;
+                    slotElement.classList.remove('border-dashed', 'border-gray-400', 'text-gray-700');
+                    slotElement.classList.add('border-blue-500', 'bg-blue-50', 'text-gray-800');
+                }
+            }
+
+            // Check if all slots are filled
+            if (userAnswer.filter(item => item !== undefined).length === currentWord.parts.length) {
+                checkAnswer();
+            }
+        }
+
+        // Function to reset the current answer attempt
+        function resetAnswer() {
+            // Restore all letter buttons
+            shuffledLettersContainer.querySelectorAll('.letter-button').forEach(button => {
+                button.classList.remove('invisible', 'pointer-events-none', 'scale-75');
+                button.disabled = false;
+            });
+
+            // Clear all answer slots in state and UI
+            // Reset userAnswer array to the correct length and fill with undefined
+            userAnswer = Array(currentWord.parts.length).fill(undefined);
+            answerSlotsContainer.querySelectorAll('[data-slot-index]').forEach(slot => {
+                slot.textContent = '';
+                slot.classList.remove('border-blue-500', 'bg-blue-50', 'border-primary-red', 'border-answer-green', 'text-gray-800');
+                slot.classList.add('border-dashed', 'border-gray-400', 'text-gray-700');
+            });
+            
+            // Clear feedback and reset border
+            feedbackMessage.textContent = '';
+            feedbackMessage.classList.add('hidden');
+            tryAgainButton.classList.add('hidden');
+            answerSlotsContainer.parentElement.classList.remove('border-answer-green', 'border-primary-red');
+            answerSlotsContainer.parentElement.classList.add('border-blue-300');
+            
+            // FIX 3: Remove checkmark if it exists
+            const existingCheckmark = document.querySelector('#answer-section > .absolute.top-4.right-4');
+            if (existingCheckmark) {
+                existingCheckmark.remove();
+            }
+
+            // Enable audio button
+            if (audioPlayButton) {
+                audioPlayButton.disabled = false;
+            }
+        }
+
+        // Function to check the final answer
+        function checkAnswer() {
+            // Get the constructed word
+            const constructedWord = userAnswer.map(item => item.part).join('');
+            
+            // Disable all letter buttons
+            shuffledLettersContainer.querySelectorAll('.letter-button').forEach(button => button.disabled = true);
+            
+            // Disable audio button during checking/processing
+            if (audioPlayButton) {
+                audioPlayButton.disabled = true;
+            }
+
+            if (constructedWord === currentWord.word) {
+                // Correct Answer
+                score++;
+                currentScoreDisplay.textContent = score;
+                feedbackMessage.textContent = currentWord.word;
+                feedbackMessage.classList.remove('hidden', 'text-primary-red');
+                feedbackMessage.classList.add('text-answer-green');
+
+                // Update answer box look
+                answerSlotsContainer.parentElement.classList.remove('border-blue-300', 'border-primary-red');
+                answerSlotsContainer.parentElement.classList.add('border-answer-green');
+                
+                // Add a checkmark 
+                const checkmark = document.createElement('div');
+                checkmark.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
+                checkmark.classList.add('absolute', 'top-4', 'right-4', 'bg-answer-green', 'rounded-full', 'p-1', 'shadow-lg', 'scale-125');
+                
+                const answerSection = document.getElementById('answer-section');
+                answerSection.style.position = 'relative'; // Ensure relative for absolute child
+                answerSection.appendChild(checkmark);
+                
+                // Play audio immediately
+                playCurrentWordAudio(); // This handles re-enabling the button after playback
+
+                // AUTOMATICALLY proceed to the next game after a short delay (2 seconds)
+                setTimeout(initializeGame, 2000);
+                
+                // Start Confetti!
+                createConfetti();
+
+            } else {
+                // Wrong Answer
+                feedbackMessage.textContent = "ખોટો જવાબ! ફરી પ્રયાસ કરો.";
+                feedbackMessage.classList.remove('hidden', 'text-answer-green');
+                feedbackMessage.classList.add('text-primary-red');
+
+                // Update answer box look
+                answerSlotsContainer.parentElement.classList.remove('border-blue-300', 'border-answer-green');
+                answerSlotsContainer.parentElement.classList.add('border-primary-red');
+
+                // Show Try Again Button
+                tryAgainButton.classList.remove('hidden');
+                
+                // Re-enable audio button immediately for the user to hear the word
+                if (audioPlayButton) {
+                    audioPlayButton.disabled = false;
+                }
+            }
+        }
+
+        // Initialization when the window loads
+        window.onload = function() {
+            // Get references to all necessary elements
+            answerSlotsContainer = document.getElementById('answer-slots-container');
+            shuffledLettersContainer = document.getElementById('shuffled-letters-container');
+            feedbackMessage = document.getElementById('feedback-message');
+            tryAgainButton = document.getElementById('try-again-button');
+            confettiContainer = document.getElementById('confetti-container');
+            currentScoreDisplay = document.getElementById('current-score');
+            audioPlayButton = document.getElementById('audio-play-button'); // Get new button reference
+
+            // Start the first game
+            initializeGame();
+        };
+    </script>
+</body>
+</html>
