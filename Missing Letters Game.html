@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missing Letters Game</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for a better look on mobile */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f8ff; /* Light, calming background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .game-card {
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            background-color: #ffffff;
+            transition: transform 0.3s ease;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+        }
+        .input-box {
+            font-size: 2rem;
+            text-align: center;
+            width: 50px; /* Smaller width for single English letter */
+            height: 60px;
+            border: 3px solid #06b6d4; /* Teal border */
+            border-radius: 8px;
+            background-color: #ecfeff; /* Light teal background */
+            color: #0e7490;
+            font-weight: bold;
+            text-transform: uppercase; /* Ensure input is visible in uppercase */
+            margin-left: 0.25rem; 
+            margin-right: 0.25rem;
+        }
+        .word-display-char {
+            font-size: 2.5rem;
+            color: #4338ca; /* Indigo color */
+            font-weight: 700;
+            padding: 0 0.15rem; /* Small horizontal padding for clarity */
+            text-transform: uppercase;
+        }
+        .emoji-icon {
+            font-size: 80px;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-card p-6 md:p-8">
+
+    <!-- Header Section -->
+    <div class="text-center mb-6">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-blue-600 mb-2 border-b-4 border-blue-300 pb-2">
+            Missing Letters Game
+        </h1>
+        <p class="text-gray-500 text-sm">Complete the picture words</p>
+    </div>
+
+    <!-- Question Display Area -->
+    <div id="question-area" class="text-center bg-indigo-50 p-6 rounded-xl mb-6 shadow-inner">
+        <!-- Image/Emoji Placeholder -->
+        <div id="image-placeholder" class="emoji-icon mb-4"></div>
+
+        <!-- Word Display Area -->
+        <div id="word-container" class="flex justify-center my-4"> 
+            <!-- Word characters and input field will be rendered here -->
+        </div>
+
+        <!-- Status Message -->
+        <p id="feedback-message" class="mt-4 text-lg font-semibold h-6"></p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col space-y-3">
+        <button id="check-button"
+                class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition duration-150 active:scale-95 text-xl">
+            Check Answer
+        </button>
+
+        <button id="next-button"
+                class="w-full bg-orange-400 hover:bg-orange-500 text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition duration-150 active:scale-95 text-xl hidden">
+            Next Question
+        </button>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-xs text-gray-400 border-t pt-4">
+        Created by : Rajesh Barochia
+    </div>
+</div>
+
+<script type="module">
+    // List of common CVC (Consonant-Vowel-Consonant) words and their emojis
+    const ENGLISH_WORDS = [
+        { word: 'SUN', emoji: '☀️' },
+        { word: 'BOX', emoji: '📦' },
+        { word: 'BIRD', emoji: '🐦' },
+        { word: 'DOG', emoji: '🐕' },
+        { word: 'CAT', emoji: '🐈' },
+        { word: 'FISH', emoji: '🐠' },
+        { word: 'CAR', emoji: '🚗' },
+        { word: 'MILK', emoji: '🥛' },
+        { word: 'STAR', emoji: '⭐' },
+        { word: 'BUS', emoji: '🚌' },
+        { word: 'KEY', emoji: '🔑' },
+        { word: 'BED', emoji: '🛏️' },
+        { word: 'BALL', emoji: '⚽' },
+    ];
+
+    let currentWord = {};
+    let missingIndex = -1;
+    let letterList = [];
+
+    // DOM elements
+    const wordContainer = document.getElementById('word-container');
+    const imagePlaceholder = document.getElementById('image-placeholder');
+    const feedbackMessage = document.getElementById('feedback-message');
+    const checkButton = document.getElementById('check-button');
+    const nextButton = document.getElementById('next-button');
+
+    // Function: Select a random word and set the question
+    function setupQuestion() {
+        try {
+            // Reset question state
+            feedbackMessage.textContent = '';
+            nextButton.classList.add('hidden');
+            checkButton.classList.remove('hidden');
+            wordContainer.innerHTML = '';
+
+            // Select a random word
+            const randomIndex = Math.floor(Math.random() * ENGLISH_WORDS.length);
+            currentWord = ENGLISH_WORDS[randomIndex];
+            const word = currentWord.word;
+            letterList = word.split(''); // Simple character split for English
+
+            // Ensure word is long enough
+            if (letterList.length < 2) {
+                 return setupQuestion(); 
+            }
+
+            // Select a random index for the missing letter (Avoid first or last letter for very short words if possible)
+            // We choose a middle index for words longer than 3 letters for better challenge
+            if (letterList.length > 3) {
+                missingIndex = Math.floor(Math.random() * (letterList.length - 2)) + 1;
+            } else {
+                // For 2 or 3 letter words, missing index can be 0 or 1
+                missingIndex = Math.floor(Math.random() * letterList.length);
+            }
+
+            // Set the image/emoji
+            imagePlaceholder.textContent = currentWord.emoji;
+            
+            // Display the word
+            letterList.forEach((letter, i) => {
+                if (i === missingIndex) {
+                    // Create the input box for the missing letter
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.id = 'missing-input';
+                    input.className = 'input-box focus:outline-none focus:ring-4 focus:ring-cyan-300';
+                    input.setAttribute('maxlength', '1');
+                    input.setAttribute('aria-label', 'Missing letter');
+                    wordContainer.appendChild(input);
+                    
+                    // Autofocus input
+                    setTimeout(() => input.focus(), 50);
+
+                } else {
+                    // Display other letters
+                    const span = document.createElement('span');
+                    span.textContent = letter;
+                    span.className = 'word-display-char';
+                    wordContainer.appendChild(span);
+                }
+            });
+        } catch (error) {
+            console.error("An error occurred during setupQuestion:", error);
+            feedbackMessage.textContent = 'Error starting game.';
+            feedbackMessage.className = 'mt-4 text-lg font-semibold text-red-600';
+        }
+    }
+
+    // Function: Check the answer
+    function checkAnswer() {
+        const inputElement = document.getElementById('missing-input');
+        if (!inputElement) return;
+
+        // User's answer (converted to uppercase for case-insensitive comparison)
+        const userAnswer = inputElement.value.trim().toUpperCase();
+        // The correct letter
+        const correctAnswer = letterList[missingIndex].toUpperCase();
+
+        if (userAnswer === '') {
+            feedbackMessage.textContent = 'Please enter a letter!';
+            feedbackMessage.className = 'mt-4 text-lg font-semibold text-red-500';
+            return;
+        }
+
+        // Check the answer
+        if (userAnswer === correctAnswer) {
+            feedbackMessage.textContent = '✅ Correct! Well done!';
+            feedbackMessage.className = 'mt-4 text-lg font-semibold text-green-600 animate-pulse';
+            
+            // Display the correct letter
+            const correctSpan = document.createElement('span');
+            correctSpan.textContent = correctAnswer;
+            correctSpan.className = 'word-display-char bg-green-200 p-1 rounded-md';
+            inputElement.replaceWith(correctSpan);
+
+            checkButton.classList.add('hidden');
+            nextButton.classList.remove('hidden');
+            
+        } else {
+            // ❌ Incorrect answer - Show correct answer and allow moving on
+            feedbackMessage.textContent = `❌ Incorrect. The correct letter was: "${correctAnswer}"`;
+            feedbackMessage.className = 'mt-4 text-lg font-semibold text-red-600';
+            
+            // Display the correct letter for review
+            const correctSpan = document.createElement('span');
+            correctSpan.textContent = correctAnswer;
+            correctSpan.className = 'word-display-char bg-red-200 p-1 rounded-md'; 
+            inputElement.replaceWith(correctSpan);
+
+            // Provide option to move next
+            checkButton.classList.add('hidden');
+            nextButton.classList.remove('hidden');
+        }
+    }
+
+    // Event Listeners
+    checkButton.addEventListener('click', checkAnswer);
+    nextButton.addEventListener('click', setupQuestion);
+
+    // Event listener for Enter key press
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            if (!nextButton.classList.contains('hidden')) {
+                // If 'Next Question' button is visible, move to next question
+                setupQuestion();
+            } else if (!checkButton.classList.contains('hidden')) {
+                // If 'Check Answer' button is visible, check the answer
+                checkAnswer();
+            }
+        }
+    });
+
+    // Start the game
+    setupQuestion();
+
+</script>
+
+</body>
+</html>
