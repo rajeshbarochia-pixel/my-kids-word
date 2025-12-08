@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>'ઈ' (ી) માત્રા શબ્દ રમત</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+
+        :root {
+            /* New Color Palette for 'Ee' Matra Game */
+            --primary-color: #9B59B6; /* Purple */
+            --secondary-color: #3498DB; /* Blue */
+            --accent-color: #F1C40F; /* Yellow */
+            --text-color: #2C3E50;
+            --bg-color: #E8F6F3;
+            --success-color: #27AE60;
+            --error-color: #C0392B;
+        }
+
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: var(--primary-color);
+            width: 100%;
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: white;
+            margin: 0;
+            font-size: 1.8rem;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            color: #fff;
+            font-size: 1rem;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        /* Game Container */
+        .game-container {
+            max-width: 600px;
+            width: 95%;
+            margin: 20px auto;
+            text-align: center;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 4px solid var(--secondary-color);
+        }
+
+        /* Instruction */
+        .instruction {
+            font-size: 1.2rem;
+            color: #555;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        /* Answer Drop Zone */
+        .answer-box {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            min-height: 80px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f4ecf7; /* Light purple tint */
+            border-radius: 15px;
+            border: 2px dashed #a569bd;
+            align-items: center;
+        }
+
+        .placeholder-text {
+            color: #bdc3c7;
+            font-size: 1.1rem;
+            pointer-events: none;
+        }
+
+        /* Letters Grid */
+        .letters-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+            background-color: #D6EAF8; /* Light blue */
+            padding: 15px;
+            border-radius: 15px;
+        }
+
+        /* Letter Tiles */
+        .letter-tile {
+            aspect-ratio: 1;
+            background-color: white;
+            border: 3px solid var(--primary-color);
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            user-select: none;
+            color: var(--primary-color);
+            box-shadow: 0 4px 0 #7D3C98;
+        }
+
+        .letter-tile:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 var(--primary-color);
+        }
+
+        .letter-tile.selected {
+            background-color: #e0e0e0;
+            color: #a0a0a0;
+            border-color: #a0a0a0;
+            box-shadow: none;
+            pointer-events: none;
+            transform: translateY(4px);
+        }
+
+        /* Answer Tile Style */
+        .answer-tile {
+            width: 60px;
+            height: 60px;
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 10px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #2980B9;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        /* History Section Styles */
+        .word-history-container {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px dashed #ddd;
+            width: 100%;
+        }
+
+        .history-title {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .word-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            min-height: 50px;
+            margin-bottom: 15px;
+        }
+
+        .word-tag {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.15);
+            animation: popIn 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-clear-list {
+            background-color: #95a5a6;
+            font-size: 0.9rem;
+            padding: 8px 15px;
+            margin-top: 5px;
+            box-shadow: none;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            transition: transform 0.2s;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-check {
+            background-color: var(--success-color);
+        }
+
+        .btn-reset {
+            background-color: var(--error-color);
+        }
+
+        /* Message Area */
+        .message {
+            height: 30px;
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .success-msg { color: var(--success-color); }
+        .error-msg { color: var(--error-color); }
+
+        /* Footer */
+        footer {
+            margin-top: auto;
+            padding: 20px;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+
+        /* Confetti Canvas */
+        #confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 400px) {
+            .letters-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+            }
+            .letter-tile {
+                font-size: 1.2rem;
+            }
+            h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>શબ્દ રમત</h1>
+        <div class="subtitle">'ઈ' (ી) માત્રા વાળા શબ્દો શીખીએ</div>
+    </header>
+
+    <div class="game-container">
+        <div class="instruction">નીચેના અક્ષરો પર ક્લિક કરી શબ્દ બનાવો</div>
+
+        <!-- Where the word is built -->
+        <div class="answer-box" id="answerBox">
+            <span class="placeholder-text">અહીં અક્ષરો આવશે...</span>
+        </div>
+
+        <!-- Letter Pool (20 Letters) -->
+        <div class="letters-grid" id="lettersGrid">
+            <!-- Letters will be generated by JS -->
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn btn-reset" onclick="resetCurrentInput()">ભૂંસો (Clear)</button>
+            <button class="btn btn-check" onclick="submitWord()">શબ્દ જમા કરો (Add)</button>
+        </div>
+
+        <div class="message" id="messageBox"></div>
+
+        <!-- Word History Section -->
+        <div class="word-history-container">
+            <div class="history-title">બનાવેલા શબ્દો:</div>
+            <div class="word-list" id="wordList">
+                <span style="color: #ccc; font-size: 0.9rem;">હજુ કોઈ શબ્દ નથી...</span>
+            </div>
+            <button class="btn btn-clear-list" onclick="clearHistory()">નવી રમત (New Game)</button>
+        </div>
+    </div>
+
+    <footer>
+        Created by: Rajesh barochia
+    </footer>
+
+    <canvas id="confetti"></canvas>
+
+    <script>
+        // Game Data
+        // The pool of 20 letters tailored for 'Ee' (Dirgha/Hrasva Mix) words
+        // Examples: મીરા, રાજી, મરજી, કવી, ભારતી, દાસી, નીત
+        const letterPool = [
+            'મી', 'રા', 'જી', 'મ', 'ર', 
+            'વી', 'ક', 'ભા', 'તી', 'દા', 
+            'સી', 'ની', 'ત', 'પા', 'ણી', 
+            'ળી', 'દી', 'શી', 'ખા', 'રી'
+        ];
+
+        let currentWord = [];
+        let collectedWords = []; // Store history
+        const answerBox = document.getElementById('answerBox');
+        const lettersGrid = document.getElementById('lettersGrid');
+        const messageBox = document.getElementById('messageBox');
+        const wordListContainer = document.getElementById('wordList');
+
+        // Initialize Game
+        function initGame() {
+            shuffleArray(letterPool); // Randomize the letter order
+            renderLetters();
+            updateAnswerBox();
+        }
+
+        // Fisher-Yates Shuffle Algorithm to randomize array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Render the 20 letter buttons
+        function renderLetters() {
+            lettersGrid.innerHTML = '';
+            letterPool.forEach((letter, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'letter-tile';
+                btn.textContent = letter;
+                btn.onclick = () => addLetter(letter, index, btn);
+                btn.id = `letter-${index}`;
+                lettersGrid.appendChild(btn);
+            });
+        }
+
+        // Add letter to answer box
+        function addLetter(letter, index, btnElement) {
+            if (currentWord.length >= 5) { // Limit to 5 letters
+                showMessage("મહત્તમ અક્ષરો આવી ગયા!", false);
+                return;
+            }
+
+            // Add to logic
+            currentWord.push({ text: letter, sourceIndex: index });
+            
+            // Visual updates
+            btnElement.classList.add('selected');
+            updateAnswerBox();
+            messageBox.textContent = '';
+        }
+
+        // Remove letter from answer box
+        function removeLetter(wordIndex) {
+            const removedItem = currentWord[wordIndex];
+            
+            // Enable the button back in the grid
+            const sourceBtn = document.getElementById(`letter-${removedItem.sourceIndex}`);
+            if (sourceBtn) {
+                sourceBtn.classList.remove('selected');
+            }
+
+            // Remove from array
+            currentWord.splice(wordIndex, 1);
+            updateAnswerBox();
+            messageBox.textContent = '';
+        }
+
+        // Update the visual answer box
+        function updateAnswerBox() {
+            answerBox.innerHTML = '';
+            
+            if (currentWord.length === 0) {
+                answerBox.innerHTML = '<span class="placeholder-text">અહીં અક્ષરો આવશે...</span>';
+                return;
+            }
+
+            currentWord.forEach((item, index) => {
+                const tile = document.createElement('div');
+                tile.className = 'answer-tile';
+                tile.textContent = item.text;
+                tile.onclick = () => removeLetter(index);
+                answerBox.appendChild(tile);
+            });
+        }
+
+        // Submit the word to the list (Unlimited logic)
+        function submitWord() {
+            const word = currentWord.map(item => item.text).join('');
+            
+            if (word.length < 2) {
+                showMessage("ઓછામાં ઓછા બે અક્ષર જોડો.", false);
+                return;
+            }
+
+            // Add to history list
+            addWordToList(word);
+            
+            // Success effects
+            fireConfetti();
+            showMessage(`'${word}' ઉમેર્યો!`, true);
+            
+            // Clear current input to allow making new words immediately
+            resetCurrentInput();
+        }
+
+        // Add word visual tag
+        function addWordToList(word) {
+            // Remove placeholder if it exists
+            if (collectedWords.length === 0) {
+                wordListContainer.innerHTML = '';
+            }
+
+            collectedWords.push(word);
+            
+            const tag = document.createElement('div');
+            tag.className = 'word-tag';
+            tag.textContent = word;
+            wordListContainer.appendChild(tag);
+        }
+
+        // Clear only the current input (Reset buttons for reuse)
+        function resetCurrentInput() {
+            currentWord = [];
+            // Reset all grid buttons
+            const tiles = document.querySelectorAll('.letter-tile');
+            tiles.forEach(tile => tile.classList.remove('selected'));
+            updateAnswerBox();
+        }
+
+        // Clear the entire history list and Reshuffle
+        function clearHistory() {
+            collectedWords = [];
+            wordListContainer.innerHTML = '<span style="color: #ccc; font-size: 0.9rem;">હજુ કોઈ શબ્દ નથી...</span>';
+            showMessage("નવી રમત શરૂ થઈ!", true);
+            resetCurrentInput();
+            
+            // Re-shuffle letters for new game
+            initGame();
+        }
+
+        // Show status message
+        function showMessage(text, isSuccess) {
+            messageBox.textContent = text;
+            messageBox.className = 'message ' + (isSuccess ? 'success-msg' : 'error-msg');
+        }
+
+        // Confetti Effect
+        const canvas = document.getElementById('confetti');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function fireConfetti() {
+            particles = [];
+            const colors = ['#9B59B6', '#3498DB', '#F1C40F', '#27AE60'];
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: window.innerWidth / 2,
+                    y: window.innerHeight / 2,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 100
+                });
+            }
+            animateConfetti();
+        }
+
+        function animateConfetti() {
+            if (particles.length === 0) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                p.vy += 0.2; // Gravity
+
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            particles = particles.filter(p => p.life > 0);
+            requestAnimationFrame(animateConfetti);
+        }
+
+        // Start
+        initGame();
+
+    </script>
+</body>
+</html>
