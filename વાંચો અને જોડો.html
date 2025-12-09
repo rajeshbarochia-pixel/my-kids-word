@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>વાંચો અને જોડો - ગુજરાતી ગેમ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rasa:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Rasa', serif;
+            background-color: #f0fdf4; /* Light Green bg */
+            user-select: none;
+        }
+        .item-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .item-card:active {
+            transform: scale(0.95);
+        }
+        .selected {
+            background-color: #fef08a !important; /* Yellow-200 */
+            border-color: #eab308 !important; /* Yellow-500 */
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .matched {
+            background-color: #86efac !important; /* Green-300 */
+            border-color: #16a34a !important; /* Green-600 */
+            opacity: 0.8;
+            pointer-events: none;
+        }
+        .wrong-shake {
+            animation: shake 0.5s;
+            background-color: #fca5a5 !important; /* Red-300 */
+            border-color: #dc2626 !important; /* Red-600 */
+        }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+        /* Custom scrollbar for game area if needed */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888; 
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center">
+
+    <!-- Header -->
+    <header class="w-full bg-pink-500 text-white p-4 text-center shadow-lg">
+        <h1 class="text-3xl md:text-4xl font-bold">વાંચો અને જોડો</h1>
+        <p class="text-lg opacity-90">સાચા વાક્યને તેના ચિત્ર સાથે જોડો!</p>
+    </header>
+
+    <!-- Score and Reset -->
+    <div class="flex justify-between w-full max-w-4xl px-4 mt-4">
+        <div class="bg-white px-4 py-2 rounded-lg shadow border-2 border-pink-200">
+            <span class="text-xl font-bold text-pink-600">સાચા: <span id="score">0</span>/8</span>
+        </div>
+        <button onclick="resetGame()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold shadow transition">
+            ફરીથી રમો ⟳
+        </button>
+    </div>
+
+    <!-- Game Area -->
+    <main class="flex flex-col md:flex-row w-full max-w-5xl p-4 gap-4 md:gap-8 flex-grow">
+        
+        <!-- Left Column: Sentences -->
+        <div class="w-full md:w-1/2 flex flex-col gap-3" id="sentences-container">
+            <!-- Sentences will be injected here -->
+        </div>
+
+        <!-- Right Column: Images -->
+        <div class="w-full md:w-1/2 flex flex-col gap-3" id="images-container">
+            <!-- Images will be injected here -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full bg-slate-800 text-white p-3 text-center mt-auto">
+        <p class="text-sm font-mono tracking-wider">Created by: Rajesh barochia</p>
+    </footer>
+
+    <!-- Win Modal -->
+    <div id="win-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4 transform transition-all scale-100">
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 class="text-3xl font-bold text-green-600 mb-2">ખૂબ સરસ!</h2>
+            <p class="text-gray-600 text-xl mb-6">તમે બધા જોડકા જોડી દીધા!</p>
+            <button onclick="resetGame()" class="bg-pink-500 text-white px-6 py-3 rounded-full text-xl font-bold hover:bg-pink-600 shadow-lg transition transform hover:scale-105">
+                ફરીથી રમો
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game Data based on the provided image
+        const gameData = [
+            { id: 1, text: "બા પાપડ આપે.", type: "papad" },
+            { id: 2, text: "હોડી પાણી પર તરે.", type: "boat" },
+            { id: 3, text: "સગડી ગરમ છે.", type: "sigri" },
+            { id: 4, text: "છતના પતરે કોયલ રમે.", type: "cuckoo" },
+            { id: 5, text: "કાકડી પાણીદાર છે.", type: "cucumber" },
+            { id: 6, text: "રાણીની સાડી સરસ છે.", type: "saree" },
+            { id: 7, text: "તારી પાસે રાતી પેન છે?", type: "pen" },
+            { id: 8, text: "ડાળ પર કાગડો પણ છે.", type: "crow" }
+        ];
+
+        // Emoji Icons generator
+        const icons = {
+            papad: "🍪", // Papad / Cracker
+            boat: "⛵",  // Canoe/Boat
+            sigri: "🔥", // Fire / Heat source
+            cuckoo: "🐦", // Bird (Emoji for Cuckoo)
+            cucumber: "🥒", // Cucumber
+            saree: "🥻",  // Saree
+            pen: "✍",   // Pen
+            // Updated Crow Image - Grey neck (Indian Crow)
+            crow: `<svg viewBox="0 0 100 100" class="w-20 h-20 mx-auto">
+                        <path d="M25,50 Q35,25 55,30 Q75,35 85,45 L75,60 Q55,70 45,65 Z" fill="#374151"/> <!-- Grey body/neck -->
+                        <path d="M70,35 Q80,25 90,30 L95,40 L85,45 Z" fill="black"/> <!-- Black Head -->
+                        <path d="M25,50 L15,60 L35,65 Z" fill="#1f2937"/> <!-- Tail -->
+                        <path d="M90,30 L100,35 L90,40 Z" fill="#1f2937"/> <!-- Beak -->
+                        <circle cx="85" cy="35" r="2" fill="white"/> <!-- Eye -->
+                        <path d="M45,65 L40,85" stroke="black" stroke-width="2"/>
+                        <path d="M55,65 L60,85" stroke="black" stroke-width="2"/>
+                   </svg>`
+        };
+
+        let selectedSentence = null;
+        let selectedImage = null;
+        let matchedCount = 0;
+        let isProcessing = false;
+
+        // Sound Effects (using simple oscillators to avoid external file issues)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'click') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            }
+        }
+
+        // Shuffle Array
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [
+                    array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function initGame() {
+            const sentencesContainer = document.getElementById('sentences-container');
+            const imagesContainer = document.getElementById('images-container');
+            
+            sentencesContainer.innerHTML = '';
+            imagesContainer.innerHTML = '';
+            document.getElementById('win-modal').classList.add('hidden');
+            document.getElementById('score').innerText = '0';
+            
+            matchedCount = 0;
+            selectedSentence = null;
+            selectedImage = null;
+            isProcessing = false;
+
+            // Prepare data
+            const sentences = [...gameData]; // Keep order matching image is boring, let's shuffle sentences too? 
+            // The prompt says "Randomly". Let's shuffle both sides independently.
+            const shuffledSentences = shuffle([...gameData]);
+            const shuffledImages = shuffle([...gameData]);
+
+            // Render Sentences (Left Side)
+            shuffledSentences.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item-card bg-white p-4 rounded-xl shadow-md border-2 border-transparent text-xl md:text-2xl font-semibold text-gray-800 flex items-center h-20 md:h-24';
+                div.innerText = item.text;
+                div.dataset.id = item.id;
+                div.dataset.type = 'sentence';
+                div.onclick = () => handleCardClick(div, 'sentence');
+                sentencesContainer.appendChild(div);
+            });
+
+            // Render Images (Right Side)
+            shuffledImages.forEach(item => {
+                const div = document.createElement('div');
+                // Added text-6xl for large Emojis
+                div.className = 'item-card bg-white p-2 rounded-xl shadow-md border-2 border-transparent flex justify-center items-center h-20 md:h-24 text-5xl md:text-6xl cursor-pointer';
+                div.innerHTML = icons[item.type];
+                div.dataset.id = item.id;
+                div.dataset.type = 'image';
+                div.onclick = () => handleCardClick(div, 'image');
+                imagesContainer.appendChild(div);
+            });
+        }
+
+        function handleCardClick(element, type) {
+            if (isProcessing || element.classList.contains('matched')) return;
+
+            playSound('click');
+
+            // Toggle selection logic
+            if (type === 'sentence') {
+                if (selectedSentence) selectedSentence.classList.remove('selected');
+                selectedSentence = element;
+                element.classList.add('selected');
+            } else {
+                if (selectedImage) selectedImage.classList.remove('selected');
+                selectedImage = element;
+                element.classList.add('selected');
+            }
+
+            // Check for match attempt
+            if (selectedSentence && selectedImage) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            isProcessing = true;
+            const id1 = selectedSentence.dataset.id;
+            const id2 = selectedImage.dataset.id;
+
+            if (id1 === id2) {
+                // Correct Match
+                setTimeout(() => {
+                    playSound('correct');
+                    selectedSentence.classList.remove('selected');
+                    selectedImage.classList.remove('selected');
+                    
+                    selectedSentence.classList.add('matched');
+                    selectedImage.classList.add('matched');
+
+                    // Add a small checkmark visual
+                    const check = document.createElement('span');
+                    check.innerHTML = ' ✅';
+                    selectedSentence.appendChild(check);
+
+                    selectedSentence = null;
+                    selectedImage = null;
+                    matchedCount++;
+                    document.getElementById('score').innerText = matchedCount;
+                    isProcessing = false;
+
+                    if (matchedCount === gameData.length) {
+                        triggerWin();
+                    }
+                }, 300);
+            } else {
+                // Wrong Match
+                setTimeout(() => {
+                    playSound('wrong');
+                    selectedSentence.classList.add('wrong-shake');
+                    selectedImage.classList.add('wrong-shake');
+                    
+                    setTimeout(() => {
+                        selectedSentence.classList.remove('wrong-shake', 'selected');
+                        selectedImage.classList.remove('wrong-shake', 'selected');
+                        selectedSentence = null;
+                        selectedImage = null;
+                        isProcessing = false;
+                    }, 500);
+                }, 300);
+            }
+        }
+
+        function triggerWin() {
+            setTimeout(() => {
+                // Confetti!
+                var duration = 3 * 1000;
+                var animationEnd = Date.now() + duration;
+                var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 60 };
+
+                function randomInRange(min, max) {
+                    return Math.random() * (max - min) + min;
+                }
+
+                var interval = setInterval(function() {
+                    var timeLeft = animationEnd - Date.now();
+
+                    if (timeLeft <= 0) {
+                        return clearInterval(interval);
+                    }
+
+                    var particleCount = 50 * (timeLeft / duration);
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+                }, 250);
+
+                document.getElementById('win-modal').classList.remove('hidden');
+            }, 500);
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        // Initialize on load
+        window.onload = initGame;
+
+    </script>
+</body>
+</html>
