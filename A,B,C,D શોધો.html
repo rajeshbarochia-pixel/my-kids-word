@@ -2,11 +2,10 @@
 <html lang="gu">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>A,B,C,D શોધો (Find the Letters)</title>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+GPL&display=swap" rel="stylesheet">
     <style>
-        /* તમારું મૂળ CSS અહીં રહેશે */
         body {
             font-family: 'Baloo GPL', sans-serif;
             background-color: #f0fdf4;
@@ -15,57 +14,68 @@
             align-items: flex-start;
             min-height: 100vh;
             margin: 0;
-            padding: 20px 10px;
+            padding: 10px 5px;
             box-sizing: border-box;
             color: #14532d;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .game-container {
             width: 100%;
             max-width: 500px;
-            padding: 20px;
+            padding: 15px;
             background-color: #ffffff;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
             text-align: center;
+            overflow-x: hidden;
         }
 
         h1 {
             color: #dc2626;
             margin-bottom: 5px;
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             font-weight: 800;
         }
 
         p.instructions {
-            margin-bottom: 20px;
-            font-size: 1.1rem;
+            margin-bottom: 15px;
+            font-size: 1rem;
             color: #14532d;
+            line-height: 1.4;
         }
 
         #appleGrid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 15px;
         }
 
         .apple-box {
             background-color: #fef3c7;
-            border: 3px solid #f97316;
-            border-radius: 15px;
-            height: 80px;
+            border: 2px solid #f97316;
+            border-radius: 12px;
+            height: 65px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: bold;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             position: relative;
             cursor: pointer;
             user-select: none;
             color: #14532d;
             text-transform: lowercase;
+            touch-action: manipulation;
+        }
+
+        @media (max-width: 400px) {
+            .apple-box {
+                height: 55px;
+                font-size: 1.6rem;
+            }
         }
 
         .missing {
@@ -74,8 +84,8 @@
         }
 
         .selected {
-            box-shadow: 0 0 10px 4px #0ea5e9 !important;
-            transform: scale(1.05);
+            box-shadow: 0 0 8px 3px #0ea5e9 !important;
+            transform: scale(1.03);
         }
 
         .solved {
@@ -87,58 +97,113 @@
 
         .dummy-box {
             background-color: #e5e7eb;
-            border: 3px solid #9ca3af;
+            border: 2px solid #9ca3af;
             cursor: default;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             color: #6b7280;
             opacity: 0.6;
             pointer-events: none;
         }
 
+        .virtual-keyboard {
+            margin-top: 20px;
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        .keyboard-key {
+            flex: 1;
+            min-width: 40px;
+            height: 50px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            transition: all 0.1s ease;
+        }
+
+        .keyboard-key:active {
+            transform: scale(0.95);
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        }
+
+        .keyboard-key.backspace {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            font-size: 1.2rem;
+        }
+
+        .keyboard-key.enter {
+            background: linear-gradient(135deg, #059669, #047857);
+            font-size: 1.2rem;
+        }
+
+        .keyboard-key.clear {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            font-size: 1.2rem;
+        }
+
         .button-container {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             justify-content: center;
-            margin-top: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
         }
 
         .game-button {
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 1rem;
             font-weight: bold;
             color: #ffffff;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: background 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            touch-action: manipulation;
         }
 
         #newGameBtn {
             background: linear-gradient(135deg, #f97316, #ea580c);
         }
 
-        #newGameBtn:hover {
+        #newGameBtn:active {
             background: linear-gradient(135deg, #ea580c, #f97316);
+            transform: scale(0.98);
         }
 
         #checkAnswerBtn {
             background: linear-gradient(135deg, #3b82f6, #2563eb);
         }
 
-        #checkAnswerBtn:hover {
+        #checkAnswerBtn:active {
             background: linear-gradient(135deg, #2563eb, #3b82f6);
-        }
-
-        .game-button:active {
             transform: scale(0.98);
         }
 
         #message {
             margin-top: 15px;
             min-height: 25px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
+            padding: 5px;
         }
 
         .correct { color: #16a34a; }
@@ -147,24 +212,24 @@
 
         .win { 
             color: #059669; 
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             font-weight: 800;
-            padding: 15px;
+            padding: 10px;
             border-radius: 10px;
             background-color: #d1fae5;
-            box-shadow: 0 5px 15px rgba(0,150,0,0.2);
+            box-shadow: 0 4px 10px rgba(0,150,0,0.15);
         }
 
         .credit {
-            margin-top: 25px;
-            font-size: 0.85rem;
+            margin-top: 20px;
+            font-size: 0.8rem;
             color: #9ca3af;
         }
 
         @keyframes bounce {
             0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-            40% {transform: translateY(-10px);}
-            60% {transform: translateY(-5px);}
+            40% {transform: translateY(-8px);}
+            60% {transform: translateY(-4px);}
         }
     </style>
 </head>
@@ -172,13 +237,57 @@
 
 <div class="game-container">
     <h1>A,B,C,D શોધો</h1>
-    <p class="instructions">ખૂટતા ખાના પર ક્લિક કરો, અક્ષર ટાઈપ કરો અને **જવાબ ચેક કરો** દબાવો.</p>
+    <p class="instructions">ખૂટતા ખાના પર ટેપ કરો, અક્ષર પસંદ કરો અને **જવાબ ચેક કરો** દબાવો.</p>
 
     <div id="appleGrid"></div>
 
+    <div class="virtual-keyboard" id="virtualKeyboard">
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-key="a">a</button>
+            <button class="keyboard-key" data-key="b">b</button>
+            <button class="keyboard-key" data-key="c">c</button>
+            <button class="keyboard-key" data-key="d">d</button>
+            <button class="keyboard-key" data-key="e">e</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-key="f">f</button>
+            <button class="keyboard-key" data-key="g">g</button>
+            <button class="keyboard-key" data-key="h">h</button>
+            <button class="keyboard-key" data-key="i">i</button>
+            <button class="keyboard-key" data-key="j">j</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-key="k">k</button>
+            <button class="keyboard-key" data-key="l">l</button>
+            <button class="keyboard-key" data-key="m">m</button>
+            <button class="keyboard-key" data-key="n">n</button>
+            <button class="keyboard-key" data-key="o">o</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-key="p">p</button>
+            <button class="keyboard-key" data-key="q">q</button>
+            <button class="keyboard-key" data-key="r">r</button>
+            <button class="keyboard-key" data-key="s">s</button>
+            <button class="keyboard-key" data-key="t">t</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-key="u">u</button>
+            <button class="keyboard-key" data-key="v">v</button>
+            <button class="keyboard-key" data-key="w">w</button>
+            <button class="keyboard-key" data-key="x">x</button>
+            <button class="keyboard-key" data-key="y">y</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-key="z">z</button>
+            <button class="keyboard-key backspace" data-key="backspace">⌫</button>
+            <button class="keyboard-key clear" data-key="clear">ક્લિયર</button>
+            <button class="keyboard-key enter" data-key="enter">એન્ટર</button>
+        </div>
+    </div>
+
     <div class="button-container">
-        <button id="checkAnswerBtn" class="game-button" onclick="checkActiveBoxAnswer()">જવાબ ચેક કરો</button>
-        <button id="newGameBtn" class="game-button" onclick="initGame()">નવી ગેમ</button>
+        <button id="checkAnswerBtn" class="game-button">જવાબ ચેક કરો</button>
+        <button id="newGameBtn" class="game-button">નવી ગેમ</button>
     </div>
 
     <div id="message"></div>
@@ -200,12 +309,63 @@
     const appleGrid = document.getElementById('appleGrid');
     const messageBox = document.getElementById('message');
     const checkAnswerButton = document.getElementById('checkAnswerBtn');
+    const newGameButton = document.getElementById('newGameBtn');
+    const virtualKeyboard = document.getElementById('virtualKeyboard');
+
+    // વર્ચ્યુઅલ કી-બોર્ડ સેટઅપ
+    function setupVirtualKeyboard() {
+        const keys = virtualKeyboard.querySelectorAll('.keyboard-key');
+        keys.forEach(key => {
+            key.addEventListener('click', function() {
+                const keyValue = this.getAttribute('data-key');
+                handleVirtualKeyPress(keyValue);
+            });
+            
+            // Touch events for better mobile response
+            key.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                this.style.transform = 'scale(0.95)';
+            }, {passive: false});
+            
+            key.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                this.style.transform = 'scale(1)';
+                const keyValue = this.getAttribute('data-key');
+                handleVirtualKeyPress(keyValue);
+            }, {passive: false});
+        });
+    }
+
+    function handleVirtualKeyPress(key) {
+        if (!activeMissingBox) {
+            showMessage("પહેલા ખૂટતા બોક્સ પર ટેપ કરો.", 'neutral');
+            return;
+        }
+
+        switch(key) {
+            case 'backspace':
+                activeMissingBox.textContent = '';
+                break;
+            case 'clear':
+                activeMissingBox.textContent = '';
+                showMessage("સાફ કર્યું.", 'neutral');
+                break;
+            case 'enter':
+                checkAnswer(activeMissingBox.textContent);
+                break;
+            default:
+                if (key.length === 1) {
+                    activeMissingBox.textContent = key;
+                }
+                break;
+        }
+    }
 
     function checkActiveBoxAnswer() {
         if (activeMissingBox) {
             checkAnswer(activeMissingBox.textContent);
         } else {
-            showMessage("કૃપા કરીને ખૂટતા બોક્સ પર ક્લિક કરો.", 'neutral');
+            showMessage("કૃપા કરીને ખૂટતા બોક્સ પર ટેપ કરો.", 'neutral');
         }
     }
 
@@ -215,6 +375,7 @@
         messageBox.className = '';
         appleGrid.innerHTML = '';
         activeMissingBox = null;
+        checkAnswerButton.disabled = false;
 
         const gridItems = [];
         for (let i = 0; i < GRID_SIZE; i++) {
@@ -239,14 +400,16 @@
 
                 if (missingIndices.has(index)) {
                     box.className += ' missing';
-                    box.setAttribute('tabindex', '0');
-                    box.setAttribute('contenteditable', 'true');
-                    box.textContent = '';
-
+                    box.textContent = '?';
+                    
                     missingLetters[index] = item;
 
+                    // Touch events for mobile
                     box.addEventListener('click', () => selectBox(box));
-                    box.addEventListener('focus', () => selectBox(box));
+                    box.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        selectBox(box);
+                    }, {passive: false});
 
                 } else {
                     box.textContent = item;
@@ -267,15 +430,25 @@
         }
         activeMissingBox = box;
         box.classList.add('selected');
-        box.focus();
-        showMessage("અક્ષર ટાઈપ કરો અને ચેક કરો.", 'neutral');
+        showMessage("અક્ષર પસંદ કરો અને ચેક કરો.", 'neutral');
     }
 
     function checkAnswer(inputValue) {
         const input = (inputValue || '').toLowerCase().trim();
 
-        if (!activeMissingBox || input.length !== 1) {
-            showMessage("કૃપા કરીને એક મૂળાક્ષર લખો.", 'incorrect');
+        if (!activeMissingBox) {
+            showMessage("કૃપા કરીને ખૂટતા બોક્સ પર ટેપ કરો.", 'incorrect');
+            return;
+        }
+
+        // જો '?' હોય તો એમ્પ્ટી કરો
+        if (input === '?') {
+            showMessage("કૃપા કરીને અક્ષર પસંદ કરો.", 'incorrect');
+            return;
+        }
+
+        if (input.length !== 1) {
+            showMessage("કૃપા કરીને એક મૂળાક્ષર પસંદ કરો.", 'incorrect');
             return;
         }
 
@@ -303,6 +476,13 @@
         showMessage("અભિનંદન! બધા મૂળાક્ષરો સાચા ભર્યા!", 'win');
         checkAnswerButton.disabled = true;
         activeMissingBox = null;
+        
+        // બધા missing boxes ને સોલ્વ્ડ બનાવો
+        document.querySelectorAll('.missing').forEach(box => {
+            box.classList.remove('missing', 'selected');
+            box.classList.add('solved');
+            box.textContent = box.dataset.correctLetter;
+        });
     }
 
     function showMessage(msg, type) {
@@ -310,21 +490,51 @@
         messageBox.className = type;
     }
 
-    window.onload = initGame;
+    // Event Listeners
+    window.addEventListener('DOMContentLoaded', () => {
+        initGame();
+        setupVirtualKeyboard();
+        
+        checkAnswerButton.addEventListener('click', checkActiveBoxAnswer);
+        newGameButton.addEventListener('click', initGame);
+        
+        // Touch events for buttons
+        checkAnswerButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            checkAnswerButton.style.transform = 'scale(0.98)';
+        }, {passive: false});
+        
+        checkAnswerButton.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            checkAnswerButton.style.transform = 'scale(1)';
+            checkActiveBoxAnswer();
+        }, {passive: false});
+        
+        newGameButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            newGameButton.style.transform = 'scale(0.98)';
+        }, {passive: false});
+        
+        newGameButton.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            newGameButton.style.transform = 'scale(1)';
+            initGame();
+        }, {passive: false});
+    });
 
-    // ⭐ સુધારેલ keyboard event handler
+    // ડેસ્કટોપ કી-બોર્ડ સપોર્ટ (વૈકલ્પિક)
     window.addEventListener('keydown', (event) => {
         if (!activeMissingBox || activeMissingBox.classList.contains('solved')) return;
 
-        const key = event.key;
+        const key = event.key.toLowerCase();
 
-        if (key.match(/^[a-zA-Z]$/)) {
-            event.preventDefault(); // બે વાર ટાઈપ થતું અટકાવે છે
-            activeMissingBox.textContent = key.toLowerCase();
-        } else if (key === 'Backspace') {
-            event.preventDefault(); // બે વાર ડિલીટ થતું અટકાવે છે
+        if (key.match(/^[a-z]$/)) {
+            event.preventDefault();
+            activeMissingBox.textContent = key;
+        } else if (key === 'backspace' || key === 'delete') {
+            event.preventDefault();
             activeMissingBox.textContent = '';
-        } else if (key === 'Enter') {
+        } else if (key === 'enter') {
             event.preventDefault();
             checkAnswer(activeMissingBox.textContent);
         }
