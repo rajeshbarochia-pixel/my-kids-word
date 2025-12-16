@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>રંગોના નામ શોધો - Word Search Game</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f0f8ff, #e6f7ff);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            touch-action: manipulation;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #ff4500;
+            text-shadow: 2px 2px #ffd700;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+            background: linear-gradient(45deg, #FF5733, #FFC300);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .instructions {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 15px;
+            background: #fff;
+            padding: 10px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.5;
+            border-left: 5px solid #FF5733;
+        }
+
+        /* Game Container */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        /* Word Grid */
+        #grid-container {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            border: 5px solid #8a2be2;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            user-select: none;
+        }
+
+        .cell {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: transform 0.1s, background-color 0.2s;
+            color: #333;
+        }
+
+        .cell:active {
+            transform: scale(0.95);
+        }
+
+        .cell.selected {
+            background-color: #ffd700;
+            color: #000;
+            box-shadow: 0 0 5px #ffd700;
+        }
+
+        .cell.found {
+            color: white;
+            animation: pop 0.3s ease;
+            font-weight: bold;
+        }
+
+        /* Different colors for each found word */
+        .cell.found-red { background-color: #FF0000; }
+        .cell.found-blue { background-color: #0000FF; }
+        .cell.found-green { background-color: #008000; }
+        .cell.found-yellow { background-color: #FFFF00; color: #333; }
+        .cell.found-pink { background-color: #FFC0CB; }
+        .cell.found-orange { background-color: #FFA500; }
+        .cell.found-purple { background-color: #800080; }
+        .cell.found-brown { background-color: #A52A2A; }
+        .cell.found-white { background-color: #FFFFFF; color: #333; border: 1px solid #ccc; }
+        .cell.found-grey { background-color: #808080; }
+
+        /* Word List */
+        #word-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            max-width: 400px;
+            margin-bottom: 10px;
+        }
+
+        .word-item {
+            padding: 8px 15px;
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 25px;
+            font-weight: bold;
+            color: #333;
+            transition: all 0.3s;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Different colors for each word in the list */
+        .word-item-red { border-left: 8px solid #FF0000; color: #FF0000; }
+        .word-item-blue { border-left: 8px solid #0000FF; color: #0000FF; }
+        .word-item-green { border-left: 8px solid #008000; color: #008000; }
+        .word-item-yellow { border-left: 8px solid #FFFF00; color: #FFA500; background-color: #FFF9C4; }
+        .word-item-pink { border-left: 8px solid #FFC0CB; color: #FF69B4; }
+        .word-item-orange { border-left: 8px solid #FFA500; color: #FF8C00; }
+        .word-item-purple { border-left: 8px solid #800080; color: #800080; }
+        .word-item-brown { border-left: 8px solid #A52A2A; color: #A52A2A; }
+        .word-item-white { border-left: 8px solid #808080; color: #666; background-color: #f9f9f9; }
+        .word-item-grey { border-left: 8px solid #808080; color: #666; }
+
+        .word-item.found {
+            text-decoration: line-through;
+            transform: scale(1.05);
+            opacity: 0.8;
+        }
+
+        /* Controls */
+        button {
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            background: linear-gradient(45deg, #FF5733, #FF8C00);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px #c03500;
+            transition: transform 0.1s;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #FF8C00, #FF5733);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 #c03500;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 500px) {
+            .cell {
+                width: 28px;
+                height: 28px;
+                font-size: 1rem;
+            }
+            
+            #grid-container {
+                gap: 3px;
+                padding: 8px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .instructions {
+                font-size: 1rem;
+                padding: 8px 15px;
+            }
+            
+            button {
+                padding: 10px 25px;
+                font-size: 1.1rem;
+            }
+            
+            .word-item {
+                padding: 6px 12px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .win-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #ffffff, #f0f8ff);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 100;
+            border: 5px solid #ffd700;
+            width: 80%;
+            max-width: 400px;
+        }
+        
+        .win-message h2 {
+            color: #32cd32;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .win-message p {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            color: #333;
+        }
+        
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 99;
+        }
+        
+        .color-palette {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 રંગોના નામ શોધો 🎨</h1>
+    <div class="instructions">નીચેના બોક્સમાંથી અંગ્રેજી રંગોના નામ શોધો! (પહેલા અને છેલ્લા અક્ષર પર ક્લિક કરો)</div>
+    
+    <div class="color-palette">
+        <div class="color-box" style="background-color: #FF0000;"></div>
+        <div class="color-box" style="background-color: #0000FF;"></div>
+        <div class="color-box" style="background-color: #008000;"></div>
+        <div class="color-box" style="background-color: #FFFF00;"></div>
+        <div class="color-box" style="background-color: #FFC0CB;"></div>
+        <div class="color-box" style="background-color: #FFA500;"></div>
+        <div class="color-box" style="background-color: #800080;"></div>
+        <div class="color-box" style="background-color: #A52A2A;"></div>
+        <div class="color-box" style="background-color: #FFFFFF; border: 1px solid #ccc;"></div>
+        <div class="color-box" style="background-color: #808080;"></div>
+    </div>
+
+    <div class="game-container">
+        <div id="word-list"></div>
+        <div id="grid-container"></div>
+    </div>
+
+    <button onclick="initGame()">નવી ગેમ (New Game)</button>
+
+    <div class="footer">Created by: Rajesh barochia</div>
+    
+    <div class="overlay" id="overlay"></div>
+    <div class="win-message" id="winMessage">
+        <h2>અભિનંદન! 🎉</h2>
+        <p>તમે બધા રંગો શોધી લીધા! (Congratulations!)</p>
+        <button onclick="closeWinMessage()">ફરી શરૂ કરો</button>
+    </div>
+
+    <script>
+        const words = ["RED", "BLUE", "GREEN", "YELLOW", "PINK", "ORANGE", "PURPLE", "BROWN", "WHITE", "GREY"];
+        const gridSize = 10;
+        let grid = [];
+        let selectedCells = [];
+        
+        // Color mapping for each word
+        const colorMap = {
+            "RED": "#FF0000",
+            "BLUE": "#0000FF", 
+            "GREEN": "#008000",
+            "YELLOW": "#FFFF00",
+            "PINK": "#FFC0CB",
+            "ORANGE": "#FFA500",
+            "PURPLE": "#800080",
+            "BROWN": "#A52A2A",
+            "WHITE": "#FFFFFF",
+            "GREY": "#808080"
+        };
+
+        function initGame() {
+            const gridContainer = document.getElementById('grid-container');
+            const wordListContainer = document.getElementById('word-list');
+            
+            gridContainer.innerHTML = '';
+            wordListContainer.innerHTML = '';
+            grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
+            selectedCells = [];
+
+            // Place words
+            const placedWords = [];
+            words.forEach(word => {
+                if (placeWord(word)) {
+                    placedWords.push(word);
+                }
+            });
+
+            // Fill empty spaces with random letters
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (grid[y][x] === '') {
+                        grid[y][x] = letters.charAt(Math.floor(Math.random() * letters.length));
+                    }
+                }
+            }
+
+            // Render Grid
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.innerText = grid[y][x];
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.addEventListener('click', handleCellClick);
+                    gridContainer.appendChild(cell);
+                }
+            }
+
+            // Render Word List
+            placedWords.forEach(word => {
+                const div = document.createElement('div');
+                div.classList.add('word-item');
+                div.classList.add(`word-item-${word.toLowerCase()}`);
+                div.id = `word-${word}`;
+                div.innerText = word;
+                div.style.color = colorMap[word];
+                
+                wordListContainer.appendChild(div);
+            });
+        }
+
+        function placeWord(word) {
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+            const simpleDirections = [[0, 1], [1, 0]];
+            
+            // Try 50 times to place a word
+            for (let i = 0; i < 50; i++) {
+                const dir = simpleDirections[Math.floor(Math.random() * simpleDirections.length)];
+                const dx = dir[0];
+                const dy = dir[1];
+                
+                const startX = Math.floor(Math.random() * gridSize);
+                const startY = Math.floor(Math.random() * gridSize);
+
+                if (canPlace(word, startX, startY, dx, dy)) {
+                    for (let j = 0; j < word.length; j++) {
+                        grid[startY + j * dy][startX + j * dx] = word[j];
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function canPlace(word, x, y, dx, dy) {
+            // Check if word fits in grid boundaries
+            if (x + (word.length - 1) * dx >= gridSize || x + (word.length - 1) * dx < 0) return false;
+            if (y + (word.length - 1) * dy >= gridSize || y + (word.length - 1) * dy < 0) return false;
+
+            // Check if cells are empty or contain matching letters
+            for (let j = 0; j < word.length; j++) {
+                const newX = x + j * dx;
+                const newY = y + j * dy;
+                const charAtPos = grid[newY][newX];
+                if (charAtPos !== '' && charAtPos !== word[j]) return false;
+            }
+            return true;
+        }
+
+        function handleCellClick(e) {
+            const cell = e.target;
+            
+            // If word is already found in this cell, ignore
+            if (cell.classList.contains('found')) return;
+
+            // Toggle selection
+            if (cell.classList.contains('selected')) {
+                cell.classList.remove('selected');
+                selectedCells = selectedCells.filter(c => c !== cell);
+            } else {
+                // Logic: Only allow selecting 2 points (Start and End) to form a line
+                if (selectedCells.length >= 2) {
+                    selectedCells.forEach(c => c.classList.remove('selected'));
+                    selectedCells = [];
+                }
+                cell.classList.add('selected');
+                selectedCells.push(cell);
+            }
+
+            if (selectedCells.length === 2) {
+                checkSelection();
+            }
+        }
+
+        function checkSelection() {
+            const [start, end] = selectedCells;
+            const x1 = parseInt(start.dataset.x);
+            const y1 = parseInt(start.dataset.y);
+            const x2 = parseInt(end.dataset.x);
+            const y2 = parseInt(end.dataset.y);
+
+            // Determine direction
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const dist = Math.max(Math.abs(dx), Math.abs(dy));
+            
+            const stepX = dx === 0 ? 0 : dx / Math.abs(dx);
+            const stepY = dy === 0 ? 0 : dy / Math.abs(dy);
+
+            // Check if it's a straight line (horizontal, vertical, or perfect diagonal)
+            if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) {
+                // Invalid line
+                setTimeout(clearSelection, 500);
+                return;
+            }
+
+            let formedWord = "";
+            let pathCells = [];
+
+            for (let i = 0; i <= dist; i++) {
+                const cx = x1 + i * stepX;
+                const cy = y1 + i * stepY;
+                const cell = document.querySelector(`.cell[data-x='${cx}'][data-y='${cy}']`);
+                if (cell) {
+                    formedWord += cell.innerText;
+                    pathCells.push(cell);
+                }
+            }
+
+            // Check if word exists (forward or backward)
+            const reversedWord = formedWord.split('').reverse().join('');
+            
+            if (document.getElementById(`word-${formedWord}`)) {
+                markFound(formedWord, pathCells);
+            } else if (document.getElementById(`word-${reversedWord}`)) {
+                markFound(reversedWord, pathCells);
+            } else {
+                setTimeout(clearSelection, 500);
+            }
+        }
+
+        function markFound(word, cells) {
+            // Add specific color class for each word
+            const colorClass = `found-${word.toLowerCase()}`;
+            
+            cells.forEach(cell => {
+                cell.classList.remove('selected');
+                cell.classList.add('found');
+                cell.classList.add(colorClass);
+            });
+            
+            const wordElement = document.getElementById(`word-${word}`);
+            if (wordElement && !wordElement.classList.contains('found')) {
+                wordElement.classList.add('found');
+                // Add celebration effect
+                cells.forEach((cell, index) => {
+                    setTimeout(() => {
+                        cell.style.transform = 'scale(1.1)';
+                        setTimeout(() => {
+                            cell.style.transform = 'scale(1)';
+                        }, 200);
+                    }, index * 100);
+                });
+                checkWin();
+            }
+            selectedCells = [];
+        }
+
+        function clearSelection() {
+            selectedCells.forEach(c => c.classList.remove('selected'));
+            selectedCells = [];
+        }
+
+        function checkWin() {
+            const allWords = document.querySelectorAll('.word-item');
+            const foundWords = document.querySelectorAll('.word-item.found');
+            if (allWords.length === foundWords.length) {
+                setTimeout(() => {
+                    document.getElementById('winMessage').style.display = 'block';
+                    document.getElementById('overlay').style.display = 'block';
+                    
+                    // Add celebration effect to all found cells
+                    const allFoundCells = document.querySelectorAll('.cell.found');
+                    allFoundCells.forEach((cell, index) => {
+                        setTimeout(() => {
+                            cell.style.transform = 'scale(1.2)';
+                            setTimeout(() => {
+                                cell.style.transform = 'scale(1)';
+                            }, 300);
+                        }, index * 50);
+                    });
+                }, 500);
+            }
+        }
+        
+        function closeWinMessage() {
+            document.getElementById('winMessage').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+            initGame();
+        }
+
+        // Start game on load
+        window.onload = initGame;
+    </script>
+</body>
+</html>
