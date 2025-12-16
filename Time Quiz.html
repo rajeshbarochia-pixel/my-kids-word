@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Telling Quiz Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+        .clock-face {
+            fill: white;
+            stroke: #333;
+            stroke-width: 4;
+        }
+        .hand {
+            stroke-linecap: round;
+            transform-origin: 100px 100px; 
+            transition: transform 1s cubic-bezier(0.4, 2.08, 0.55, 0.44);
+        }
+        .hour-hand {
+            stroke: #333;
+            stroke-width: 6;
+        }
+        .minute-hand {
+            stroke: #0088CC;
+            stroke-width: 4;
+        }
+        .center-dot {
+            fill: #333;
+        }
+        .game-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .option-btn {
+            transition: all 0.2s;
+            border-bottom: 4px solid rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        .option-btn:active {
+            transform: translateY(2px);
+            border-bottom: 0px solid rgba(0,0,0,0);
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            animation: fall linear forwards;
+            z-index: 50;
+        }
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(720deg); }
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4">
+
+    <!-- Main Card -->
+    <div class="game-card w-full max-w-md p-6 text-center border-4 border-yellow-400 relative min-h-[600px] flex flex-col">
+        
+        <!-- Header -->
+        <div class="mb-2">
+            <h1 class="text-3xl font-bold text-purple-600 mb-1">⏰ Time Quiz!</h1>
+        </div>
+
+        <!-- GAME AREA -->
+        <div id="game-area" class="flex-1 flex flex-col">
+            <!-- Progress & Score -->
+            <div class="flex justify-between items-end mb-4 px-2">
+                <div class="text-sm font-bold text-gray-400 uppercase tracking-widest" id="progress-text">Question 1/5</div>
+                <div class="bg-blue-100 text-blue-600 font-bold rounded-full px-4 py-1 text-sm shadow-sm">
+                    ⭐ Score: <span id="score">0</span>
+                </div>
+            </div>
+
+            <div class="relative w-full flex justify-center mb-2">
+                <button onclick="speakCurrentQuestion()" class="bg-purple-100 text-purple-600 p-2 rounded-full hover:bg-purple-200 transition-colors" title="Listen Question">
+                   🔊 Listen
+                </button>
+            </div>
+
+            <!-- Clock Visualization -->
+            <div class="relative w-56 h-56 mx-auto mb-4">
+                <svg viewBox="0 0 200 200" class="w-full h-full filter drop-shadow-xl">
+                    <circle cx="100" cy="100" r="95" class="clock-face" />
+                    <g id="clock-numbers" class="text-2xl font-bold fill-gray-700" style="font-family: Arial, sans-serif;"></g>
+                    <line x1="100" y1="100" x2="100" y2="55" class="hand hour-hand" id="hourHand" />
+                    <line x1="100" y1="100" x2="100" y2="30" class="hand minute-hand" id="minuteHand" />
+                    <circle cx="100" cy="100" r="6" class="center-dot" />
+                </svg>
+                
+                <!-- Helper Text -->
+                <div class="absolute top-0 left-0 w-full h-full pointer-events-none opacity-80">
+                    <span class="absolute top-4 left-1/2 transform -translate-x-1/2 text-[9px] font-bold text-red-500 uppercase tracking-widest">o'clock</span>
+                    <span class="absolute bottom-5 left-1/2 transform -translate-x-1/2 text-[9px] font-bold text-red-500 uppercase tracking-widest">half past</span>
+                    <span class="absolute top-1/2 right-2 transform -translate-y-1/2 text-[9px] font-bold text-blue-500 uppercase tracking-widest writing-mode-vertical">past</span>
+                    <span class="absolute top-1/2 left-2 transform -translate-y-1/2 text-[9px] font-bold text-purple-500 uppercase tracking-widest writing-mode-vertical">to</span>
+                </div>
+            </div>
+
+            <!-- Feedback Area -->
+            <div id="feedback" class="h-6 mb-2 font-bold text-lg transition-all"></div>
+
+            <!-- Options Grid -->
+            <div id="options-container" class="grid grid-cols-1 gap-2 mb-2 flex-1">
+                <!-- Buttons injected here -->
+            </div>
+            
+            <!-- Message for auto transition -->
+            <div id="auto-msg" class="h-4 text-xs text-gray-400 font-bold opacity-0 transition-opacity"></div>
+        </div>
+
+        <!-- GAME OVER AREA -->
+        <div id="result-area" class="hidden flex-1 flex flex-col items-center justify-center animate-pulse">
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Round Complete!</h2>
+            <p class="text-gray-500 text-lg mb-6">Great effort so far.</p>
+            
+            <div class="bg-yellow-100 p-6 rounded-2xl mb-8 w-full border-2 border-yellow-300">
+                <p class="text-sm text-yellow-700 font-bold uppercase tracking-wide">Current Score</p>
+                <p class="text-5xl font-bold text-yellow-600" id="final-score">0</p>
+            </div>
+
+            <!-- Continue Button -->
+            <button onclick="continueGame()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl text-xl shadow-[0_4px_0_rgb(21,128,61)] transition-transform active:translate-y-1 active:shadow-none mb-3">
+                Next ➡️
+            </button>
+
+            <!-- Restart Button -->
+            <button onclick="restartGame()" class="w-full bg-purple-100 hover:bg-purple-200 text-purple-700 font-bold py-3 px-6 rounded-xl text-lg shadow-sm border-2 border-purple-200">
+                🔄 Restart Game
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-4 pt-4 border-t border-gray-200">
+            <p class="text-sm font-bold text-gray-500">Created by: Rajesh barochia</p>
+        </div>
+    </div>
+
+    <script>
+        // --- Game State & Elements ---
+        const scoreEl = document.getElementById('score');
+        const finalScoreEl = document.getElementById('final-score');
+        const feedbackEl = document.getElementById('feedback');
+        const autoMsgEl = document.getElementById('auto-msg');
+        const optionsContainer = document.getElementById('options-container');
+        const hourHand = document.getElementById('hourHand');
+        const minuteHand = document.getElementById('minuteHand');
+        const clockNumbers = document.getElementById('clock-numbers');
+        const progressText = document.getElementById('progress-text');
+        
+        const gameArea = document.getElementById('game-area');
+        const resultArea = document.getElementById('result-area');
+
+        // Game Variables
+        let totalQuestions = 5; 
+        let currentScore = 0;
+        let questionCount = 0;
+        let currentQuestion = null;
+        let canAnswer = true;
+        let autoTransitionTimer = null;
+        
+        const synth = window.speechSynthesis;
+
+        // --- Initialization ---
+        function initClockFace() {
+            clockNumbers.innerHTML = ''; 
+            for(let i=1; i<=12; i++) {
+                const angle = (i * 30) * (Math.PI / 180);
+                const r = 72;
+                const x = 100 + r * Math.sin(angle);
+                const y = 100 - r * Math.cos(angle);
+                
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute('x', x);
+                text.setAttribute('y', y);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'central');
+                text.textContent = i;
+                text.setAttribute('fill', '#555');
+                text.setAttribute('font-size', '18');
+                text.setAttribute('font-weight', 'bold');
+                clockNumbers.appendChild(text);
+            }
+        }
+
+        function timeToText(hours, minutes) {
+            const numbers = ["twelve", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+            let displayHour = hours > 12 ? hours - 12 : hours;
+            let nextHour = displayHour === 12 ? 1 : displayHour + 1;
+            
+            if (minutes === 0) return `${numbers[displayHour]} o'clock`;
+            else if (minutes === 15) return `Quarter past ${numbers[displayHour]}`;
+            else if (minutes === 30) return `Half past ${numbers[displayHour]}`;
+            else if (minutes === 45) return `Quarter to ${numbers[nextHour]}`;
+            else if (minutes < 30) {
+                let minText = (minutes === 5) ? "Five" : (minutes === 10) ? "Ten" : (minutes === 20) ? "Twenty" : (minutes === 25) ? "Twenty-five" : minutes;
+                return `${minText} past ${numbers[displayHour]}`;
+            } else {
+                let minsTo = 60 - minutes;
+                let minText = (minsTo === 5) ? "Five" : (minsTo === 10) ? "Ten" : (minsTo === 20) ? "Twenty" : (minsTo === 25) ? "Twenty-five" : minsTo;
+                return `${minText} to ${numbers[nextHour]}`;
+            }
+        }
+
+        function generateQuestion() {
+            const hours = Math.floor(Math.random() * 12) + 1;
+            const minutes = Math.floor(Math.random() * 12) * 5;
+            const correctAnswer = timeToText(hours, minutes);
+            
+            let options = new Set();
+            options.add(correctAnswer);
+            let attempts = 0;
+            while(options.size < 4 && attempts < 100) {
+                attempts++;
+                const rH = Math.floor(Math.random() * 12) + 1;
+                const rM = Math.floor(Math.random() * 12) * 5;
+                const wrong = timeToText(rH, rM);
+                if(wrong !== correctAnswer) options.add(wrong);
+            }
+
+            return {
+                h: hours,
+                m: minutes,
+                correct: correctAnswer,
+                options: Array.from(options).sort(() => Math.random() - 0.5)
+            };
+        }
+
+        function updateClockHands(h, m) {
+            const hAngle = (h % 12) * 30 + (m / 60) * 30; 
+            const mAngle = m * 6;
+            hourHand.style.transform = `rotate(${hAngle}deg)`;
+            minuteHand.style.transform = `rotate(${mAngle}deg)`;
+        }
+
+        function speak(text) {
+            if (synth.speaking) synth.cancel();
+            const utterThis = new SpeechSynthesisUtterance(text);
+            utterThis.rate = 0.9;
+            utterThis.pitch = 1.1;
+            utterThis.lang = 'en-US';
+            synth.speak(utterThis);
+        }
+
+        function speakCurrentQuestion() {
+            if(canAnswer) speak("What time is it?");
+            else speak(`It is ${currentQuestion.correct}`);
+        }
+
+        function playSound(type) {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                if (type === 'success') {
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(1046.5, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.5);
+                } else if (type === 'gameover') {
+                    oscillator.type = 'triangle';
+                    oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    oscillator.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+                    oscillator.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.4);
+                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.6);
+                } else {
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.3);
+                }
+            } catch(e) {}
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = ['#ff0', '#f00', '#0f0', '#00f', '#f0f'][Math.floor(Math.random() * 5)];
+                confetti.style.animationDuration = Math.random() * 1.5 + 1 + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 2500);
+            }
+        }
+
+        // --- Game Logic ---
+        function handleAnswer(selectedOption, btn) {
+            if(!canAnswer) return;
+            canAnswer = false;
+
+            const isCorrect = selectedOption === currentQuestion.correct;
+            
+            const buttons = optionsContainer.querySelectorAll('button');
+            buttons.forEach(b => {
+                b.disabled = true;
+                b.classList.remove('hover:bg-purple-50');
+                if(b.textContent === currentQuestion.correct) {
+                    b.classList.add('bg-green-500', 'text-white', 'border-green-700');
+                    b.textContent = `✅ ${currentQuestion.correct}`;
+                } else if (b === btn && !isCorrect) {
+                    b.classList.add('bg-red-500', 'text-white', 'border-red-700');
+                    b.textContent = `❌ ${selectedOption}`;
+                }
+            });
+
+            if(isCorrect) {
+                playSound('success');
+                currentScore += 10;
+                scoreEl.textContent = currentScore;
+                feedbackEl.innerHTML = `<span class="text-green-600">Awesome! 🎉</span>`;
+                createConfetti();
+                speak(`Correct! It is ${currentQuestion.correct}.`);
+            } else {
+                playSound('error');
+                feedbackEl.innerHTML = `<span class="text-red-500">Correct answer is shown.</span>`;
+                speak(`It is ${currentQuestion.correct}.`);
+            }
+
+            // Show auto transition message
+            autoMsgEl.textContent = "Next question coming...";
+            autoMsgEl.classList.remove('opacity-0');
+
+            // Automatic transition: Wait 1.5 seconds, then load next question
+            if (autoTransitionTimer) clearTimeout(autoTransitionTimer);
+            autoTransitionTimer = setTimeout(() => {
+                loadNextQuestion();
+            }, 1500);
+        }
+
+        function loadNextQuestion() {
+            // Reset message
+            autoMsgEl.classList.add('opacity-0');
+
+            // Check if game should end
+            if (questionCount >= totalQuestions) {
+                endGame();
+                return;
+            }
+
+            // Update State
+            questionCount++;
+            progressText.textContent = `Question ${questionCount} / ${totalQuestions}`;
+            
+            canAnswer = true;
+            feedbackEl.innerHTML = "";
+            optionsContainer.innerHTML = "";
+            
+            currentQuestion = generateQuestion();
+            updateClockHands(currentQuestion.h, currentQuestion.m);
+
+            currentQuestion.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn w-full py-2 px-4 rounded-xl text-lg font-bold text-gray-700 bg-white shadow-md border-b-4 border-purple-200 hover:bg-purple-50 hover:border-purple-300 transform transition-transform active:scale-95";
+                btn.textContent = opt;
+                btn.onclick = () => handleAnswer(opt, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function endGame() {
+            gameArea.classList.add('hidden');
+            resultArea.classList.remove('hidden');
+            finalScoreEl.textContent = currentScore;
+            playSound('gameover');
+            speak(`Round complete. Your score is ${currentScore}.`);
+        }
+
+        function continueGame() {
+            // Add 5 more questions
+            totalQuestions += 5;
+            
+            // Hide result, show game
+            resultArea.classList.add('hidden');
+            gameArea.classList.remove('hidden');
+            
+            loadNextQuestion();
+        }
+
+        function restartGame() {
+            currentScore = 0;
+            questionCount = 0;
+            totalQuestions = 5; // Reset to 5
+            scoreEl.textContent = "0";
+            
+            resultArea.classList.add('hidden');
+            gameArea.classList.remove('hidden');
+            
+            loadNextQuestion();
+        }
+
+        // Run after DOM load
+        window.addEventListener('load', () => {
+            initClockFace();
+            loadNextQuestion();
+        });
+
+    </script>
+</body>
+</html>
