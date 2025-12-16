@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singular & Plural Game for Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background-color: #fff7ed; /* Light orange tint */
+            background-image: radial-gradient(#fdba74 2px, transparent 2px);
+            background-size: 24px 24px;
+        }
+        .card-shadow {
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        .option-btn {
+            transition: all 0.2s ease;
+        }
+        .option-btn:active {
+            transform: scale(0.95);
+        }
+        .correct-anim {
+            animation: bounce 0.5s infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+        .emoji-display {
+            font-size: 5rem;
+            line-height: 1.2;
+            letter-spacing: 0.5rem;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between items-center text-gray-800 select-none">
+
+    <!-- Header -->
+    <header class="w-full bg-orange-500 p-4 text-center shadow-lg border-b-4 border-orange-700">
+        <h1 class="text-2xl md:text-3xl font-bold text-white drop-shadow-md tracking-wide">Singular vs Plural</h1>
+        <p class="text-orange-100 text-sm font-semibold">ચિત્ર જુઓ અને સાચો શબ્દ શોધો</p>
+    </header>
+
+    <!-- Game Container -->
+    <main class="flex-grow flex flex-col items-center justify-center w-full max-w-lg p-4">
+        
+        <!-- Start Screen -->
+        <div id="start-screen" class="bg-white rounded-3xl p-8 w-full text-center card-shadow border-4 border-orange-300">
+            <div class="text-6xl mb-4 animate-bounce">🚗</div>
+            <h2 class="text-2xl font-bold text-orange-600 mb-2">Ready to Play?</h2>
+            <p class="text-gray-500 mb-6">ચિત્ર જોઈને કહો: એક (Singular) છે કે વધુ (Plural)?</p>
+            <button onclick="startGame()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-12 rounded-full text-xl shadow-lg transform transition hover:scale-105 border-b-4 border-indigo-700">
+                START GAME ▶
+            </button>
+        </div>
+
+        <!-- Question Screen -->
+        <div id="game-screen" class="hidden w-full relative">
+            
+            <!-- Progress & Score -->
+            <div class="flex justify-between items-center mb-6 bg-white p-3 rounded-full shadow-md border-2 border-orange-100">
+                <div class="w-2/3 bg-gray-200 rounded-full h-4 ml-2 overflow-hidden">
+                    <div id="progress-bar" class="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div class="font-bold text-orange-600 mr-3 text-lg">
+                    Score: <span id="current-score">0</span>
+                </div>
+            </div>
+
+            <!-- Main Question Card -->
+            <div class="bg-white rounded-3xl p-6 w-full card-shadow border-4 border-blue-200 text-center">
+                
+                <h3 class="text-gray-400 font-bold uppercase text-sm tracking-widest mb-4">Identify the Image</h3>
+
+                <!-- Image Display Area -->
+                <div class="bg-blue-50 rounded-2xl p-8 mb-8 border-2 border-blue-100 min-h-[200px] flex items-center justify-center">
+                    <div id="question-emoji" class="emoji-display transform transition hover:scale-110 cursor-default">🚗</div>
+                </div>
+
+                <p class="text-gray-500 mb-4 font-bold">Choose the correct word:</p>
+
+                <!-- Options Area (Two Buttons) -->
+                <div id="options-container" class="grid grid-cols-2 gap-4">
+                    <!-- Buttons will be injected here -->
+                </div>
+
+                <!-- Feedback -->
+                <div id="feedback" class="hidden mt-6 text-center">
+                    <div id="feedback-text" class="font-bold text-2xl mb-2"></div>
+                    <button onclick="nextQuestion()" id="next-btn" class="bg-orange-500 text-white px-8 py-3 rounded-full font-bold hover:bg-orange-600 shadow-md transition transform active:scale-95 text-lg">Next ➡</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden bg-white rounded-3xl p-8 w-full text-center card-shadow border-4 border-green-200">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 class="text-3xl font-bold text-green-600 mb-2">Game Over!</h2>
+            <p class="text-gray-600 mb-6 font-medium">તમારો સ્કોર (Final Score)</p>
+            
+            <div class="bg-green-50 rounded-2xl p-6 mb-8 border-2 border-green-100">
+                <div class="text-6xl font-black text-green-500 mb-2"><span id="final-score">0</span> / <span id="total-questions">0</span></div>
+                <p class="text-green-600 font-bold text-xl" id="result-message">Great Job!</p>
+            </div>
+            
+            <button onclick="restartGame()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-10 rounded-full text-xl shadow-lg transform transition hover:scale-105 border-b-4 border-blue-700">
+                Play Again 🔄
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center p-4 text-gray-500 text-xs font-bold tracking-widest opacity-60">
+        Created by: Rajesh barochia
+    </footer>
+
+    <script>
+        // Data Structure
+        const vocabulary = [
+            { singular: "Boy", plural: "Boys", emoji: "👦" }, 
+            { singular: "House", plural: "Houses", emoji: "🏠" },
+            { singular: "Car", plural: "Cars", emoji: "🚗" },
+            { singular: "Cat", plural: "Cats", emoji: "🐱" },
+            { singular: "Flag", plural: "Flags", emoji: "🚩" },
+            { singular: "Ball", plural: "Balls", emoji: "⚽" },
+            { singular: "Ship", plural: "Ships", emoji: "🚢" },
+            { singular: "Rat", plural: "Rats", emoji: "🐀" },
+            { singular: "Fish", plural: "Fishes", emoji: "🐟" }, 
+            { singular: "Book", plural: "Books", emoji: "📕" },
+            { singular: "Pen", plural: "Pens", emoji: "🖊️" },
+            { singular: "Toy", plural: "Toys", emoji: "🧸" }
+        ];
+
+        let gameQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let canClick = false;
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startGame() {
+            score = 0;
+            currentQuestionIndex = 0;
+            
+            // Generate questions: For each word, randomly decide if we ask for Singular or Plural
+            gameQuestions = vocabulary.map(item => {
+                const isPlural = Math.random() > 0.5; // 50% chance
+                return {
+                    ...item,
+                    type: isPlural ? 'plural' : 'singular',
+                    correctAnswer: isPlural ? item.plural : item.singular,
+                    displayEmoji: isPlural ? `${item.emoji} ${item.emoji} ${item.emoji}` : item.emoji
+                };
+            });
+
+            // Shuffle the order of questions
+            gameQuestions = shuffleArray(gameQuestions);
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= gameQuestions.length) {
+                endGame();
+                return;
+            }
+
+            const q = gameQuestions[currentQuestionIndex];
+            const total = gameQuestions.length;
+            
+            // Display Emoji (1 or 3)
+            document.getElementById('question-emoji').innerText = q.displayEmoji;
+
+            // Update Score & Progress
+            document.getElementById('current-score').innerText = score;
+            const progress = ((currentQuestionIndex) / total) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+
+            // Reset UI
+            document.getElementById('feedback').classList.add('hidden');
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            optionsContainer.classList.remove('opacity-50', 'pointer-events-none');
+
+            // Generate Options: Always the Singular vs Plural of that specific word
+            let options = [q.singular, q.plural];
+            // Shuffle button positions so correct isn't always same side
+            options = shuffleArray(options);
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn w-full bg-white hover:bg-blue-50 text-gray-700 font-bold py-6 px-2 rounded-xl text-2xl shadow-sm border-2 border-gray-300 flex items-center justify-center";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, q.correctAnswer, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            canClick = true;
+        }
+
+        function checkAnswer(selected, correct, btnElement) {
+            if (!canClick) return;
+            canClick = false;
+
+            const feedbackEl = document.getElementById('feedback');
+            const feedbackText = document.getElementById('feedback-text');
+            feedbackEl.classList.remove('hidden');
+            
+            document.getElementById('options-container').classList.add('pointer-events-none');
+
+            const allBtns = document.querySelectorAll('.option-btn');
+
+            if (selected === correct) {
+                score++;
+                btnElement.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+                btnElement.classList.add('bg-green-500', 'text-white', 'border-green-600', 'correct-anim', 'shadow-md');
+                feedbackText.innerHTML = "<span class='text-green-600'>✔ Correct! (સાચું!)</span>";
+            } else {
+                btnElement.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+                btnElement.classList.add('bg-red-500', 'text-white', 'border-red-600', 'shadow-md');
+                feedbackText.innerHTML = `<span class='text-red-600'>✖ Wrong! Answer is: <span class="text-black">${correct}</span></span>`;
+                
+                // Highlight correct answer
+                allBtns.forEach(btn => {
+                    if (btn.innerText === correct) {
+                        btn.classList.add('bg-green-100', 'text-green-800', 'border-green-400');
+                    }
+                });
+            }
+        }
+
+        function nextQuestion() {
+             currentQuestionIndex++;
+             loadQuestion();
+        }
+
+        function endGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('total-questions').innerText = gameQuestions.length;
+            
+            const msg = document.getElementById('result-message');
+            if(score === gameQuestions.length) {
+                msg.innerText = "Fantastic! 🌟";
+                confettiEffect();
+            } else if (score > gameQuestions.length / 2) {
+                msg.innerText = "Good Job! 👍";
+            } else {
+                msg.innerText = "Keep Practicing! 💪";
+            }
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        function confettiEffect() {
+            const colors = ['#f472b6', '#a78bfa', '#60a5fa', '#34d399', '#fbbf24'];
+            for(let i=0; i<60; i++) {
+                const conf = document.createElement('div');
+                conf.style.position = 'fixed';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.top = '-10px';
+                conf.style.width = Math.random() * 10 + 5 + 'px';
+                conf.style.height = Math.random() * 5 + 5 + 'px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.transition = 'top 2.5s ease-in, transform 2.5s linear';
+                conf.style.zIndex = '9999';
+                conf.style.borderRadius = '4px';
+                document.body.appendChild(conf);
+                
+                setTimeout(() => {
+                    conf.style.top = '110vh';
+                    conf.style.transform = `rotate(${Math.random() * 720}deg)`;
+                }, 100);
+
+                setTimeout(() => {
+                    conf.remove();
+                }, 2600);
+            }
+        }
+    </script>
+</body>
+</html>
