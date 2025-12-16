@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In, On, Under Game for Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background-color: #f0fdf4;
+            background-image: radial-gradient(#86efac 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+        .game-container {
+            perspective: 1000px;
+        }
+        .stage-area {
+            height: 250px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Characters */
+        .hamster {
+            font-size: 4rem;
+            position: absolute;
+            transition: all 0.5s ease;
+            z-index: 10;
+        }
+
+        /* Objects */
+
+        /* Table Emoji Replacement (SVG Background) for 'ON' */
+        .table-emoji {
+            width: 150px;
+            height: 150px;
+            /* Simple vector table graphic */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='10' y='40' width='80' height='10' rx='2' fill='%238B4513'/%3E%3Crect x='15' y='50' width='10' height='40' rx='2' fill='%23A0522D'/%3E%3Crect x='75' y='50' width='10' height='40' rx='2' fill='%23A0522D'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            position: absolute;
+            bottom: 20px; /* Adjusted to sit nicely */
+            z-index: 5;
+        }
+
+        /* Cloud Object for 'Under' */
+        .cloud {
+            width: 130px;
+            height: 50px;
+            background: #60a5fa; /* Blue color */
+            border-radius: 50px;
+            position: absolute;
+            bottom: 160px; /* High up so hamster can be under it */
+            z-index: 20;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 2px solid #3b82f6; /* Darker blue border */
+        }
+        .cloud::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: #60a5fa; /* Blue color */
+            border-radius: 50%;
+            top: -35px;
+            left: 15px;
+            border-top: 2px solid #3b82f6;
+        }
+        .cloud::before {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: #60a5fa; /* Blue color */
+            border-radius: 50%;
+            top: -20px;
+            right: 15px;
+            border-top: 2px solid #3b82f6;
+            border-right: 2px solid #3b82f6;
+        }
+
+        .cup {
+            width: 100px;
+            height: 90px;
+            background-color: #3b82f6; /* Blue cup */
+            border-radius: 0 0 40px 40px;
+            position: absolute;
+            bottom: 50px;
+            border: 4px solid #1d4ed8;
+            border-top: none;
+            z-index: 20; /* Cup front covers hamster */
+        }
+        .cup-back {
+            width: 100px;
+            height: 30px;
+            background-color: #2563eb;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 110px; /* Top of cup */
+            z-index: 5; /* Behind hamster */
+        }
+
+        /* Animations */
+        .bounce { animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .btn-option {
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-option:active {
+            transform: scale(0.95);
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between items-center text-gray-800 select-none">
+
+    <!-- Header -->
+    <header class="w-full bg-pink-500 p-4 text-center shadow-lg border-b-4 border-pink-700">
+        <h1 class="text-3xl font-bold text-white drop-shadow-md tracking-wide">In, On, Under</h1>
+        <p class="text-pink-100 text-sm font-semibold">હેમસ્ટર ક્યાં છે? (Where is the hamster?)</p>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="flex-grow flex flex-col items-center justify-center w-full max-w-lg p-4">
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="bg-white rounded-3xl p-8 w-full text-center shadow-2xl border-4 border-pink-200">
+            <div class="text-6xl mb-4 animate-bounce">🐹</div>
+            <h2 class="text-2xl font-bold text-pink-600 mb-2">Let's Play!</h2>
+            <p class="text-gray-500 mb-6">Learn Prepositions (સ્થાન દર્શક શબ્દો)</p>
+            <button onclick="startGame()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-10 rounded-full text-xl shadow-lg border-b-4 border-green-700 transition transform hover:scale-105">
+                START ▶
+            </button>
+            <p class="mt-4 text-xs text-gray-400">🔊 Sound On (અવાજ ચાલુ રાખો)</p>
+        </div>
+
+        <!-- Gameplay Screen -->
+        <div id="game-screen" class="hidden w-full max-w-md">
+            
+            <!-- Progress -->
+            <div class="flex justify-between items-center mb-4 px-2">
+                <span class="text-pink-600 font-bold text-lg">Question: <span id="q-num">1</span>/10</span>
+                <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-bold border border-yellow-300">⭐ <span id="score">0</span></span>
+            </div>
+
+            <!-- The Visual Stage -->
+            <div class="bg-white rounded-3xl p-4 shadow-xl border-4 border-blue-200 mb-6 relative overflow-hidden">
+                <button onclick="speakCurrentQuestion()" class="absolute top-2 right-2 text-gray-400 hover:text-blue-500">🔊</button>
+                
+                <div id="stage" class="stage-area bg-blue-50 rounded-2xl border-b-4 border-blue-100">
+                    <!-- Dynamic Content Injected Here -->
+                </div>
+            </div>
+
+            <!-- Options -->
+            <h3 class="text-center text-gray-500 font-bold mb-3">Choose the correct word:</h3>
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="checkAnswer('in')" class="btn-option bg-white border-b-4 border-purple-200 text-purple-600 hover:bg-purple-50 font-bold py-4 rounded-xl text-2xl shadow-md">IN</button>
+                <button onclick="checkAnswer('on')" class="btn-option bg-white border-b-4 border-orange-200 text-orange-600 hover:bg-orange-50 font-bold py-4 rounded-xl text-2xl shadow-md">ON</button>
+                <button onclick="checkAnswer('under')" class="btn-option bg-white border-b-4 border-teal-200 text-teal-600 hover:bg-teal-50 font-bold py-4 rounded-xl text-xl shadow-md">UNDER</button>
+            </div>
+
+            <!-- Feedback -->
+            <div id="feedback" class="hidden mt-4 p-3 rounded-xl text-center font-bold text-lg animate-pulse"></div>
+
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden bg-white rounded-3xl p-8 w-full text-center shadow-2xl border-4 border-purple-200">
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 class="text-3xl font-bold text-purple-600 mb-2">Game Over!</h2>
+            <div class="bg-purple-50 rounded-xl p-6 my-6">
+                <p class="text-gray-600 mb-2">Your Score</p>
+                <h1 class="text-6xl font-black text-purple-500"><span id="final-score">0</span><span class="text-3xl text-gray-400">/10</span></h1>
+            </div>
+            <button onclick="restartGame()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-10 rounded-full text-xl shadow-lg border-b-4 border-blue-700 transition transform hover:scale-105">
+                Play Again 🔄
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center p-4 text-gray-500 text-xs font-bold tracking-widest opacity-60">
+        Created by: Rajesh barochia
+    </footer>
+
+    <script>
+        let score = 0;
+        let currentQ = 0;
+        let totalQ = 10;
+        let currentType = ''; // 'in', 'on', 'under'
+        let canClick = false;
+
+        // Speech Synthesis Setup
+        const synth = window.speechSynthesis;
+        
+        function speak(text) {
+            // Cancel any ongoing speech to prevent overlap and errors
+            if (synth.speaking) {
+                synth.cancel();
+            }
+
+            if (text !== '') {
+                const utterThis = new SpeechSynthesisUtterance(text);
+                utterThis.rate = 0.9; // Slightly slower for kids
+                utterThis.pitch = 1.1; // Slightly higher pitch
+                utterThis.lang = 'en-US';
+                synth.speak(utterThis);
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            currentQ = 0;
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentQ >= totalQ) {
+                endGame();
+                return;
+            }
+
+            currentQ++;
+            document.getElementById('q-num').innerText = currentQ;
+            document.getElementById('feedback').classList.add('hidden');
+            document.getElementById('feedback').className = "hidden mt-4 p-3 rounded-xl text-center font-bold text-lg animate-pulse";
+            canClick = true;
+
+            // Randomly select type: in, on, under
+            const types = ['in', 'on', 'under'];
+            currentType = types[Math.floor(Math.random() * types.length)];
+
+            renderScene(currentType);
+            
+            // Speak instructions after a short delay
+            setTimeout(() => {
+                speakCurrentQuestion();
+            }, 500);
+        }
+
+        function speakCurrentQuestion() {
+            speak("Where is the hamster?");
+        }
+
+        function renderScene(type) {
+            const stage = document.getElementById('stage');
+            stage.innerHTML = ''; // Clear stage
+
+            // Create Hamster
+            const hamster = document.createElement('div');
+            hamster.className = 'hamster bounce';
+            hamster.innerText = '🐹';
+
+            if (type === 'on') {
+                // Scenario: Hamster ON a Table (using SVG)
+                const tableEmoji = document.createElement('div');
+                tableEmoji.className = 'table-emoji';
+                
+                // Position hamster ON top
+                // Table visual top is roughly 50-60% of 150px height + bottom offset
+                hamster.style.bottom = '105px'; 
+                
+                stage.appendChild(tableEmoji);
+                stage.appendChild(hamster);
+
+            } else if (type === 'under') {
+                // Scenario: Hamster UNDER a Cloud
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                
+                // Position hamster UNDER
+                hamster.style.bottom = '40px'; 
+                hamster.style.zIndex = '1';
+
+                stage.appendChild(hamster);
+                stage.appendChild(cloud); 
+
+            } else if (type === 'in') {
+                // Scenario: Hamster IN a Cup
+                const cupBack = document.createElement('div');
+                cupBack.className = 'cup-back'; // Top rim behind hamster
+
+                const cupFront = document.createElement('div');
+                cupFront.className = 'cup'; // Front body covering hamster bottom
+
+                // Position hamster inside
+                hamster.style.bottom = '70px'; // Peeking out
+                hamster.style.zIndex = '10'; // Between back and front
+                
+                stage.appendChild(cupBack);
+                stage.appendChild(hamster);
+                stage.appendChild(cupFront);
+            }
+        }
+
+        function checkAnswer(selected) {
+            if (!canClick) return;
+            canClick = false;
+
+            const feedback = document.getElementById('feedback');
+            feedback.classList.remove('hidden');
+
+            if (selected === currentType) {
+                // Correct
+                score++;
+                document.getElementById('score').innerText = score;
+                feedback.innerHTML = "✔ Correct! (સાચું)";
+                feedback.classList.add('bg-green-100', 'text-green-600');
+                
+                speak(`Correct! The hamster is ${currentType} the object.`);
+
+                setTimeout(nextQuestion, 2000);
+            } else {
+                // Wrong
+                feedback.innerHTML = `✖ Wrong! It is <span class="uppercase">${currentType}</span>.`;
+                feedback.classList.add('bg-red-100', 'text-red-600');
+                
+                speak(`Oh no. The hamster is ${currentType} the object.`);
+
+                setTimeout(nextQuestion, 2500);
+            }
+        }
+
+        function endGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            
+            if (score === totalQ) {
+                speak("Wow! Perfect score! You are a superstar!");
+            } else {
+                speak("Good job! Keep practicing.");
+            }
+        }
+
+        function restartGame() {
+            startGame();
+        }
+    </script>
+</body>
+</html>
