@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>વજન માપવાની રમત - ૫ પ્રશ્નોની શ્રેણી</title>
+    <style>
+        :root {
+            --primary-color: #ff6b6b;
+            --secondary-color: #4ecdc4;
+            --bg-color: #f7fff7;
+            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --pan-color: #95a5a6;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: var(--font-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 650px;
+            background: white;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            border: 5px solid var(--secondary-color);
+            position: relative;
+        }
+
+        h1 { 
+            color: var(--primary-color); 
+            margin-bottom: 5px; 
+            font-size: 1.8rem; 
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .instruction {
+            font-size: 1rem;
+            margin-bottom: 20px;
+            background: #e8f4f8;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: bold;
+            border-left: 5px solid var(--secondary-color);
+        }
+
+        .scale-area {
+            position: relative;
+            width: 350px;
+            margin: 0 auto 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pan-container {
+            position: relative;
+            width: 200px;
+            height: 70px;
+            margin-bottom: -10px;
+            z-index: 10;
+        }
+
+        .pan {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 18px;
+            background: var(--pan-color);
+            border-radius: 0 0 60px 60px;
+            border-bottom: 5px solid #7f8c8d;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+
+        .pan::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: #bdc3c7;
+            border-radius: 50%;
+        }
+
+        .pan-stand {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 20px;
+            background: #444;
+        }
+
+        .fruit-display {
+            font-size: 65px;
+            position: absolute;
+            bottom: 15px;
+            width: 100%;
+            text-align: center;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+            z-index: 11;
+        }
+
+        .scale-wrapper {
+            position: relative;
+            width: 350px;
+            height: 200px;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #fff, #f0f0f0);
+            border-radius: 175px 175px 0 0;
+            border: 10px solid #555;
+            box-sizing: border-box;
+            box-shadow: inset 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .tick {
+            position: absolute;
+            background: #333;
+            left: 50%;
+            transform-origin: 50% 170px;
+            top: 0;
+        }
+        .tick.major { 
+            width: 4px; 
+            height: 25px; 
+            background: #222;
+            box-shadow: 0 0 3px rgba(0,0,0,0.3);
+        }
+        .tick.medium { 
+            width: 3px; 
+            height: 18px; 
+            background: #555; 
+        }
+        .tick.minor { 
+            width: 1.5px; 
+            height: 10px; 
+            background: #999; 
+        }
+
+        .number {
+            position: absolute;
+            font-size: 13px;
+            font-weight: bold;
+            left: 50%;
+            top: 30px;
+            transform-origin: 50% 140px;
+            width: 50px;
+            margin-left: -25px;
+            color: #222;
+            text-shadow: 0 0 2px white;
+        }
+
+        .needle {
+            position: absolute;
+            width: 5px;
+            height: 150px;
+            background: linear-gradient(to top, #e74c3c, #c0392b);
+            bottom: 0;
+            left: calc(50% - 2.5px);
+            transform-origin: bottom center;
+            border-radius: 5px 5px 0 0;
+            transition: transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 5;
+            transform: rotate(-90deg);
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+        }
+
+        .needle-tip {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 15px solid #e74c3c;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .center-pin {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle at 30% 30%, #555, #222);
+            border-radius: 50%;
+            left: 50%;
+            bottom: -12px;
+            transform: translateX(-50%);
+            z-index: 6;
+            border: 3px solid white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .digital-display {
+            background: linear-gradient(to bottom, #1a1a1a, #000);
+            color: #00ff00;
+            padding: 8px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.4rem;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 3px solid #444;
+            min-width: 140px;
+            box-shadow: 0 0 15px rgba(0,255,0,0.1);
+            text-shadow: 0 0 5px #00ff00;
+            letter-spacing: 1px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .option-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 1.2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px #3baea5;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px #3baea5;
+        }
+
+        .option-btn:active:not(:disabled) { 
+            transform: translateY(4px); 
+            box-shadow: 0 0 #3baea5; 
+        }
+
+        .option-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .option-btn.correct { 
+            background: #2ecc71 !important; 
+            box-shadow: 0 4px #27ae60 !important;
+        }
+        .option-btn.wrong { 
+            background: #e74c3c !important; 
+            box-shadow: 0 4px #c0392b !important;
+        }
+
+        .footer { 
+            margin-top: 25px; 
+            font-weight: bold; 
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 35px;
+            border-radius: 50px;
+            color: white;
+            z-index: 100;
+            display: none;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 90%;
+        }
+
+        /* Overlays */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.97);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            border-radius: 20px;
+            padding: 20px;
+        }
+
+        #startBtn, #restartBtn {
+            padding: 20px 40px;
+            font-size: 1.5rem;
+            background: linear-gradient(to bottom, var(--primary-color), #ff5252);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        #startBtn:hover, #restartBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
+        }
+
+        #progressTracker {
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #555;
+            background: #f0f8ff;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            border: 2px solid var(--secondary-color);
+        }
+
+        .score-display {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-top: 10px;
+        }
+
+        .weight-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .highlight {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="msg" class="message-box"></div>
+
+    <div class="container">
+        <!-- Start Game Overlay -->
+        <div id="startOverlay" class="overlay">
+            <h2 style="color: var(--primary-color);">વજન માપવાની રમત ⚖️</h2>
+            <p style="margin: 10px 0; text-align: center; max-width: 90%;">
+                આ રમતમાં તમારે ૫ વજનો ઓળખવાના છે.<br>
+                <span class="highlight">૨૫૦ ગ્રામ</span>, <span class="highlight">૫૦૦ ગ્રામ</span>, <span class="highlight">૭૫૦ ગ્રામ</span> અને <span class="highlight">૧ કિલો</span>ના ભાગમાં વજન ઓળખો.
+            </p>
+            <button id="startBtn" onclick="initGame()">રમત શરૂ કરો ▶️</button>
+        </div>
+
+        <!-- End Game Overlay -->
+        <div id="endOverlay" class="overlay" style="display: none;">
+            <h2 style="color: var(--primary-color);">રમત પૂરી થઈ! 🏁</h2>
+            <p id="finalScoreText" style="font-size: 1.5rem; margin: 20px 0; padding: 10px 30px; background: #f0f8ff; border-radius: 20px;"></p>
+            <button id="restartBtn" onclick="initGame()">ફરીથી રમો 🔄</button>
+        </div>
+
+        <h1>⚖️ વજન માપવાની રમત 🍎</h1>
+        
+        <div id="progressTracker">પ્રશ્ન: <span id="currentQuestionNum">1</span> / 5</div>
+        
+        <div class="instruction">કાંટો જે નિશાની પર થઈને જાય તે વજન પસંદ કરો!</div>
+
+        <div class="scale-area">
+            <div class="pan-container">
+                <div class="fruit-display" id="fruitIcon">🍎</div>
+                <div class="pan"></div>
+                <div class="pan-stand"></div>
+            </div>
+
+            <div class="scale-wrapper">
+                <div id="scaleFace" class="scale-face"></div>
+                <div id="needle" class="needle">
+                    <div class="needle-tip"></div>
+                </div>
+            </div>
+            <div class="center-pin"></div>
+            <div class="digital-display" id="digitalWeight">?.??? kg</div>
+            <div class="weight-label" id="weightLabel">ફળનું વજન</div>
+        </div>
+
+        <div class="options-grid" id="options"></div>
+        <div class="score-display">સ્કોર: <span id="score">0</span> ⭐</div>
+    </div>
+
+    <div class="footer">Created by: Rajesh Barochia</div>
+
+    <script>
+        // સુરક્ષિત રીતે API કી સંચાલન
+        const apiKey = ""; 
+        const fruits = [
+            { icon: '🍎', name: 'સફરજન' }, { icon: '🍌', name: 'કેળું' },
+            { icon: '🍉', name: 'તરબૂચ' }, { icon: '🍍', name: 'અનાનસ' },
+            { icon: '🥭', name: 'કેરી' }, { icon: '🥦', name: 'કોબીજ' },
+            { icon: '🥕', name: 'ગાજર' }, { icon: '🌽', name: 'મકાઈ' }
+        ];
+
+        let currentWeight = 0;
+        let score = 0;
+        let questionCount = 0;
+        const maxQuestions = 5;
+        let hasInteracted = false;
+        let isProcessing = false;
+        let currentAudio = null;
+
+        // રમત પ્રારંભ
+        function initGame() {
+            hasInteracted = true;
+            score = 0;
+            questionCount = 0;
+            isProcessing = false;
+            document.getElementById('score').innerText = score;
+            document.getElementById('startOverlay').style.display = 'none';
+            document.getElementById('endOverlay').style.display = 'none';
+            
+            // પ્રવૃત્તિ બટનો સક્રિય કરો
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.disabled = false;
+            });
+            
+            generateGame();
+            speak("વજન માપવાની રમતમાં તમારું સ્વાગત છે. પ્રથમ પ્રશ્ન તૈયાર છે.");
+        }
+
+        // ઑડિઓ બોલાવવાનું કાર્ય
+        async function speak(text) {
+            if (!hasInteracted) return;
+            
+            // પહેલાનું ઑડિઓ બંધ કરો
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+            
+            // વૈકલ્પિક: Web Speech API નો ઉપયોગ કરો
+            if (!apiKey || apiKey.trim() === "") {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'gu-IN';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: text }] }],
+                        generationConfig: {
+                            responseModalities: ["AUDIO"],
+                            speechConfig: {
+                                voiceConfig: {
+                                    prebuiltVoiceConfig: { voiceName: "Aoede" } 
+                                }
+                            }
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                    const audioData = result.candidates[0].content.parts[0].inlineData.data;
+                    const mimeType = result.candidates[0].content.parts[0].inlineData.mimeType;
+                    
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1]) : 24000;
+
+                    const wavBlob = pcmToWav(base64ToArrayBuffer(audioData), sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    currentAudio = new Audio(audioUrl);
+                    currentAudio.play();
+                    
+                    // સ્વચ્છતા માટે
+                    currentAudio.onended = () => {
+                        URL.revokeObjectURL(audioUrl);
+                        currentAudio = null;
+                    };
+                }
+            } catch (error) {
+                console.warn("TTS Error, using fallback:", error);
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'gu-IN';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // PCM ને WAV માં રૂપાંતરિત કરો
+        function pcmToWav(pcmBuffer, sampleRate) {
+            const buffer = new ArrayBuffer(44 + pcmBuffer.byteLength);
+            const view = new DataView(buffer);
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            // WAV હેડર
+            writeString(0, 'RIFF');
+            view.setUint32(4, 32 + pcmBuffer.byteLength, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, pcmBuffer.byteLength, true);
+
+            // PCM ડેટા ઉમેરો
+            const pcmView = new Uint8Array(pcmBuffer);
+            const wavView = new Uint8Array(buffer, 44);
+            wavView.set(pcmView);
+
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        // Base64 ને ArrayBuffer માં રૂપાંતરિત કરો
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // વજન ફોર્મેટ કરો
+        function formatWeight(w) { 
+            return (w / 1000).toFixed(3) + " kg"; 
+        }
+
+        // સ્કેલ ડાયલ શરૂઆતમાં બનાવો
+        function initScale() {
+            const face = document.getElementById('scaleFace');
+            face.innerHTML = '';
+            
+            // ટિક્સ અને નંબરો ઉમેરો
+            for (let i = 0; i <= 4000; i += 50) {
+                const angle = (i / 4000) * 180 - 90;
+                const tick = document.createElement('div');
+                
+                if (i % 1000 === 0) {
+                    tick.className = 'tick major';
+                    const num = document.createElement('div');
+                    num.className = 'number';
+                    num.innerText = (i/1000) + 'kg';
+                    num.style.transform = `rotate(${angle}deg)`;
+                    face.appendChild(num);
+                } else if (i % 250 === 0) {
+                    tick.className = 'tick medium';
+                } else {
+                    tick.className = 'tick minor';
+                }
+                
+                tick.style.transform = `rotate(${angle}deg)`;
+                face.appendChild(tick);
+            }
+        }
+
+        // નવો પ્રશ્ન જનરેટ કરો
+        function generateGame() {
+            if (questionCount >= maxQuestions) {
+                showEndScreen();
+                return;
+            }
+
+            questionCount++;
+            document.getElementById('currentQuestionNum').innerText = questionCount;
+            document.getElementById('digitalWeight').innerText = "?.??? kg";
+
+            // રેન્ડમ ફળ પસંદ કરો
+            const fruit = fruits[Math.floor(Math.random() * fruits.length)];
+            const display = document.getElementById('fruitIcon');
+            display.innerText = fruit.icon;
+            document.getElementById('weightLabel').innerText = `${fruit.name}નું વજન`;
+            
+            // વજનના વિકલ્પો
+            const weights = [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 3000, 3500, 4000];
+            currentWeight = weights[Math.floor(Math.random() * weights.length)];
+            
+            // કાંટાને ચોક્કસ કોણ પર સેટ કરો
+            const angle = (currentWeight / 4000) * 180 - 90;
+            const needle = document.getElementById('needle');
+            
+            // કાંટાને સચોટ સ્થિતિમાં લઈ જાઓ
+            needle.style.transition = 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            needle.style.transform = `rotate(${angle}deg)`;
+            
+            // વિકલ્પો જનરેટ કરો
+            let options = [currentWeight];
+            while (options.length < 4) {
+                let randomOption = weights[Math.floor(Math.random() * weights.length)];
+                if (!options.includes(randomOption)) {
+                    options.push(randomOption);
+                }
+            }
+            
+            // વિકલ્પો ફેરબદલ કરો
+            options.sort(() => Math.random() - 0.5);
+
+            const container = document.getElementById('options');
+            container.innerHTML = '';
+            
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = formatWeight(opt);
+                btn.onclick = () => checkAnswer(opt, btn);
+                container.appendChild(btn);
+            });
+            
+            isProcessing = false;
+            
+            // ઑડિઓ સૂચના
+            setTimeout(() => {
+                speak(`પ્રશ્ન નંબર ${questionCount}. કાંટો જે વજન પર છે તે પસંદ કરો.`);
+            }, 1000);
+        }
+
+        // જવાબ તપાસો
+        function checkAnswer(selected, btn) {
+            if (isProcessing) return;
+            
+            isProcessing = true;
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(b => b.disabled = true);
+
+            // ડિજિટલ ડિસ્પ્લે અપડેટ કરો
+            document.getElementById('digitalWeight').innerText = formatWeight(currentWeight);
+            
+            if (selected === currentWeight) {
+                // સાચો જવાબ
+                score += 10;
+                document.getElementById('score').innerText = score;
+                btn.classList.add('correct');
+                
+                // સંદેશ બતાવો
+                showMessage("સાચો જવાબ! 🎉", "#2ecc71");
+                
+                // ઑડિઓ પ્લે કરો
+                speak(`ખૂબ સરસ! સાચો જવાબ છે. વજન ${currentWeight/1000} કિલોગ્રામ છે.`);
+                
+                // આગલો પ્રશ્ન
+                setTimeout(() => {
+                    generateGame();
+                }, 2500);
+            } else {
+                // ખોટો જવાબ
+                btn.classList.add('wrong');
+                
+                // સાચો જવાબ હાઈલાઇટ કરો
+                btns.forEach(b => {
+                    const btnWeight = parseFloat(b.innerText.split(' ')[0]) * 1000;
+                    if (Math.abs(btnWeight - currentWeight) < 1) {
+                        b.classList.add('correct');
+                    }
+                });
+                
+                // સંદેશ બતાવો
+                showMessage("ખોટો જવાબ! 😟", "#e74c3c");
+                
+                // ઑડિઓ પ્લે કરો
+                speak(`ખોટો જવાબ છે. સાચું વજન ${currentWeight/1000} કિલોગ્રામ હતું.`);
+                
+                // આગલો પ્રશ્ન
+                setTimeout(() => {
+                    generateGame();
+                }, 3000);
+            }
+        }
+
+        // અંતિમ સ્ક્રીન બતાવો
+        function showEndScreen() {
+            document.getElementById('endOverlay').style.display = 'flex';
+            document.getElementById('finalScoreText').innerText = `તમારો કુલ સ્કોર: ${score} / 50`;
+            
+            // ઑડિઓ પ્લે કરો
+            if (score >= 40) {
+                speak(`ખૂબ ખૂબ અભિનંદન! તમે ${score} સ્કોર કર્યો છે. ખૂબ સરસ રમત રમી!`);
+            } else if (score >= 20) {
+                speak(`અભિનંદન! તમે ${score} સ્કોર કર્યો છે. સારું રમ્યા!`);
+            } else {
+                speak(`રમત પૂરી થઈ. તમારો સ્કોર ${score} છે. ફરીથી પ્રયત્ન કરો!`);
+            }
+        }
+
+        // સંદેશ બતાવો
+        function showMessage(text, color) {
+            const msg = document.getElementById('msg');
+            msg.innerText = text;
+            msg.style.backgroundColor = color;
+            msg.style.display = 'block';
+            
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 2500);
+        }
+
+        // પૃષ્ઠ લોડ થતા શરૂઆતના કાર્યો
+        window.onload = () => {
+            initScale();
+            
+            // વપરાશકર્તા સંપર્ક માટે
+            document.addEventListener('click', () => {
+                hasInteracted = true;
+            }, { once: true });
+            
+            // શરૂઆતનો સંદેશ
+            setTimeout(() => {
+                if (!hasInteracted) {
+                    showMessage("રમત શરૂ કરવા માટે 'રમત શરૂ કરો' બટન દબાવો", "#4ecdc4");
+                }
+            }, 1000);
+        };
+
+        // પૃષ્ઠ બંધ થાય ત્યારે ઑડિઓ બંધ કરો
+        window.addEventListener('beforeunload', () => {
+            if (currentAudio) {
+                currentAudio.pause();
+            }
+            window.speechSynthesis.cancel();
+        });
+    </script>
+</body>
+</html>
