@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>તાપમાન માસ્ટર - સચોટ સ્કેલ ગેમ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', 'Gujarati', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            touch-action: manipulation;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .main-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+        }
+        /* થર્મોમીટર માળખું */
+        .thermometer-center {
+            position: relative;
+            height: 280px; /* સ્કેલની કુલ ઊંચાઈ */
+            width: 30px;
+            background: #ffffff;
+            border: 3px solid #334e68;
+            border-bottom: none;
+            border-radius: 15px 15px 0 0;
+            z-index: 10;
+        }
+        .mercury-column {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to right, #ff4b2b, #ff416c, #ff4b2b);
+            transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px 2px 0 0;
+        }
+        .bulb {
+            position: absolute;
+            bottom: -45px; /* ટ્યુબની નીચે */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle at 30% 30%, #ff4b2b, #b91c1c);
+            border: 4px solid #334e68;
+            border-radius: 50%;
+            z-index: 11;
+        }
+        /* સ્કેલ અને આંકડા */
+        .scale-container {
+            position: absolute;
+            bottom: 0;
+            height: 280px;
+            width: 60px;
+        }
+        .scale-left { right: 35px; }
+        .scale-right { left: 35px; }
+
+        .tick {
+            position: absolute;
+            height: 2px;
+            background: #334e68;
+        }
+        .tick-major { width: 15px; }
+        .tick-minor { width: 8px; background: #627d98; }
+        
+        .label {
+            position: absolute;
+            font-size: 11px;
+            font-weight: 700;
+            color: #102a43;
+            line-height: 1;
+            /* આંકડાને કાપાની બરાબર મધ્યમાં લાવવા માટે */
+            transform: translateY(50%); 
+        }
+        .label-left { right: 20px; text-align: right; }
+        .label-right { left: 20px; text-align: left; }
+
+        .unit-tag {
+            position: absolute;
+            top: -25px;
+            font-weight: 900;
+            font-size: 16px;
+            color: #334e68;
+        }
+
+        .live-dot {
+            width: 8px; height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <header class="text-center py-1">
+            <h1 class="text-2xl font-bold text-red-600">🌡️ તાપમાન માસ્ટર</h1>
+        </header>
+
+        <div class="flex-1 bg-white rounded-3xl shadow-xl p-4 flex flex-col overflow-hidden border-4 border-blue-50">
+            
+            <!-- Status Row -->
+            <div class="flex justify-between items-center mb-4 px-2">
+                <div class="bg-blue-100 text-blue-800 px-4 py-1 rounded-full text-xs font-bold">સ્કોર: <span id="score">0</span></div>
+                <div id="live-status" class="hidden text-green-600 text-xs font-bold items-center">
+                    <span class="live-dot"></span> લાઇવ
+                </div>
+                <div class="bg-orange-100 text-orange-800 px-4 py-1 rounded-full text-xs font-bold">લેવલ: <span id="level">૧</span></div>
+            </div>
+
+            <!-- Interactive Area -->
+            <div class="flex flex-1 items-center justify-center relative">
+                
+                <!-- Thermometer wrapper with scales -->
+                <div class="relative h-[280px] w-[180px] flex justify-center">
+                    
+                    <!-- Celsius Scale -->
+                    <div class="unit-tag" style="left: 0;">°F</div>
+                    <div id="c-scale" class="scale-container scale-left"></div>
+
+                    <!-- Tube -->
+                    <div class="thermometer-center">
+                        <div id="mercury" class="mercury-column" style="height: 0%;"></div>
+                    </div>
+                    
+                    <!-- Fahrenheit Scale -->
+                    <div class="unit-tag" style="right: 0;">°C</div>
+                    <div id="f-scale" class="scale-container scale-right"></div>
+
+                    <!-- Bulb -->
+                    <div class="bulb"></div>
+                </div>
+
+                <!-- Info Display (Right side) -->
+                <div class="ml-4 flex flex-col items-center justify-center space-y-3">
+                    <div id="display-box" class="bg-slate-50 p-3 rounded-2xl border-2 border-slate-100 text-center w-36">
+                        <div id="val-c" class="text-3xl font-black text-red-500">0°C</div>
+                        <div id="val-f" class="text-lg font-bold text-blue-500">32°F</div>
+                        <div id="obj-icon" class="text-5xl my-2">🏠</div>
+                        <div id="obj-name" class="text-xs font-bold text-slate-500">સામાન્ય</div>
+                    </div>
+
+                    <div id="quiz-box" class="hidden bg-yellow-50 p-3 rounded-2xl border-2 border-yellow-200 text-center w-36">
+                        <p class="text-[10px] font-bold text-yellow-700 mb-2">તાપમાન ઓળખો:</p>
+                        <div id="quiz-options" class="grid gap-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback -->
+            <div id="msg" class="text-center h-6 text-sm font-bold my-2"></div>
+
+            <!-- Bottom Controls -->
+            <div class="mt-auto grid grid-cols-2 gap-3 pb-2">
+                <button onclick="fetchLiveWeather()" class="col-span-2 bg-blue-600 text-white font-bold py-3 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center text-sm">
+                    🌍 લાઇવ તાપમાન જુઓ
+                </button>
+                <button onclick="initQuiz()" class="bg-green-500 text-white font-bold py-3 rounded-xl active:scale-95 text-xs">
+                    🎲 ક્વિઝ રમો
+                </button>
+                <button onclick="speakTemp()" class="bg-slate-100 text-slate-700 font-bold py-3 rounded-xl active:scale-95 text-xs">
+                    📢 સાંભળો
+                </button>
+            </div>
+        </div>
+
+        <footer class="text-center py-2 text-[10px] text-slate-400 font-medium">
+            Created by: Rajesh barochia
+        </footer>
+    </div>
+
+    <script>
+        let score = 0, level = 1, currentTempC = 0, quizTargetC = 0;
+
+        const presets = [
+            { t: 0, i: "❄️", n: "બરફ" },
+            { t: 10, i: "🍦", n: "ઠંડુ" },
+            { t: 25, i: "🏠", n: "સામાન્ય" },
+            { t: 37, i: "🧒", n: "શરીર" },
+            { t: 60, i: "☕", n: "ગરમ ચા" },
+            { t: 100, i: "🔥", n: "ઉકળતું" }
+        ];
+
+        function createScales() {
+            const cs = document.getElementById('c-scale');
+            const fs = document.getElementById('f-scale');
+            const h = 280; // Scale height in px
+
+            // Celsius: 0 to 100
+            for (let i = 0; i <= 100; i += 5) {
+                const y = (i / 100) * h;
+                const tick = document.createElement('div');
+                tick.style.bottom = `${y}px`;
+                tick.className = `tick ${i % 10 === 0 ? 'tick-major' : 'tick-minor'}`;
+                tick.style.right = '0';
+                cs.appendChild(tick);
+
+                if (i % 20 === 0) {
+                    const lbl = document.createElement('div');
+                    lbl.className = 'label label-left';
+                    lbl.style.bottom = `${y}px`;
+                    lbl.innerText = i;
+                    cs.appendChild(lbl);
+                }
+            }
+
+            // Fahrenheit: 32 to 212
+            // 0C = 32F, 100C = 212F. Total range = 180F.
+            for (let f = 30; f <= 220; f += 10) {
+                const cVal = (f - 32) / 1.8;
+                if (cVal < -5 || cVal > 105) continue;
+                const y = (cVal / 100) * h;
+                
+                const tick = document.createElement('div');
+                tick.style.bottom = `${y}px`;
+                tick.className = `tick ${f % 20 === 0 || f === 32 || f === 212 ? 'tick-major' : 'tick-minor'}`;
+                tick.style.left = '0';
+                fs.appendChild(tick);
+
+                if (f % 40 === 0 || f === 32 || f === 212) {
+                    const lbl = document.createElement('div');
+                    lbl.className = 'label label-right';
+                    lbl.style.bottom = `${y}px`;
+                    lbl.innerText = f;
+                    fs.appendChild(lbl);
+                }
+            }
+        }
+
+        function updateUI(c, hideText = false) {
+            currentTempC = Math.round(c * 10) / 10;
+            const f = Math.round((c * 1.8 + 32) * 10) / 10;
+            document.getElementById('mercury').style.height = `${Math.max(0, Math.min(100, c))}%`;
+
+            if (!hideText) {
+                document.getElementById('val-c').innerText = `${currentTempC}°C`;
+                document.getElementById('val-f').innerText = `${f}°F`;
+                
+                const best = presets.reduce((p, k) => Math.abs(k.t - c) < Math.abs(p.t - c) ? k : p);
+                document.getElementById('obj-icon').innerText = best.i;
+                document.getElementById('obj-name').innerText = best.n;
+            } else {
+                document.getElementById('val-c').innerText = `???°C`;
+                document.getElementById('val-f').innerText = `???°F`;
+            }
+        }
+
+        async function fetchLiveWeather() {
+            setMsg("લોકેશન શોધી રહ્યા છીએ...", "#3b82f6");
+            document.getElementById('quiz-box').classList.add('hidden');
+            document.getElementById('display-box').classList.remove('hidden');
+
+            navigator.geolocation.getCurrentPosition(async (p) => {
+                try {
+                    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&current_weather=true`);
+                    const d = await r.json();
+                    updateUI(d.current_weather.temperature);
+                    document.getElementById('live-status').classList.remove('hidden');
+                    setMsg("લાઇવ તાપમાન મળી ગયું!", "#10b981");
+                    speak(`અત્યારે તાપમાન ${currentTempC} ડિગ્રી છે.`);
+                } catch (e) { setMsg("ડેટા ભૂલ!", "#ef4444"); }
+            }, () => setMsg("પરવાનગી આપો", "#ef4444"));
+        }
+
+        function initQuiz() {
+            document.getElementById('live-status').classList.add('hidden');
+            document.getElementById('display-box').classList.add('hidden');
+            document.getElementById('quiz-box').classList.remove('hidden');
+            setMsg("પારો જોઈને અંદાજ લગાવો!", "#f59e0b");
+
+            quizTargetC = Math.floor(Math.random() * 11) * 10;
+            updateUI(quizTargetC, true);
+
+            const opts = [quizTargetC];
+            while(opts.length < 3) {
+                let r = Math.floor(Math.random() * 11) * 10;
+                if(!opts.includes(r)) opts.push(r);
+            }
+            opts.sort(() => Math.random() - 0.5);
+
+            const container = document.getElementById('quiz-options');
+            container.innerHTML = '';
+            opts.forEach(o => {
+                const b = document.createElement('button');
+                b.className = "bg-white border-2 border-yellow-200 py-2 rounded-xl text-xs font-bold text-yellow-700 active:bg-yellow-100 transition-colors";
+                b.innerText = `${o}°C`;
+                b.onclick = () => checkAns(o);
+                container.appendChild(b);
+            });
+        }
+
+        function checkAns(v) {
+            if (v === quizTargetC) {
+                score += 10;
+                setMsg("સાચું છે! 🥳", "#10b981");
+                updateUI(v, false);
+                document.getElementById('display-box').classList.remove('hidden');
+                speak("ખૂબ સરસ!");
+                updateStats();
+                setTimeout(initQuiz, 2500);
+            } else {
+                setMsg("ફરીથી જુઓ! 🧐", "#ef4444");
+                speak("ખોટું છે");
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('score').innerText = score;
+            level = Math.floor(score / 50) + 1;
+            document.getElementById('level').innerText = level;
+        }
+
+        function setMsg(t, c) {
+            const m = document.getElementById('msg');
+            m.innerText = t; m.style.color = c;
+        }
+
+        function speak(t) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const u = new SpeechSynthesisUtterance(t);
+                u.lang = 'gu-IN';
+                window.speechSynthesis.speak(u);
+            }
+        }
+
+        function speakTemp() {
+            speak(`તાપમાન ${currentTempC} ડિગ્રી સેલ્સિયસ છે.`);
+        }
+
+        window.onload = () => { createScales(); updateUI(25); };
+    </script>
+</body>
+</html>
