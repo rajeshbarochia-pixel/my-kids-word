@@ -3,332 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>મણકા ગણતરીની રમત (ઓટો ચેક)</title>
+    <title>મણકા ગણતરી રમત</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles for the abacus structure and visual appeal */
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Vadodara:wght@400;700&display=swap');
         
-        /* Setting the main body layout for full screen centering on desktop/tablet */
-        .full-center-layout {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center; /* Center content vertically on large screens */
-            min-height: 100vh;
-            padding: 1rem;
+        body {
+            font-family: 'Hind Vadodara', sans-serif;
+            background-color: #f0fdf4;
+            touch-action: manipulation;
         }
 
-        /* Base container for the Abacus visual */
-        .abacus-base {
-            background-color: #ffffff; /* White background for the abacus card */
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-            width: 180px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 5;
-        }
-
-        .abacus-container-only {
-            display: flex;
-            justify-content: center;
-            position: relative;
-            height: 280px; /* HEIGHT INCREASED from 250px to 280px to contain all 9 beads */
-            width: 160px; 
-            margin: 0 auto; 
-        }
-
-        .rod-wrapper {
-            position: absolute;
-            bottom: 0;
-            width: 50%; 
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end; 
-            z-index: 10;
-        }
-        
-        /* Rod Styling */
-        .rod {
-            width: 6px; 
-            background-color: #555; 
-            position: absolute; 
-            bottom: 10px; 
-            height: 250px; /* Rod height increased from 220px to 250px */
-            border-radius: 3px;
-        }
-
-        .rod-tens-wrapper { left: 0; }
-        .rod-units-wrapper { right: 0; }
-        
-        /* Bead Styling */
         .bead {
-            width: 32px; /* Tappable size */
-            height: 32px;
+            width: 25px;
+            height: 25px;
             border-radius: 50%;
-            position: absolute;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3); 
-            transition: bottom 0.5s ease-out; /* Use 'bottom' property for movement in this non-interactive mode */
-            border: 2px solid rgba(255, 255, 255, 0.6);
-            left: calc(50% - 16px); /* Center bead on the rod */
-            z-index: 20;
+            display: inline-block;
+            margin: 2px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            animation: bounceIn 0.5s ease;
         }
 
-        /* Bead Colors - Using brighter colors */
-        .color-0 { background-color: #fcd34d; /* Amber 300 */ }
-        .color-1 { background-color: #ef4444; /* Red 500 */ }
-        .color-2 { background-color: #2dd4bf; /* Teal 400 */ }
-        .color-3 { background-color: #60a5fa; /* Blue 400 */ }
-        .color-4 { background-color: #a78bfa; /* Violet 400 */ }
-        .color-5 { background-color: #f472b6; /* Pink 400 */ }
-
-
-        /* Input and Feedback */
-        .answer-input {
-            width: 120px; 
-            height: 55px; 
-            text-align: center;
-            font-size: 1.8rem; 
-            font-weight: bold;
-            border: 3px solid #cbd5e1; /* Default border */
-            border-radius: 12px; 
-            outline: none;
-            transition: border-color 0.3s, box-shadow 0.3s;
-            background-color: #f8fafc; 
-            color: #333;
-        }
-        .answer-input::placeholder {
-            color: #94a3b8; 
-            font-size: 1.0rem; /* FURTHER REDUCED FONT SIZE to 1.0rem */
-        }
-        .answer-input:focus {
-            border-color: #6366f1; 
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3); 
-        }
-        /* Color feedback styles */
-        .answer-input.correct-border {
-            border-color: #10b981; /* Green */
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.5); 
-        }
-        .answer-input.incorrect-border {
-            border-color: #ef4444; /* Red */
-            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.5); 
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); }
         }
 
-        .feedback-message {
-            min-height: 40px; 
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        /* સાચા જવાબ માટે નવું અને શક્તિશાળી એનિમેશન */
+        @keyframes successBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        /* સાચા જવાબની સ્ટાઇલ */
+        .success-animate {
+            animation: successBounce 0.8s ease-in-out infinite !important;
+            color: #166534 !important; /* ઘટ્ટ લીલો */
+            background-color: #f0fdf4 !important;
+            border-color: #22c55e !important;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.5) !important;
+            opacity: 1 !important; /* Disable હોવા છતાં ઝાંખું નહીં થાય */
+            -webkit-text-fill-color: #166534 !important; /* Safari માટે */
+        }
+
+        .box {
+            min-height: 180px;
+            transition: all 0.3s ease;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input {
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            background-color: #fff7ed;
+            transform: scale(1.05);
+            border-color: #f97316;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-100 to-red-100 min-h-screen p-4 flex flex-col items-center font-sans full-center-layout">
+<body class="min-h-screen flex flex-col items-center p-4">
 
-    <header class="text-center mb-8">
-        <h1 class="text-4xl font-extrabold text-red-700 tracking-tight">મણકા ગણો</h1>
-        <p class="text-lg text-gray-700 mt-2">મણકા ઘોડીમાં મણકા ગણીને સાચી સંખ્યા લખો.</p>
-        <p class="text-sm text-gray-500 mt-1">Created by: Rajesh Barochia</p> <!-- Added Creator Name Here -->
+    <!-- Header -->
+    <header class="text-center mb-6">
+        <h1 class="text-3xl md:text-4xl font-bold text-orange-600 mb-2">🔴 મણકા ગણતરી રમત 🔵</h1>
+        <p class="text-gray-600 font-semibold text-lg">જમણેથી ડાબી તરફ (એકમ થી હજાર) અંક લખો</p>
     </header>
 
-    <div id="game-area" class="w-full max-w-sm flex flex-col items-center">
-        <!-- Abacus and Input will be injected here -->
-    </div>
-    
-    <div class="mt-8 w-full max-w-sm flex justify-center">
-        <button id="new-game-btn" onclick="generateNewGame(1)" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 transition transform hover:scale-105 active:scale-95 text-lg">
-            નવો પ્રશ્ન લાવો (New Question)
-        </button>
-    </div>
+    <!-- Game Container -->
+    <main class="w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-6 border-t-8 border-orange-500">
+        
+        <!-- Display Boxes -->
+        <div class="grid grid-cols-4 gap-2 md:gap-4 mb-8">
+            <div class="flex flex-col items-center">
+                <div id="box-1000" class="box w-full bg-blue-100 border-4 border-blue-400 rounded-xl p-2 flex flex-wrap content-start justify-center overflow-y-auto shadow-inner"></div>
+                <div class="mt-2 font-bold text-blue-700 text-lg">હજાર</div>
+            </div>
+            <div class="flex flex-col items-center">
+                <div id="box-100" class="box w-full bg-red-100 border-4 border-red-400 rounded-xl p-2 flex flex-wrap content-start justify-center overflow-y-auto shadow-inner"></div>
+                <div class="mt-2 font-bold text-red-700 text-lg">સો</div>
+            </div>
+            <div class="flex flex-col items-center">
+                <div id="box-10" class="box w-full bg-yellow-100 border-4 border-yellow-400 rounded-xl p-2 flex flex-wrap content-start justify-center overflow-y-auto shadow-inner"></div>
+                <div class="mt-2 font-bold text-yellow-700 text-lg">દશક</div>
+            </div>
+            <div class="flex flex-col items-center">
+                <div id="box-1" class="box w-full bg-green-100 border-4 border-green-400 rounded-xl p-2 flex flex-wrap content-start justify-center overflow-y-auto shadow-inner"></div>
+                <div class="mt-2 font-bold text-green-700 text-lg">એકમ</div>
+            </div>
+        </div>
 
-    <div id="score-message" class="mt-8 p-4 w-full max-w-sm text-center text-xl font-bold rounded-xl hidden text-green-700 bg-green-100"></div>
+        <!-- Input Section (Order: 1000, 100, 10, 1) -->
+        <div id="input-container" class="grid grid-cols-4 gap-2 md:gap-4 mb-8">
+            <input type="number" id="input-1000" class="w-full text-4xl font-bold text-center border-4 border-blue-300 rounded-2xl p-3 outline-none" placeholder="?">
+            <input type="number" id="input-100" class="w-full text-4xl font-bold text-center border-4 border-red-300 rounded-2xl p-3 outline-none" placeholder="?">
+            <input type="number" id="input-10" class="w-full text-4xl font-bold text-center border-4 border-yellow-300 rounded-2xl p-3 outline-none" placeholder="?">
+            <input type="number" id="input-1" class="w-full text-4xl font-bold text-center border-4 border-green-300 rounded-2xl p-3 outline-none" placeholder="?">
+        </div>
+
+        <!-- Controls -->
+        <div class="flex flex-col md:flex-row justify-center items-center gap-6">
+            <button onclick="checkAnswer()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-10 rounded-full text-2xl shadow-lg transition transform active:scale-90">
+                ✅ તપાસો
+            </button>
+            <button onclick="newGame()" class="bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-4 px-10 rounded-full text-2xl border-2 border-blue-200 transition transform active:scale-90">
+                🔄 નવી રમત
+            </button>
+        </div>
+
+        <!-- Feedback -->
+        <div id="message-container" class="mt-10 text-center hidden">
+            <div id="message-box" class="text-3xl font-bold mb-4"></div>
+            <button id="speak-btn" onclick="speakCurrentNumber()" class="bg-green-100 hover:bg-green-200 text-green-700 px-6 py-3 rounded-2xl shadow-md transition inline-flex items-center gap-3 font-bold text-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                સંખ્યા સાંભળો
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 text-center">
+        <p class="text-md font-bold text-gray-400 tracking-wide uppercase">Created by: Rajesh barochia</p>
+    </footer>
 
     <script>
-        const BEAD_COLORS = ['color-0', 'color-1', 'color-2', 'color-3', 'color-4', 'color-5'];
-        const BEAD_HEIGHT = 32; // Bead diameter
-        const BEAD_GAP = 2;     // Small gap between beads
-        const TOTAL_BEAD_SIZE = BEAD_HEIGHT + BEAD_GAP;
-        const ROD_BOTTOM_OFFSET = 10; 
-        const MAX_BEADS_PER_ROD = 9; 
+        let currentValues = { thousand: 0, hundred: 0, ten: 0, unit: 0 };
+        const inputs = {
+            thousand: document.getElementById('input-1000'),
+            hundred: document.getElementById('input-100'),
+            ten: document.getElementById('input-10'),
+            unit: document.getElementById('input-1')
+        };
+        const boxes = {
+            thousand: document.getElementById('box-1000'),
+            hundred: document.getElementById('box-100'),
+            ten: document.getElementById('box-10'),
+            unit: document.getElementById('box-1')
+        };
+        
+        // Right to Left order for navigation
+        const inputWriteOrder = [inputs.unit, inputs.ten, inputs.hundred, inputs.thousand];
 
-        let correctAnswers = [];
-        let isAnsweredCorrectly = false; // Flag to prevent repeated actions on the same correct answer
+        const messageContainer = document.getElementById('message-container');
+        const messageBox = document.getElementById('message-box');
 
-        // Helper function to generate a random integer
-        function getRandomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance();
+            msg.text = text;
+            msg.lang = 'gu-IN';
+            msg.rate = 0.85;
+            window.speechSynthesis.speak(msg);
         }
 
-        /**
-         * Renders the bead elements for a single rod, stacked from the bottom.
-         * @param {number} count The number of beads to display.
-         * @param {string} colorClass The color class for the beads.
-         * @returns {string} The HTML string for the beads.
-         */
-        function generateBeads(count, colorClass) {
-            let beadsHTML = '';
-            // We want 'count' beads to be visible at the bottom of the rod.
-            // Since the Abacus is read from bottom up, we generate only the required beads.
+        function speakCurrentNumber() {
+            const total = (currentValues.thousand * 1000) + (currentValues.hundred * 100) + (currentValues.ten * 10) + currentValues.unit;
+            speak(`${total}`);
+        }
+
+        function createBeads(boxElement, count, colorClass) {
+            boxElement.innerHTML = '';
             for (let i = 0; i < count; i++) {
-                // Calculate 'bottom' position to stack beads correctly on the rod
-                const bottomPosition = ROD_BOTTOM_OFFSET + (i * TOTAL_BEAD_SIZE); 
-                beadsHTML += `<div class="bead ${colorClass}" style="bottom: ${bottomPosition}px;"></div>`;
-            }
-            return beadsHTML;
-        }
-
-
-        /**
-         * Generates the HTML for one single abacus problem.
-         * @param {number} number The number to be displayed (e.g., 35).
-         * @param {number} index The index of this problem in the game (always 0).
-         * @returns {string} The HTML string for the problem.
-         */
-        function createAbacusProblem(number, index) {
-            const unitsDigit = number % 10; // એકમ (Units)
-            const tensDigit = Math.floor(number / 10); // દશક (Tens)
-
-            // Ensure different colors for units and tens for better visibility
-            let unitsBeadColor = BEAD_COLORS[getRandomInt(0, BEAD_COLORS.length - 1)];
-            let tensBeadColor = unitsBeadColor;
-            while(tensBeadColor === unitsBeadColor) {
-                 tensBeadColor = BEAD_COLORS[getRandomInt(0, BEAD_COLORS.length - 1)];
-            }
-            
-            return `
-                <div class="flex flex-col items-center">
-                    <div class="abacus-base">
-                        <div class="abacus-container-only">
-                            
-                            <!-- Tens Rod Area -->
-                            <div class="rod-wrapper rod-tens-wrapper">
-                                <div class="rod"></div>
-                                <div class="absolute w-full h-full">
-                                    ${generateBeads(tensDigit, tensBeadColor)}
-                                </div>
-                            </div>
-
-                            <!-- Units Rod Area -->
-                            <div class="rod-wrapper rod-units-wrapper">
-                                <div class="rod"></div>
-                                <div class="absolute w-full h-full">
-                                    ${generateBeads(unitsDigit, unitsBeadColor)}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex flex-col items-center w-full mt-6">
-                        <input 
-                            type="number" 
-                            id="input-${index}" 
-                            data-index="${index}" 
-                            class="answer-input" 
-                            placeholder="સંખ્યા લખો"
-                            min="0" max="99"
-                            oninput="checkImmediateAnswer(this)"
-                        >
-                        <div id="feedback-${index}" class="mt-3 feedback-message"></div>
-                    </div>
-                </div>
-            `;
-        }
-
-        /**
-         * Checks the user's answer immediately on input and provides color feedback.
-         * @param {HTMLInputElement} inputElement The input field that triggered the event.
-         */
-        function checkImmediateAnswer(inputElement) {
-            const index = 0; // Fixed index since there is only one question
-            const feedbackEl = document.getElementById(`feedback-${index}`);
-            const correctAns = correctAnswers[index];
-            const userAnswer = parseInt(inputElement.value);
-
-            // 1. Clear previous classes
-            inputElement.classList.remove('correct-border', 'incorrect-border');
-            feedbackEl.textContent = '';
-            feedbackEl.classList.remove('text-red-600', 'text-green-600');
-            document.getElementById('score-message').classList.add('hidden');
-
-            // If input is empty or NaN, just clear feedback and return
-            if (isNaN(userAnswer) || inputElement.value.length === 0) {
-                isAnsweredCorrectly = false;
-                return;
-            }
-
-            // Convert correct answer to string to compare length (for two digits check)
-            const correctAnsStr = String(correctAns);
-            const userAnsStr = inputElement.value;
-            
-            // Check if the answer is correct
-            if (userAnswer === correctAns) {
-                if (!isAnsweredCorrectly) {
-                    isAnsweredCorrectly = true;
-                    
-                    // Correct feedback: Green border
-                    inputElement.classList.add('correct-border');
-                    inputElement.readOnly = true; // Lock input
-                    feedbackEl.textContent = 'સાચું! ✅';
-                    feedbackEl.classList.add('text-green-600');
-
-                    // Show success message briefly
-                    const scoreMessageEl = document.getElementById('score-message');
-                    scoreMessageEl.classList.remove('hidden');
-                    scoreMessageEl.innerHTML = `બહુ સરસ! 🎉 તમારો જવાબ સાચો છે.`;
-                    
-                    // Automatically generate new game after a short delay
-                    setTimeout(() => {
-                        generateNewGame(1);
-                    }, 2000); // 2 second delay
-                }
-            } else if (userAnsStr.length === correctAnsStr.length) {
-                // If the user entered the full number of digits (usually 2 for 10-99) but it's wrong: Red border
-                inputElement.classList.add('incorrect-border');
-                feedbackEl.textContent = 'ખોટું. ❌ ફરી પ્રયાસ કરો.';
-                feedbackEl.classList.add('text-red-600');
-            } else {
-                // User is still typing (e.g., entered '1' but correct is '85') - no color feedback yet
+                setTimeout(() => {
+                    const bead = document.createElement('div');
+                    bead.className = `bead ${colorClass}`;
+                    boxElement.appendChild(bead);
+                }, i * 60);
             }
         }
 
-        /**
-         * Generates a new abacus problem.
-         * @param {number} count The number of problems to generate (now fixed to 1).
-         */
-        function generateNewGame(count) {
-            const actualCount = 1; // Force count to 1 for single problem mode
-            const gameArea = document.getElementById('game-area');
-            gameArea.innerHTML = ''; // Clear previous game
-            correctAnswers = [];
-            isAnsweredCorrectly = false; // Reset the flag
+        function newGame() {
+            Object.values(inputs).forEach(input => {
+                input.value = '';
+                input.classList.remove('success-animate', 'border-red-500', 'border-green-500');
+                input.disabled = false;
+            });
+            messageContainer.classList.add('hidden');
             
-            document.getElementById('score-message').classList.add('hidden');
-            
-            // Only generate one problem
-            for (let i = 0; i < actualCount; i++) {
-                // Generate a random two-digit number (10 to 99)
-                const number = getRandomInt(10, 99);
-                correctAnswers.push(number);
+            currentValues.thousand = Math.floor(Math.random() * 10);
+            currentValues.hundred = Math.floor(Math.random() * 10);
+            currentValues.ten = Math.floor(Math.random() * 10);
+            currentValues.unit = Math.floor(Math.random() * 10);
+
+            createBeads(boxes.thousand, currentValues.thousand, 'bg-blue-500');
+            createBeads(boxes.hundred, currentValues.hundred, 'bg-red-500');
+            createBeads(boxes.ten, currentValues.ten, 'bg-yellow-500');
+            createBeads(boxes.unit, currentValues.unit, 'bg-green-500');
+
+            speak("એકમથી ગણવાનું શરૂ કરો");
+            inputs.unit.focus();
+        }
+
+        function checkAnswer() {
+            const uT = parseInt(inputs.thousand.value) || 0;
+            const uH = parseInt(inputs.hundred.value) || 0;
+            const uTe = parseInt(inputs.ten.value) || 0;
+            const uU = parseInt(inputs.unit.value) || 0;
+
+            const isCorrect = (uT === currentValues.thousand && uH === currentValues.hundred && uTe === currentValues.ten && uU === currentValues.unit);
+
+            messageContainer.classList.remove('hidden');
+            Object.values(inputs).forEach(input => input.classList.remove('border-red-500', 'border-green-500', 'success-animate'));
+
+            if (isCorrect) {
+                messageBox.innerHTML = "🥳 ખુબ સરસ! સાચો જવાબ છે! 🌟";
+                messageBox.className = "text-3xl font-bold mb-4 text-green-600";
                 
-                const problemHtml = createAbacusProblem(number, i);
-                gameArea.insertAdjacentHTML('beforeend', problemHtml);
-            }
-
-            // Focus on the input field for immediate playability
-            const inputField = document.getElementById('input-0');
-            if(inputField) {
-                inputField.focus();
+                const fullNumber = (uT * 1000) + (uH * 100) + (uTe * 10) + uU;
+                speak(`સાચો જવાબ! આ સંખ્યા છે ${fullNumber}`);
+                
+                // એનિમેશન અને યુનિફોર્મ લીલો રંગ લાગુ કરો
+                Object.values(inputs).forEach(input => {
+                    input.classList.add('success-animate');
+                    input.disabled = true;
+                });
+            } else {
+                messageBox.innerHTML = "❌ ફરીથી પ્રયત્ન કરો 🧐";
+                messageBox.className = "text-3xl font-bold mb-4 text-red-600";
+                speak("ખોટો જવાબ, ફરીથી ગણો");
+                
+                if(uT !== currentValues.thousand) inputs.thousand.classList.add('border-red-500');
+                if(uH !== currentValues.hundred) inputs.hundred.classList.add('border-red-500');
+                if(uTe !== currentValues.ten) inputs.ten.classList.add('border-red-500');
+                if(uU !== currentValues.unit) inputs.unit.classList.add('border-red-500');
             }
         }
 
-        // Initialize the game when the page loads
-        window.onload = () => generateNewGame(1); 
+        // Keyboard Logic: Right to Left
+        inputWriteOrder.forEach((input, index, arr) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length >= 1 && index < arr.length - 1) {
+                    arr[index + 1].focus();
+                }
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+                    arr[index - 1].focus();
+                }
+            });
+        });
+
+        window.onload = newGame;
     </script>
 </body>
 </html>
