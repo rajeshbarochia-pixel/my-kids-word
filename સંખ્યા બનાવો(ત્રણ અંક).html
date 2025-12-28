@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>નંબર વ્હીલ ગેમ - Number Wheel Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rasa:wght@400;700&display=swap');
+
+        :root {
+            --c1: #FF4757; /* લાલ */
+            --c2: #2ED573; /* લીલો */
+            --c3: #1E90FF; /* વાદળી */
+            --c4: #FFA502; /* કેસરી */
+            --bg: #dfe4ea;
+        }
+
+        body {
+            font-family: 'Rasa', serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        h1 {
+            color: #2f3542;
+            margin: 10px 0 5px 0;
+            font-size: 2.2rem;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Author Text Style */
+        .author-text {
+            font-family: sans-serif;
+            color: #57606f;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* Game Container */
+        .game-wrapper {
+            position: relative;
+            width: 340px;
+            height: 340px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0 20px 0;
+        }
+
+        /* Indicator Window */
+        .indicator-box {
+            position: absolute;
+            top: 0;
+            width: 50px;
+            height: 160px; /* Radius of outer ring */
+            background: rgba(255, 255, 255, 0.4);
+            border: 2px solid #2f3542;
+            border-bottom: none;
+            z-index: 10;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -100%);
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+        }
+
+        .arrow {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            color: #2f3542;
+            z-index: 20;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* Rings */
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: transform 2.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+            border: 3px solid white;
+        }
+
+        /* Adjusted sizes for 3 rings */
+        .ring-3 { width: 300px; height: 300px; background-color: var(--c3); z-index: 2; }
+        .ring-2 { width: 200px; height: 200px; background-color: var(--c2); z-index: 3; }
+        .ring-1 { width: 100px; height: 100px; background-color: var(--c1); z-index: 4; }
+
+        /* Number Wrapper (Positions the number on the ring) */
+        .num-wrapper {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Number Content (The actual text that stays upright) */
+        .num-content {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: transform 2.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+        }
+
+        .ring-1 .num-content { font-size: 1.2rem; }
+
+        /* Hub */
+        .hub {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            z-index: 20;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+        }
+
+        /* --- Animations --- */
+        
+        @keyframes rotate-cw { 100% { transform: rotate(360deg); } }
+        @keyframes rotate-ccw { 100% { transform: rotate(-360deg); } }
+
+        /* Spinning State for Rings */
+        .spinning .ring-1 { animation: rotate-ccw 1s linear infinite; }
+        .spinning .ring-2 { animation: rotate-cw 1.5s linear infinite; }
+        .spinning .ring-3 { animation: rotate-ccw 2s linear infinite; }
+
+        /* Counter-Animations for Numbers (To keep them upright) */
+        .spinning .ring-1 .num-content { animation: rotate-cw 1s linear infinite; }
+        .spinning .ring-2 .num-content { animation: rotate-ccw 1.5s linear infinite; }
+        .spinning .ring-3 .num-content { animation: rotate-cw 2s linear infinite; }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+            z-index: 30;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Rasa', serif;
+            font-weight: bold;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.2);
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-width: 200px;
+        }
+
+        button:active { transform: translateY(5px); box-shadow: none; }
+        
+        .btn-spin { background-color: #2ED573; color: white; }
+        .btn-stop { background-color: #FF4757; color: white; }
+
+        /* Result Area */
+        .result-area {
+            background: white;
+            padding: 10px 30px;
+            border-radius: 15px;
+            margin-top: 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            min-width: 200px;
+        }
+
+        .result-title { font-size: 1rem; color: #747d8c; }
+        .result-value { font-size: 2.5rem; color: #2f3542; font-weight: bold; letter-spacing: 5px; }
+
+        /* Footer removed as text moved to header */
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 100;
+        }
+
+        @media (max-width: 400px) {
+            .game-wrapper { transform: scale(0.85); margin: 10px 0; }
+            h1 { font-size: 1.8rem; }
+            button { padding: 12px 30px; font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎡 લકી નંબર વ્હીલ 🎡</h1>
+    <div class="author-text">Created by: Rajesh barochia</div>
+
+    <div class="game-wrapper" id="gameWrapper">
+        <div class="indicator-box"></div>
+        <div class="arrow">🔻</div>
+
+        <!-- 3 Rings -->
+        <div class="ring ring-3" id="ring3"></div>
+        <div class="ring ring-2" id="ring2"></div>
+        <div class="ring ring-1" id="ring1"></div>
+        
+        <div class="hub"></div>
+    </div>
+
+    <div class="result-area">
+        <div class="result-title">તમારો નંબર:</div>
+        <div class="result-value" id="resultDisplay">---</div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-spin" id="toggleBtn" onclick="toggleSpin()">🚀 ફેરવો</button>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        const digits = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'];
+        
+        // 3 Rings Configuration
+        const rings = [
+            { id: 'ring1', radius: 50, el: null },
+            { id: 'ring2', radius: 100, el: null },
+            { id: 'ring3', radius: 150, el: null }
+        ];
+
+        let isSpinning = false;
+        let finalNumberString = "";
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playTone(freq, type, duration) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function init() {
+            rings.forEach(ring => {
+                ring.el = document.getElementById(ring.id);
+                for (let i = 0; i < 10; i++) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'num-wrapper';
+                    
+                    const content = document.createElement('div');
+                    content.className = 'num-content';
+                    content.innerText = digits[i];
+
+                    const angle = i * 36;
+                    const rad = (angle - 90) * (Math.PI / 180); 
+                    
+                    // -15 accounts for half the wrapper size (30px) to center it
+                    const x = (ring.radius - 15) * Math.cos(rad); 
+                    const y = (ring.radius - 15) * Math.sin(rad);
+
+                    wrapper.style.transform = `translate(${x}px, ${y}px)`;
+                    
+                    wrapper.appendChild(content);
+                    ring.el.appendChild(wrapper);
+                }
+            });
+        }
+
+        function toggleSpin() {
+            const btn = document.getElementById('toggleBtn');
+
+            if (!isSpinning) {
+                // START
+                isSpinning = true;
+                btn.innerText = "🛑 થોભો";
+                btn.classList.remove('btn-spin');
+                btn.classList.add('btn-stop');
+                document.getElementById('gameWrapper').classList.add('spinning');
+                document.getElementById('resultDisplay').innerText = "---";
+                
+                rings.forEach(r => {
+                    r.el.style.transform = '';
+                    Array.from(r.el.getElementsByClassName('num-content')).forEach(c => {
+                        c.style.transform = '';
+                    });
+                });
+
+                playTone(400, 'square', 0.1);
+
+            } else {
+                // STOP
+                isSpinning = false;
+                btn.disabled = true;
+                document.getElementById('gameWrapper').classList.remove('spinning');
+
+                finalNumberString = "";
+                let generatedDigits = [];
+
+                rings.forEach((ring, index) => {
+                    const winningDigit = Math.floor(Math.random() * 10);
+                    generatedDigits.push(winningDigit);
+                    
+                    const angleNeeded = -1 * (winningDigit * 36);
+                    const totalRotation = angleNeeded - (1080 + (index * 360)); 
+
+                    // 1. Rotate Ring
+                    ring.el.style.transform = `rotate(${totalRotation}deg)`;
+
+                    // 2. Counter-Rotate Numbers
+                    const counterRotation = -1 * totalRotation;
+                    
+                    const numbers = ring.el.getElementsByClassName('num-content');
+                    Array.from(numbers).forEach(num => {
+                        num.style.transform = `rotate(${counterRotation}deg)`;
+                    });
+                });
+
+                generatedDigits.forEach(d => finalNumberString += digits[d]);
+                playTone(600, 'sine', 0.2);
+
+                setTimeout(() => {
+                    document.getElementById('resultDisplay').innerText = finalNumberString;
+                    btn.disabled = false;
+                    btn.innerText = "🚀 ફેરવો";
+                    btn.classList.remove('btn-stop');
+                    btn.classList.add('btn-spin');
+                    playTone(800, 'triangle', 0.5); 
+                    speakResult(finalNumberString);
+                    fireConfetti();
+                }, 2600);
+            }
+        }
+
+        function speakResult(text) {
+            // Convert Gujarati digits to standard digits for correct whole-number pronunciation
+            // This ensures "૧૨૩" is read as "ek so trevis" (123) instead of "ek be tran" (1 2 3)
+            const map = {'૦':'0', '૧':'1', '૨':'2', '૩':'3', '૪':'4', '૫':'5', '૬':'6', '૭':'7', '૮':'8', '૯':'9'};
+            let numStr = text.split('').map(c => map[c] || c).join('');
+
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
+            const msg = new SpeechSynthesisUtterance();
+            msg.text = "તમારો નંબર છે " + numStr; 
+            msg.lang = 'gu-IN';
+            msg.rate = 0.9;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function fireConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            let particles = [];
+            for(let i=0; i<100; i++) {
+                particles.push({
+                    x: canvas.width/2, y: canvas.height/2,
+                    vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
+                    color: `hsl(${Math.random()*360}, 100%, 50%)`, life: 100
+                });
+            }
+            function update() {
+                ctx.clearRect(0,0,canvas.width, canvas.height);
+                particles.forEach((p, index) => {
+                    p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life--;
+                    ctx.fillStyle = p.color; ctx.beginPath();
+                    ctx.arc(p.x, p.y, 5, 0, Math.PI*2); ctx.fill();
+                    if(p.life <= 0) particles.splice(index, 1);
+                });
+                if(particles.length > 0) requestAnimationFrame(update);
+            }
+            update();
+        }
+
+        init();
+    </script>
+</body>
+</html>
