@@ -31,10 +31,20 @@
 
         h1 {
             color: #2f3542;
-            margin: 10px 0;
+            margin: 10px 0 5px 0;
             font-size: 2.2rem;
             text-align: center;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Author Text Style */
+        .author-text {
+            font-family: sans-serif;
+            color: #57606f;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
         }
 
         /* Game Container */
@@ -45,7 +55,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 20px 0;
+            margin: 10px 0 20px 0;
         }
 
         /* Indicator Window */
@@ -53,7 +63,7 @@
             position: absolute;
             top: 0;
             width: 50px;
-            height: 170px; /* Radius of outer ring */
+            height: 170px; /* Radius of outer ring + padding */
             background: rgba(255, 255, 255, 0.4);
             border: 2px solid #2f3542;
             border-bottom: none;
@@ -95,7 +105,7 @@
             border: 3px solid white;
         }
 
-        /* Adjusted sizes for 4 rings */
+        /* Sizes for 4 rings */
         .ring-4 { width: 320px; height: 320px; background-color: var(--c4); z-index: 1; }
         .ring-3 { width: 240px; height: 240px; background-color: var(--c3); z-index: 2; }
         .ring-2 { width: 160px; height: 160px; background-color: var(--c2); z-index: 3; }
@@ -194,15 +204,7 @@
         .result-title { font-size: 1rem; color: #747d8c; }
         .result-value { font-size: 2.5rem; color: #2f3542; font-weight: bold; letter-spacing: 5px; }
 
-        /* Footer */
-        footer {
-            margin-top: auto;
-            padding: 15px;
-            color: #57606f;
-            font-size: 0.9rem;
-            font-weight: bold;
-            font-family: sans-serif;
-        }
+        /* Footer removed as text moved to header */
 
         #confetti-canvas {
             position: fixed;
@@ -211,7 +213,7 @@
         }
 
         @media (max-width: 400px) {
-            .game-wrapper { transform: scale(0.85); margin: 0; }
+            .game-wrapper { transform: scale(0.85); margin: 10px 0; }
             h1 { font-size: 1.8rem; }
             button { padding: 12px 30px; font-size: 1.3rem; }
         }
@@ -220,11 +222,13 @@
 <body>
 
     <h1>🎡 લકી નંબર વ્હીલ 🎡</h1>
+    <div class="author-text">Created by: Rajesh barochia</div>
 
     <div class="game-wrapper" id="gameWrapper">
         <div class="indicator-box"></div>
         <div class="arrow">🔻</div>
 
+        <!-- 4 Rings -->
         <div class="ring ring-4" id="ring4"></div>
         <div class="ring ring-3" id="ring3"></div>
         <div class="ring ring-2" id="ring2"></div>
@@ -241,10 +245,6 @@
     <div class="controls">
         <button class="btn-spin" id="toggleBtn" onclick="toggleSpin()">🚀 ફેરવો</button>
     </div>
-
-    <footer>
-        Created by: Rajesh barochia
-    </footer>
 
     <canvas id="confetti-canvas"></canvas>
 
@@ -292,7 +292,7 @@
                     const angle = i * 36;
                     const rad = (angle - 90) * (Math.PI / 180); 
                     
-                    // -15 accounts for half the wrapper size to center it
+                    // -15 accounts for half the wrapper size (30px) to center it
                     const x = (ring.radius - 15) * Math.cos(rad); 
                     const y = (ring.radius - 15) * Math.sin(rad);
 
@@ -370,8 +370,15 @@
         }
 
         function speakResult(text) {
+            // Convert Gujarati digits to standard digits for correct whole-number pronunciation
+            const map = {'૦':'0', '૧':'1', '૨':'2', '૩':'3', '૪':'4', '૫':'5', '૬':'6', '૭':'7', '૮':'8', '૯':'9'};
+            let numStr = text.split('').map(c => map[c] || c).join('');
+
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
             const msg = new SpeechSynthesisUtterance();
-            msg.text = "તમારો નંબર છે " + text.split('').join(' '); 
+            msg.text = "તમારો નંબર છે " + numStr; 
             msg.lang = 'gu-IN';
             msg.rate = 0.9;
             window.speechSynthesis.speak(msg);
