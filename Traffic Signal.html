@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ટ્રાફિક સિગ્નલ શીખો - Traffic Light Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Digital-7&display=swap'); /* Adding a digital font feel fallback */
+
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background-color: #e0f7fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+            text-align: center;
+            overflow: hidden; /* Helps with screen friendly layout */
+        }
+
+        h1 {
+            color: #006064;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .game-wrapper {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        /* Traffic Light Housing */
+        .traffic-light {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 0 0 5px #444, 10px 10px 20px rgba(0,0,0,0.4);
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Pole */
+        .traffic-light::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 25px;
+            height: 150px;
+            background: linear-gradient(90deg, #444, #666, #444);
+            z-index: -1;
+            border-radius: 0 0 10px 10px;
+            border: 2px solid #333;
+        }
+
+        /* Row container to hold timer, light and message */
+        .light-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            height: 90px; /* Match light height */
+            width: 90px; /* Match light width */
+        }
+
+        .light {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background-color: #4a4a4a; /* Off state */
+            border: 4px solid #222;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        .light:active {
+            transform: scale(0.95);
+        }
+
+        /* Message bubbles (Right side) */
+        .msg-bubble {
+            position: absolute;
+            left: 130px; /* To the right */
+            background: white;
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateX(-20px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            z-index: 5;
+            border-left: 5px solid transparent;
+        }
+
+        .msg-bubble::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 10px 10px 10px 0;
+            border-style: solid;
+            border-color: transparent white transparent transparent;
+        }
+
+        /* Timer Display (Left side) */
+        .timer-display {
+            position: absolute;
+            right: 130px; /* To the left */
+            font-family: 'Courier New', monospace;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #333;
+            background: #222; /* Dark background like a digital clock */
+            color: #ff3333; /* Digital red numbers */
+            padding: 5px 15px;
+            border-radius: 5px;
+            border: 2px solid #555;
+            min-width: 40px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .timer-display.active {
+            opacity: 1;
+        }
+
+        /* Active States */
+        .light.red.active {
+            background-color: #ff0000;
+            box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000;
+            z-index: 11;
+        }
+        .msg-bubble.red-msg.active {
+            opacity: 1;
+            transform: translateX(0);
+            color: #d32f2f;
+            border-left-color: #d32f2f;
+        }
+        .timer-display.red-timer { color: #ff3333; }
+
+        .light.yellow.active {
+            background-color: #ffeb3b;
+            box-shadow: 0 0 30px #ffeb3b, 0 0 60px #ffeb3b;
+            z-index: 11;
+        }
+        .msg-bubble.yellow-msg.active {
+            opacity: 1;
+            transform: translateX(0);
+            color: #fbc02d;
+            border-left-color: #fbc02d;
+        }
+        .timer-display.yellow-timer { color: #ffeb3b; }
+
+        .light.green.active {
+            background-color: #00e676;
+            box-shadow: 0 0 30px #00e676, 0 0 60px #00e676;
+            z-index: 11;
+        }
+        .msg-bubble.green-msg.active {
+            opacity: 1;
+            transform: translateX(0);
+            color: #2e7d32;
+            border-left-color: #2e7d32;
+        }
+        .timer-display.green-timer { color: #00e676; }
+
+        .start-btn {
+            background: #00838f;
+            color: white;
+            font-size: 1.5rem;
+            padding: 12px 35px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            transition: transform 0.2s;
+        }
+        .start-btn:hover { transform: scale(1.05); }
+
+        .footer-credit {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.8rem;
+            color: #999;
+            background: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 500px) {
+            h1 { font-size: 1.5rem; }
+            .traffic-light { margin-bottom: 0; }
+            .msg-bubble { 
+                font-size: 1rem; 
+                left: 100px;
+                padding: 5px 10px;
+            }
+            .timer-display {
+                right: 100px;
+                font-size: 1.8rem;
+                padding: 2px 10px;
+            }
+            .game-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🚦 ટ્રાફિક સિગ્નલ શીખો 🚦</h1>
+
+    <button id="start-btn" class="start-btn" onclick="startGame()">રમત શરૂ કરો ▶️</button>
+
+    <div class="game-wrapper">
+        <div class="traffic-light">
+            <!-- RED -->
+            <div class="light-row">
+                <div id="timer-red" class="timer-display red-timer">6</div>
+                <div id="light-red" class="light red" onclick="handleClick('red')"></div>
+                <div id="msg-red" class="msg-bubble red-msg">🛑 થોભો (Stop)</div>
+            </div>
+
+            <!-- YELLOW -->
+            <div class="light-row">
+                <div id="timer-yellow" class="timer-display yellow-timer">3</div>
+                <div id="light-yellow" class="light yellow" onclick="handleClick('yellow')"></div>
+                <div id="msg-yellow" class="msg-bubble yellow-msg">⚠️ જુઓ (Wait)</div>
+            </div>
+
+            <!-- GREEN -->
+            <div class="light-row">
+                <div id="timer-green" class="timer-display green-timer">6</div>
+                <div id="light-green" class="light green" onclick="handleClick('green')"></div>
+                <div id="msg-green" class="msg-bubble green-msg">🟢 જાઓ (Go)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-credit">
+        Created by: Rajesh barochia
+    </div>
+
+    <script>
+        let score = 0;
+        let currentActiveLight = null;
+        let timerInterval = null;
+        let isGameRunning = false;
+        
+        // Sound synthesis setup
+        const synthesis = window.speechSynthesis;
+        
+        function speak(text) {
+            if (synthesis.speaking) {
+                synthesis.cancel();
+            }
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'gu-IN';
+            utterance.rate = 1;
+            synthesis.speak(utterance);
+        }
+
+        function playTone(type) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } else if (type === 'change') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(300, ctx.currentTime);
+                gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.1);
+            }
+        }
+
+        function startGame() {
+            if (isGameRunning) return;
+            
+            document.getElementById('start-btn').style.display = 'none';
+            // score = 0; // Score logic hidden
+            // updateScore(); 
+            isGameRunning = true;
+            
+            // Start the sequence with Red
+            activateLight('red', 6, 'green'); // 6 seconds for Red
+        }
+
+        function resetLights() {
+            clearInterval(timerInterval);
+            ['red', 'yellow', 'green'].forEach(color => {
+                document.getElementById(`light-${color}`).classList.remove('active');
+                document.getElementById(`msg-${color}`).classList.remove('active');
+                document.getElementById(`timer-${color}`).classList.remove('active');
+            });
+        }
+
+        function activateLight(color, seconds, nextColor) {
+            resetLights();
+            currentActiveLight = color;
+            
+            // Activate UI elements
+            document.getElementById(`light-${color}`).classList.add('active');
+            document.getElementById(`msg-${color}`).classList.add('active');
+            const timerEl = document.getElementById(`timer-${color}`);
+            timerEl.classList.add('active');
+            
+            playTone('change');
+            
+            // Speak the rule
+            let text = "";
+            if(color === 'red') text = "લાલ લાઈટ, થોભો";
+            if(color === 'yellow') text = "પીળી લાઈટ, રાહ જુઓ";
+            if(color === 'green') text = "લીલી લાઈટ, જાઓ";
+            speak(text);
+
+            // Countdown Logic
+            let timeLeft = seconds;
+            timerEl.textContent = timeLeft;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft >= 0) {
+                    timerEl.textContent = timeLeft;
+                }
+
+                if (timeLeft < 0) {
+                    clearInterval(timerInterval);
+                    if(isGameRunning) {
+                        // Determine next step based on cycle
+                        if (color === 'red') {
+                             // After Red, Go Green
+                             activateLight('green', 6, 'yellow');
+                        } else if (color === 'green') {
+                             // After Green, Go Yellow
+                             activateLight('yellow', 3, 'red'); // Yellow is shorter
+                        } else if (color === 'yellow') {
+                             // After Yellow, Go Red
+                             activateLight('red', 6, 'green');
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        function handleClick(clickedColor) {
+            if (!isGameRunning) return;
+
+            // Removed feedback text element reference
+            
+            if (clickedColor === currentActiveLight) {
+                // Correct click
+                score += 10;
+                // updateScore(); // Hidden score
+                playTone('correct');
+                
+                // Visual feedback pop
+                const light = document.getElementById(`light-${clickedColor}`);
+                light.style.transform = "scale(1.1)";
+                setTimeout(() => light.style.transform = "scale(1)", 200);
+                
+            } else {
+                // Wrong click
+                // No visual text feedback, just no positive reinforcement
+            }
+        }
+
+        function updateScore() {
+            // Function kept empty to prevent errors if called
+        }
+    </script>
+</body>
+</html>
