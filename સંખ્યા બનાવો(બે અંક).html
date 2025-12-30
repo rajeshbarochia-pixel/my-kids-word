@@ -8,62 +8,67 @@
         @import url('https://fonts.googleapis.com/css2?family=Rasa:wght@400;700&display=swap');
 
         :root {
-            --c1: #FF4757; /* લાલ */
-            --c2: #2ED573; /* લીલો */
-            --c3: #1E90FF; /* વાદળી */
-            --c4: #FFA502; /* કેસરી */
+            --c1: #FF4757; /* એકમ */
+            --c2: #2ED573; /* દશક */
             --bg: #dfe4ea;
+            --text: #2f3542;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             font-family: 'Rasa', serif;
             background-color: var(--bg);
             margin: 0;
-            padding: 0;
+            padding: 10px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            touch-action: manipulation;
+            justify-content: space-between; /* જગ્યા સરખી વહેંચવી */
+            height: 100vh;
+            height: -webkit-fill-available; /* મોબાઈલ બ્રાઉઝર માટે */
+            overflow: hidden; /* સ્ક્રોલ બંધ */
+        }
+
+        header {
+            text-align: center;
+            flex-shrink: 0;
         }
 
         h1 {
-            color: #2f3542;
-            margin: 10px 0 5px 0; /* Reduced bottom margin */
-            font-size: 2.2rem;
-            text-align: center;
+            color: var(--text);
+            margin: 0;
+            font-size: clamp(1.8rem, 5vh, 2.5rem); /* ફોન્ટ સાઈઝ ઓટો સેટ થશે */
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Author Text Style */
         .author-text {
             font-family: sans-serif;
             color: #57606f;
             font-size: 0.9rem;
             font-weight: bold;
-            margin-bottom: 15px;
-            text-align: center;
+            margin-top: 5px;
         }
 
-        /* Game Container */
+        /* રિસ્પોન્સિવ ગેમ કન્ટેનર */
         .game-wrapper {
             position: relative;
-            width: 340px;
-            height: 340px;
+            /* પહોળાઈ અને ઊંચાઈ સ્ક્રીન મુજબ સેટ થશે */
+            width: min(85vw, 55vh); 
+            height: min(85vw, 55vh);
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 10px 0 20px 0;
+            flex-shrink: 1;
         }
 
-        /* Indicator Window */
         .indicator-box {
             position: absolute;
-            top: 0;
-            width: 60px; /* Slightly wider */
-            height: 160px; /* Radius of outer ring (300/2 + padding) */
+            width: 44px;
+            height: 52%; /* રિંગના અડધા ભાગ જેટલું */
             background: rgba(255, 255, 255, 0.4);
             border: 2px solid #2f3542;
             border-bottom: none;
@@ -79,10 +84,10 @@
 
         .arrow {
             position: absolute;
-            top: -25px;
+            top: -22px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 2rem;
+            font-size: 1.8rem;
             color: #2f3542;
             z-index: 20;
             animation: bounce 1s infinite;
@@ -93,112 +98,111 @@
             50% { transform: translateX(-50%) translateY(-5px); }
         }
 
-        /* Rings */
         .ring {
             position: absolute;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
             transition: transform 2.5s cubic-bezier(0.1, 0.8, 0.1, 1);
             border: 3px solid white;
         }
 
-        /* Adjusted sizes for 2 rings - Made them larger */
-        .ring-2 { width: 300px; height: 300px; background-color: var(--c2); z-index: 2; }
-        .ring-1 { width: 160px; height: 160px; background-color: var(--c1); z-index: 3; }
+        /* રિંગની સાઈઝ કન્ટેનરના % મુજબ */
+        .ring-2 { width: 100%; height: 100%; background-color: var(--c2); z-index: 2; }
+        .ring-1 { width: 55%; height: 55%; background-color: var(--c1); z-index: 3; }
 
-        /* Number Wrapper (Positions the number on the ring) */
         .num-wrapper {
             position: absolute;
-            width: 40px;
-            height: 40px;
+            width: 30px;
+            height: 30px;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* Number Content (The actual text that stays upright) */
         .num-content {
-            font-size: 2rem; /* Larger font for 2 rings */
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
             font-weight: bold;
             color: white;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
             transition: transform 2.5s cubic-bezier(0.1, 0.8, 0.1, 1);
         }
 
-        .ring-1 .num-content { font-size: 1.6rem; }
+        .ring-1 .num-content { font-size: clamp(1rem, 3.5vw, 1.5rem); }
 
-        /* Hub */
         .hub {
             position: absolute;
-            width: 30px;
-            height: 30px;
+            width: 12%;
+            height: 12%;
             background: #fff;
             border-radius: 50%;
             z-index: 20;
             box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
         }
 
-        /* --- Animations --- */
-        
+        /* Animations */
         @keyframes rotate-cw { 100% { transform: rotate(360deg); } }
         @keyframes rotate-ccw { 100% { transform: rotate(-360deg); } }
 
-        /* Spinning State for Rings */
         .spinning .ring-1 { animation: rotate-ccw 1s linear infinite; }
         .spinning .ring-2 { animation: rotate-cw 1.5s linear infinite; }
-
-        /* Counter-Animations for Numbers (To keep them upright) */
         .spinning .ring-1 .num-content { animation: rotate-cw 1s linear infinite; }
         .spinning .ring-2 .num-content { animation: rotate-ccw 1.5s linear infinite; }
 
-        /* Controls */
-        .controls {
+        /* નીચેનો કંટ્રોલ એરિયા */
+        .bottom-section {
+            width: 100%;
             display: flex;
-            justify-content: center;
-            margin-top: 10px;
-            z-index: 30;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 20px;
+            flex-shrink: 0;
         }
 
+        .result-area {
+            background: white;
+            padding: 5px 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 80%;
+            max-width: 300px;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .result-title { font-size: 0.9rem; color: #747d8c; }
+        .result-value { font-size: 2.2rem; color: var(--text); font-weight: bold; letter-spacing: 5px; margin: 0; line-height: 1.1; }
+        .result-text { font-size: 1.1rem; color: #57606f; margin-top: 2px; }
+
         button {
-            padding: 15px 40px;
-            font-size: 1.5rem;
+            padding: 12px 0;
+            width: 70%;
+            max-width: 250px;
+            font-size: 1.4rem;
             border: none;
             border-radius: 50px;
             cursor: pointer;
             font-family: 'Rasa', serif;
             font-weight: bold;
-            box-shadow: 0 5px 0 rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
             transition: all 0.1s;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            min-width: 200px;
         }
 
-        button:active { transform: translateY(5px); box-shadow: none; }
-        
-        .btn-spin { background-color: #2ED573; color: white; }
-        .btn-stop { background-color: #FF4757; color: white; }
-
-        /* Result Area */
-        .result-area {
-            background: white;
-            padding: 10px 30px;
-            border-radius: 15px;
-            margin-top: 20px;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            min-width: 200px;
-        }
-
-        .result-title { font-size: 1rem; color: #747d8c; }
-        .result-value { font-size: 2.5rem; color: #2f3542; font-weight: bold; letter-spacing: 5px; }
-
-        /* Footer removed as text moved to header */
+        button:active { transform: translateY(3px); box-shadow: none; }
+        .btn-spin { background-color: #2ED573; }
+        .btn-stop { background-color: #FF4757; }
+        button:disabled { background-color: #ccc; box-shadow: none; }
 
         #confetti-canvas {
             position: fixed;
@@ -206,35 +210,39 @@
             pointer-events: none; z-index: 100;
         }
 
-        @media (max-width: 400px) {
-            .game-wrapper { transform: scale(0.85); margin: 10px 0; }
-            h1 { font-size: 1.8rem; }
-            button { padding: 12px 30px; font-size: 1.3rem; }
+        /* નાની સ્ક્રીન માટે */
+        @media (max-height: 600px) {
+            h1 { font-size: 1.5rem; }
+            .bottom-section { gap: 8px; padding-bottom: 10px; }
+            button { padding: 8px 0; font-size: 1.2rem; }
+            .result-value { font-size: 1.8rem; }
         }
     </style>
 </head>
 <body>
 
-    <h1>🎡 નંબર વ્હીલ 🎡</h1>
-    <div class="author-text">Created by: Rajesh barochia</div>
+    <header>
+        <h1>🎡 નંબર વ્હીલ 🎡</h1>
+        <div class="author-text">Created by: Rajesh Barochia</div>
+    </header>
 
     <div class="game-wrapper" id="gameWrapper">
         <div class="indicator-box"></div>
         <div class="arrow">🔻</div>
 
-        <!-- Only 2 Rings -->
         <div class="ring ring-2" id="ring2"></div>
         <div class="ring ring-1" id="ring1"></div>
         
         <div class="hub"></div>
     </div>
 
-    <div class="result-area">
-        <div class="result-title">તમારો નંબર:</div>
-        <div class="result-value" id="resultDisplay">--</div>
-    </div>
+    <div class="bottom-section">
+        <div class="result-area">
+            <div class="result-title">તમારો નંબર:</div>
+            <div class="result-value" id="resultDisplay">--</div>
+            <div class="result-text" id="resultText"></div>
+        </div>
 
-    <div class="controls">
         <button class="btn-spin" id="toggleBtn" onclick="toggleSpin()">🚀 ફેરવો</button>
     </div>
 
@@ -243,16 +251,27 @@
     <script>
         const digits = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'];
         
-        // 2 Rings Configuration
+        // 0-99 Gujarati Numbers for correct pronunciation
+        const fullNumbers = {
+            0: "શૂન્ય", 1: "એક", 2: "બે", 3: "ત્રણ", 4: "ચાર", 5: "પાંચ", 6: "છ", 7: "સાત", 8: "આઠ", 9: "નવ", 10: "દસ",
+            11: "અગિયાર", 12: "બાર", 13: "તેર", 14: "ચૌદ", 15: "પંદર", 16: "સોળ", 17: "સત્તર", 18: "અઢાર", 19: "ઓગણીસ", 20: "વીસ",
+            21: "એકવીસ", 22: "બાવીસ", 23: "ત્રેવીસ", 24: "ચોવીસ", 25: "પચીસ", 26: "છવ્વીસ", 27: "સત્તાવીસ", 28: "અઠ્ઠાવીસ", 29: "ઓગણત્રીસ", 30: "ત્રીસ",
+            31: "એકત્રીસ", 32: "બત્રીસ", 33: "તેંત્રીસ", 34: "ચોત્રીસ", 35: "પાંત્રીસ", 36: "છત્રીસ", 37: "સાડત્રીસ", 38: "આડત્રીસ", 39: "ઓગણચાલીસ", 40: "ચાલીસ",
+            41: "એકતાલીસ", 42: "બેતાલીસ", 43: "તાલીસ", 44: "ચુંમાલીસ", 45: "પિસ્તાલીસ", 46: "છેતાલીસ", 47: "સુડતાલીસ", 48: "અડતાલીસ", 49: "ઓગણપચાસ", 50: "પચાસ",
+            51: "એકાવન", 52: "બાવન", 53: "ત્રેપન", 54: "ચોપન", 55: "પંચાવન", 56: "છપ્પન", 57: "સત્તાવન", 58: "અઠ્ઠાવન", 59: "ઓગણસાઠ", 60: "સાઠ",
+            61: "એકસઠ", 62: "બાસઠ", 63: "ત્રેસઠ", 64: "ચોસઠ", 65: "પાસઠ", 66: "છાસઠ", 67: "સડસઠ", 68: "અડસઠ", 69: "ઓગણસિત્તેર", 70: "સિત્તેર",
+            71: "એકોતેર", 72: "બહોતેર", 73: "તોતેર", 74: "ચુમોતેર", 75: "પંચોતેર", 76: "છોતેર", 77: "સિત્તોતેર", 78: "ઇઠ્ઠોતેર", 79: "ઓગણએંસી", 80: "એંસી",
+            81: "એક્યાસી", 82: "બ્યાસી", 83: "ત્યાસી", 84: "ચોર્યાસી", 85: "પંચાસી", 86: "છ્યાસી", 87: "સત્યાસી", 88: "અઠ્યાસી", 89: "ઓગણનેવું", 90: "નેવું",
+            91: "એક્યાણું", 92: "બાણું", 93: "ત્રાણું", 94: "ચોરાણું", 95: "પંચાણું", 96: "છન્નું", 97: "સત્તાણું", 98: "અઠ્ઠાણું", 99: "નવ્વાણું"
+        };
+
         const rings = [
-            { id: 'ring1', radius: 80, el: null },   // Adjusted radius (half of 160)
-            { id: 'ring2', radius: 150, el: null }   // Adjusted radius (half of 300)
+            { id: 'ring1', radiusPercent: 20 }, // 55% width / 2 approx
+            { id: 'ring2', radiusPercent: 42 }  // 100% width / 2 approx
         ];
 
         let isSpinning = false;
-        let finalNumberString = "";
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioContext();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playTone(freq, type, duration) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -269,107 +288,111 @@
         }
 
         function init() {
+            // Calculate sizes based on the container size dynamically
+            const wrapper = document.getElementById('gameWrapper');
+            const size = wrapper.offsetWidth;
+
             rings.forEach(ring => {
-                ring.el = document.getElementById(ring.id);
+                const el = document.getElementById(ring.id);
+                // Radius = size * percentage
+                const r = size * (ring.radiusPercent / 100);
+                
                 for (let i = 0; i < 10; i++) {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'num-wrapper';
-                    
+                    const wrapperDiv = document.createElement('div');
+                    wrapperDiv.className = 'num-wrapper';
                     const content = document.createElement('div');
                     content.className = 'num-content';
                     content.innerText = digits[i];
-
+                    
                     const angle = i * 36;
                     const rad = (angle - 90) * (Math.PI / 180); 
-                    
-                    // -20 accounts for half the wrapper size (40px) to center it
-                    const x = (ring.radius - 20) * Math.cos(rad); 
-                    const y = (ring.radius - 20) * Math.sin(rad);
+                    // Adjust radius slightly inwards for text placement
+                    const x = r * Math.cos(rad); 
+                    const y = r * Math.sin(rad);
 
-                    wrapper.style.transform = `translate(${x}px, ${y}px)`;
-                    
-                    wrapper.appendChild(content);
-                    ring.el.appendChild(wrapper);
+                    wrapperDiv.style.transform = `translate(${x}px, ${y}px)`;
+                    wrapperDiv.appendChild(content);
+                    el.appendChild(wrapperDiv);
                 }
+                ring.el = el; // Store element ref
             });
         }
 
         function toggleSpin() {
             const btn = document.getElementById('toggleBtn');
+            const resDisplay = document.getElementById('resultDisplay');
+            const resText = document.getElementById('resultText');
 
             if (!isSpinning) {
-                // START
                 isSpinning = true;
                 btn.innerText = "🛑 થોભો";
                 btn.classList.remove('btn-spin');
                 btn.classList.add('btn-stop');
                 document.getElementById('gameWrapper').classList.add('spinning');
-                document.getElementById('resultDisplay').innerText = "--";
+                resDisplay.innerText = "--";
+                resText.innerText = "";
                 
                 rings.forEach(r => {
                     r.el.style.transform = '';
-                    Array.from(r.el.getElementsByClassName('num-content')).forEach(c => {
-                        c.style.transform = '';
-                    });
+                    Array.from(r.el.getElementsByClassName('num-content')).forEach(c => c.style.transform = '');
                 });
-
                 playTone(400, 'square', 0.1);
 
             } else {
-                // STOP
                 isSpinning = false;
                 btn.disabled = true;
                 document.getElementById('gameWrapper').classList.remove('spinning');
 
-                finalNumberString = "";
                 let generatedDigits = [];
-
                 rings.forEach((ring, index) => {
                     const winningDigit = Math.floor(Math.random() * 10);
                     generatedDigits.push(winningDigit);
                     
                     const angleNeeded = -1 * (winningDigit * 36);
+                    // Add extra spins based on index
                     const totalRotation = angleNeeded - (1080 + (index * 360)); 
-
-                    // 1. Rotate Ring
-                    ring.el.style.transform = `rotate(${totalRotation}deg)`;
-
-                    // 2. Counter-Rotate Numbers
-                    const counterRotation = -1 * totalRotation;
                     
-                    const numbers = ring.el.getElementsByClassName('num-content');
-                    Array.from(numbers).forEach(num => {
+                    ring.el.style.transform = `rotate(${totalRotation}deg)`;
+                    
+                    const counterRotation = -1 * totalRotation;
+                    Array.from(ring.el.getElementsByClassName('num-content')).forEach(num => {
                         num.style.transform = `rotate(${counterRotation}deg)`;
                     });
                 });
 
-                generatedDigits.forEach(d => finalNumberString += digits[d]);
+                // Index 0 is inner (units?), Index 1 is outer (tens?)
+                // Based on previous code: ring1 is inner, ring2 is outer.
+                // Usually ring1 (inner) is units, ring2 (outer) is tens.
+                // Let's assume: Ring 2 (Outer) = Tens, Ring 1 (Inner) = Units
+                const tens = generatedDigits[1];
+                const units = generatedDigits[0];
+                const finalNumber = tens * 10 + units;
+                
+                const displayString = digits[tens] + digits[units];
+                
                 playTone(600, 'sine', 0.2);
 
                 setTimeout(() => {
-                    document.getElementById('resultDisplay').innerText = finalNumberString;
+                    resDisplay.innerText = displayString;
+                    const word = fullNumbers[finalNumber];
+                    resText.innerText = word;
+
                     btn.disabled = false;
                     btn.innerText = "🚀 ફેરવો";
                     btn.classList.remove('btn-stop');
                     btn.classList.add('btn-spin');
+                    
                     playTone(800, 'triangle', 0.5); 
-                    speakResult(finalNumberString);
+                    speakResult(word);
                     fireConfetti();
                 }, 2600);
             }
         }
 
         function speakResult(text) {
-            // Convert Gujarati digits to standard digits for correct whole-number pronunciation
-            // This ensures "૧૨" is read as "bar" (12) instead of "ek be" (1 2)
-            const map = {'૦':'0', '૧':'1', '૨':'2', '૩':'3', '૪':'4', '૫':'5', '૬':'6', '૭':'7', '૮':'8', '૯':'9'};
-            let numStr = text.split('').map(c => map[c] || c).join('');
-
-            // Cancel any ongoing speech
             window.speechSynthesis.cancel();
-
             const msg = new SpeechSynthesisUtterance();
-            msg.text = "તમારો નંબર છે " + numStr; 
+            msg.text = "તમારો નંબર છે " + text; 
             msg.lang = 'gu-IN';
             msg.rate = 0.9;
             window.speechSynthesis.speak(msg);
@@ -381,7 +404,7 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             let particles = [];
-            for(let i=0; i<100; i++) {
+            for(let i=0; i<80; i++) {
                 particles.push({
                     x: canvas.width/2, y: canvas.height/2,
                     vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
@@ -401,7 +424,8 @@
             update();
         }
 
-        init();
+        // Initialize on load to ensure sizes are correct
+        window.onload = init;
     </script>
 </body>
 </html>
