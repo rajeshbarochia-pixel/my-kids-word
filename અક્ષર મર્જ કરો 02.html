@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>શબ્દ ઉચ્ચાર ગેમ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Vadodara:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Hind+Vadodara', sans-serif;
+            background-color: #f0f4f8;
+            touch-action: manipulation;
+            overflow: hidden;
+        }
+
+        .letter-box {
+            z-index: 20;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .line-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .target-slot {
+            width: 55px;
+            height: 55px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes flowIn {
+            0% { transform: translateY(-30px) scale(0.5); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .animate-flow {
+            animation: flowIn 0.4s ease-out forwards;
+        }
+
+        .success-overlay {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Credit Section Styling */
+        .credit-footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #edf2f7;
+            font-size: 0.85rem;
+            color: #718096;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen">
+
+    <div class="relative w-full max-w-md bg-white p-6 rounded-[2.5rem] shadow-2xl border-4 border-white mx-4 overflow-hidden">
+        <div class="flex justify-between items-center mb-6">
+            <span id="level-indicator" class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-bold">લેવલ: 1/10</span>
+            <h1 class="text-xl font-bold text-gray-700">શબ્દ બનાવો</h1>
+            <button id="speaker-btn" onclick="speakText(currentWordData.word)" class="text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+            </button>
+        </div>
+
+        <svg id="svg-lines" class="line-svg"></svg>
+
+        <div id="game-container" class="flex flex-col items-center gap-12 py-4">
+            <!-- Source Row -->
+            <div id="source-row" class="flex justify-around w-full px-4 min-h-[100px]">
+                <!-- Letters will be injected here -->
+            </div>
+
+            <!-- Target Area -->
+            <div class="relative mt-4">
+                <div id="result-box" class="flex gap-3 p-4 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 min-h-[90px] items-center">
+                    <!-- Slots will be injected here -->
+                </div>
+                
+                <div id="final-word-overlay" class="hidden absolute inset-0 bg-yellow-400 text-indigo-900 text-4xl flex items-center justify-center rounded-2xl shadow-xl font-bold z-30 border-4 border-white cursor-pointer" onclick="nextLevel()">
+                    <span id="overlay-text"></span>
+                </div>
+            </div>
+
+            <p id="instruction" class="text-gray-400 text-sm font-medium">અક્ષરો પર ક્લિક કરીને શબ્દ પૂર્ણ કરો</p>
+        </div>
+
+        <!-- Credit Section -->
+        <div class="credit-footer text-center">
+            <p>બનાવનાર: <span class="font-bold text-gray-600">Rajesh Barochia</span></p>
+            <p class="text-[10px] mt-1 italic">બાળકોના શિક્ષણ માટે એક મનોરંજક પ્રવૃત્તિ</p>
+        </div>
+
+        <div id="complete-screen" class="hidden absolute inset-0 bg-indigo-600 text-white flex flex-col items-center justify-center z-50 p-8 text-center">
+            <h2 class="text-4xl font-bold mb-4">અભિનંદન! 🎉</h2>
+            <p class="text-xl mb-8">તમે બધા શબ્દો શીખી લીધા છે!</p>
+            <button onclick="restartGame()" class="bg-white text-indigo-600 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-gray-100 transition-all">ફરીથી શરૂ કરો</button>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; // Runtime provides the key
+        const wordsData = [
+            { word: "મજા", parts: ["મ", "જા"], colors: ["bg-orange-400", "bg-green-500"] },
+            { word: "રમત", parts: ["ર", "મ", "ત"], colors: ["bg-blue-400", "bg-red-400", "bg-purple-400"] },
+            { word: "કમળ", parts: ["ક", "મ", "ળ"], colors: ["bg-pink-400", "bg-yellow-500", "bg-teal-500"] },
+            { word: "આકાશ", parts: ["આ", "કા", "શ"], colors: ["bg-sky-400", "bg-indigo-400", "bg-orange-500"] },
+            { word: "કલમ", parts: ["ક", "લ", "મ"], colors: ["bg-emerald-400", "bg-amber-400", "bg-rose-400"] },
+            { word: "વડ", parts: ["વ", "ડ"], colors: ["bg-lime-500", "bg-cyan-500"] },
+            { word: "દસ", parts: ["દ", "સ"], colors: ["bg-violet-400", "bg-fuchsia-400"] },
+            { word: "જગત", parts: ["જ", "ગ", "ત"], colors: ["bg-orange-500", "bg-blue-500", "bg-green-500"] },
+            { word: "ભજન", parts: ["ભ", "જ", "ન"], colors: ["bg-red-500", "bg-purple-500", "bg-teal-500"] },
+            { word: "ગગન", parts: ["ગ", "ગ", "ન"], colors: ["bg-indigo-500", "bg-pink-500", "bg-amber-500"] }
+        ];
+
+        let currentLevel = 0;
+        let filledCount = 0;
+        let currentWordData = null;
+
+        /**
+         * TTS Function fixed to extract audio correctly from the Gemini API response
+         */
+        async function speakText(text) {
+            const speakerBtn = document.getElementById('speaker-btn');
+            if (speakerBtn) speakerBtn.classList.add('opacity-50', 'pointer-events-none');
+
+            const fetchWithRetry = async (url, options, retries = 5, delay = 1000) => {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (retries > 0) {
+                        await new Promise(res => setTimeout(res, delay));
+                        return fetchWithRetry(url, options, retries - 1, delay * 2);
+                    }
+                    throw error;
+                }
+            };
+
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: `Say in a clear voice: ${text}` }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: { 
+                            voiceConfig: { 
+                                prebuiltVoiceConfig: { voiceName: "Kore" } 
+                            } 
+                        }
+                    }
+                };
+
+                const result = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                // Correct extraction as per system instructions: candidates[0].content.parts[0].inlineData
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const inlineData = part?.inlineData;
+                
+                if (inlineData && inlineData.data) {
+                    const base64Data = inlineData.data;
+                    const mimeType = inlineData.mimeType || 'audio/L16;rate=24000';
+                    const sampleRate = parseInt(mimeType.split('rate=')[1]) || 24000;
+                    
+                    const audioBlob = pcmToWav(base64Data, sampleRate);
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = new Audio(audioUrl);
+                    
+                    audio.onended = () => {
+                        if (speakerBtn) speakerBtn.classList.remove('opacity-50', 'pointer-events-none');
+                        URL.revokeObjectURL(audioUrl);
+                    };
+                    
+                    await audio.play();
+                } else {
+                    throw new Error("Missing inlineData.data in the response");
+                }
+            } catch (error) {
+                console.error("TTS Error:", error);
+                // System fallback
+                if ('speechSynthesis' in window) {
+                    const msg = new SpeechSynthesisUtterance(text);
+                    msg.lang = 'gu-IN';
+                    msg.onend = () => {
+                        if (speakerBtn) speakerBtn.classList.remove('opacity-50', 'pointer-events-none');
+                    };
+                    window.speechSynthesis.speak(msg);
+                } else {
+                    if (speakerBtn) speakerBtn.classList.remove('opacity-50', 'pointer-events-none');
+                }
+            }
+        }
+
+        /**
+         * PCM-16 to WAV conversion
+         */
+        function pcmToWav(base64Pcm, sampleRate) {
+            const binaryString = atob(base64Pcm);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+            
+            const wavHeader = new ArrayBuffer(44);
+            const view = new DataView(wavHeader);
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+            };
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + len, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM
+            view.setUint16(22, 1, true); // Mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, len, true);
+
+            return new Blob([wavHeader, bytes], { type: 'audio/wav' });
+        }
+
+        function initLevel() {
+            currentWordData = wordsData[currentLevel];
+            filledCount = 0;
+            
+            document.getElementById('level-indicator').innerText = `લેવલ: ${currentLevel + 1}/${wordsData.length}`;
+            document.getElementById('final-word-overlay').classList.add('hidden');
+            
+            const sourceRow = document.getElementById('source-row');
+            const resultBox = document.getElementById('result-box');
+            sourceRow.innerHTML = '';
+            resultBox.innerHTML = '';
+
+            // Create Sources
+            currentWordData.parts.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.id = `source-${i}`;
+                div.className = `letter-box w-16 h-16 ${currentWordData.colors[i]} text-white text-3xl flex items-center justify-center rounded-xl shadow-lg font-bold cursor-pointer hover:scale-105 active:scale-95`;
+                div.innerText = p;
+                div.onclick = () => selectLetter(p, i);
+                sourceRow.appendChild(div);
+
+                const slot = document.createElement('div');
+                slot.id = `slot-${i}`;
+                slot.className = 'target-slot';
+                resultBox.appendChild(slot);
+            });
+
+            setTimeout(drawLines, 150);
+        }
+
+        function drawLines() {
+            const svg = document.getElementById('svg-lines');
+            if (!svg) return;
+            svg.innerHTML = '';
+            
+            const containerRect = document.querySelector('.relative').getBoundingClientRect();
+
+            currentWordData.parts.forEach((_, i) => {
+                const sourceEl = document.getElementById(`source-${i}`);
+                const slotEl = document.getElementById(`slot-${i}`);
+                if (!sourceEl || !slotEl) return;
+
+                const source = sourceEl.getBoundingClientRect();
+                const slot = slotEl.getBoundingClientRect();
+
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute('x1', (source.left + source.width/2) - containerRect.left);
+                line.setAttribute('y1', (source.bottom) - containerRect.top);
+                line.setAttribute('x2', (slot.left + slot.width/2) - containerRect.left);
+                line.setAttribute('y2', (slot.top) - containerRect.top);
+                line.setAttribute('stroke', '#cbd5e1');
+                line.setAttribute('stroke-width', '3');
+                line.setAttribute('stroke-dasharray', '6 4');
+                svg.appendChild(line);
+            });
+        }
+
+        function selectLetter(letter, idx) {
+            if (idx !== filledCount) return;
+
+            const source = document.getElementById(`source-${idx}`);
+            const slot = document.getElementById(`slot-${idx}`);
+
+            slot.innerHTML = `<div class="w-full h-full ${currentWordData.colors[idx]} text-white rounded-lg flex items-center justify-center text-2xl font-bold animate-flow">${letter}</div>`;
+            slot.style.border = "none";
+            
+            source.style.opacity = '0.1';
+            source.style.pointerEvents = 'none';
+            
+            filledCount++;
+
+            if (filledCount === currentWordData.parts.length) {
+                completeLevel();
+            }
+        }
+
+        function completeLevel() {
+            setTimeout(() => {
+                const overlay = document.getElementById('final-word-overlay');
+                document.getElementById('overlay-text').innerText = currentWordData.word;
+                overlay.classList.remove('hidden');
+                speakText(currentWordData.word);
+            }, 500);
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            if (currentLevel < wordsData.length) {
+                initLevel();
+            } else {
+                document.getElementById('complete-screen').classList.remove('hidden');
+            }
+        }
+
+        function restartGame() {
+            currentLevel = 0;
+            document.getElementById('complete-screen').classList.add('hidden');
+            initLevel();
+        }
+
+        window.onload = initLevel;
+        window.onresize = drawLines;
+    </script>
+</body>
+</html>
