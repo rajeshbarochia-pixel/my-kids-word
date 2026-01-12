@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>શબ્દ પર છેકો મારો - Rajesh barochia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background-color: #f0f9ff;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            margin: 0;
+            user-select: none;
+        }
+        .word-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .crossed {
+            color: #d1d5db;
+            position: relative;
+        }
+        .crossed::after {
+            content: '';
+            position: absolute;
+            left: 5%;
+            top: 50%;
+            width: 90%;
+            height: 4px;
+            background-color: #ef4444;
+            opacity: 0.6;
+            border-radius: 999px;
+            transform: rotate(-4deg);
+        }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .success-anim {
+            animation: pop 0.4s ease-out;
+        }
+        #word-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            padding: 1rem;
+            align-content: center;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center">
+
+    <div class="w-full max-w-md h-full flex flex-col bg-white shadow-2xl overflow-hidden border-x border-sky-100">
+        
+        <!-- Header -->
+        <div class="bg-sky-500 p-4 text-white text-center shrink-0">
+            <div class="flex justify-between items-center mb-2">
+                <h1 class="text-xl font-bold">શબ્દ પર છેકો મારો ✍️</h1>
+                <button id="mute-btn" onclick="toggleMute()" class="p-1.5 bg-sky-600 rounded-full hover:bg-sky-700 transition-colors">
+                    <svg id="volume-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                </button>
+            </div>
+            
+            <div class="flex justify-between items-center bg-sky-600 rounded-full px-4 py-1.5 shadow-inner">
+                <div class="flex items-center gap-2">
+                    <svg class="text-yellow-300" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+                    <span id="score-display" class="font-bold">સ્કોર: ૦</span>
+                </div>
+                <button onclick="initGame()" class="flex items-center gap-1 bg-white text-sky-600 px-3 py-0.5 rounded-full text-xs font-bold hover:bg-sky-50 transition-all active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M3 21v-5h5"></path></svg>
+                    ફરીથી
+                </button>
+            </div>
+        </div>
+
+        <!-- Target Section -->
+        <div class="p-6 text-center border-b-2 border-sky-50 bg-gradient-to-b from-white to-sky-50 shrink-0">
+            <p class="text-sky-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">આ શબ્દ શોધો</p>
+            <div class="flex items-center justify-center gap-4">
+                <div id="target-display" class="text-4xl font-black text-sky-600 drop-shadow-sm">...</div>
+                <button onclick="speakTarget()" class="p-2.5 bg-sky-100 text-sky-600 rounded-xl hover:bg-sky-200 shadow-sm transition-all active:scale-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Feedback Message -->
+        <div id="msg-banner" class="py-1.5 px-4 text-center text-xs font-bold bg-sky-100 text-sky-700 shrink-0 transition-colors">
+            શબ્દ શોધો!
+        </div>
+
+        <!-- Word Grid -->
+        <div id="word-grid" class="bg-white">
+            <!-- Buttons injected by JS -->
+        </div>
+
+        <!-- Footer -->
+        <div class="p-3 bg-sky-50 text-center border-t border-sky-100 shrink-0">
+            <p class="text-sky-700 font-bold text-base">Created by: Rajesh barochia</p>
+            <p class="text-sky-400 text-[10px] font-medium uppercase tracking-widest mt-0.5">Interactive Learning 🚀</p>
+        </div>
+    </div>
+
+    <script>
+        const wordPool = [
+            "કમળ", "ઘર", "નળ", "જગ", "બસ", "મગર", "ગાજર", "કેરી", 
+            "સાપ", "હાથી", "ચકલી", "પોપટ", "મોર", "કાબર", "બતક", 
+            "ફળ", "ફૂલ", "ઝાડ", "પાણી", "આકાશ", "ધરતી", "સૂરજ", "ચંદન"
+        ];
+
+        let score = 0;
+        let targetWord = "";
+        let gridWords = [];
+        let crossedWords = [];
+        let isMuted = false;
+
+        const scoreDisplay = document.getElementById('score-display');
+        const targetDisplay = document.getElementById('target-display');
+        const msgBanner = document.getElementById('msg-banner');
+        const wordGrid = document.getElementById('word-grid');
+        const volumeIcon = document.getElementById('volume-icon');
+
+        function speak(text) {
+            if ('speechSynthesis' in window && !isMuted) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'gu-IN';
+                utterance.rate = 0.8;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function speakTarget() {
+            speak(targetWord);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            volumeIcon.innerHTML = isMuted 
+                ? '<line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9l3 3-3 3"></path><path d="M12 9l3 3-3 3"></path><path d="M11 5L6 9H2v6h4l5 4V5z"></path>' 
+                : '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
+            if (!isMuted) speak(targetWord);
+        }
+
+        function initGame() {
+            score = 0;
+            scoreDisplay.innerText = `સ્કોર: ૦`;
+            crossedWords = [];
+            
+            // Pick 10 random words
+            const shuffled = [...wordPool].sort(() => 0.5 - Math.random());
+            gridWords = shuffled.slice(0, 10);
+            
+            // Set initial target
+            targetWord = gridWords[Math.floor(Math.random() * gridWords.length)];
+            targetDisplay.innerText = targetWord;
+            msgBanner.innerText = `'${targetWord}' શબ્દ શોધો!`;
+            msgBanner.className = "py-1.5 px-4 text-center text-xs font-bold shrink-0 bg-sky-100 text-sky-700";
+
+            renderGrid();
+            setTimeout(() => speak(targetWord), 500);
+        }
+
+        function renderGrid() {
+            wordGrid.innerHTML = '';
+            gridWords.forEach((word) => {
+                const isCrossed = crossedWords.includes(word);
+                const btn = document.createElement('button');
+                btn.className = `relative py-4 px-2 rounded-xl text-xl font-bold transition-all transform active:scale-95 flex items-center justify-center border-b-4 border-2 ${
+                    isCrossed 
+                    ? 'bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed' 
+                    : 'bg-white border-sky-100 text-sky-800 shadow-md hover:border-sky-300 hover:-translate-y-0.5'
+                }`;
+                
+                const span = document.createElement('span');
+                span.innerText = word;
+                if (isCrossed) span.className = 'opacity-30';
+                btn.appendChild(span);
+
+                if (isCrossed) {
+                    // Strike-through
+                    const line = document.createElement('div');
+                    line.className = 'absolute inset-0 flex items-center justify-center pointer-events-none px-4';
+                    line.innerHTML = '<div class="w-full h-1 bg-red-500 opacity-60 rounded-full rotate-[-4deg]"></div>';
+                    btn.appendChild(line);
+
+                    // Checkmark
+                    const check = document.createElement('div');
+                    check.className = 'absolute top-1 right-1 text-green-500';
+                    check.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                    btn.appendChild(check);
+                }
+
+                btn.onclick = () => handleWordClick(word, btn);
+                wordGrid.appendChild(btn);
+            });
+        }
+
+        function handleWordClick(word, element) {
+            if (crossedWords.includes(word)) return;
+
+            if (word === targetWord) {
+                crossedWords.push(word);
+                score += 10;
+                scoreDisplay.innerText = `સ્કોર: ${score}`;
+                
+                element.classList.add('success-anim');
+                msgBanner.innerText = "વાહ! સાચો જવાબ. ✅";
+                msgBanner.className = "py-1.5 px-4 text-center text-xs font-bold shrink-0 bg-green-100 text-green-700";
+                speak("સાચું છે");
+
+                setTimeout(() => {
+                    const remaining = gridWords.filter(w => !crossedWords.includes(w));
+                    if (remaining.length > 0) {
+                        targetWord = remaining[Math.floor(Math.random() * remaining.length)];
+                        targetDisplay.innerText = targetWord;
+                        msgBanner.innerText = `હવે '${targetWord}' શોધો!`;
+                        msgBanner.className = "py-1.5 px-4 text-center text-xs font-bold shrink-0 bg-sky-100 text-sky-700";
+                        renderGrid();
+                        speak(targetWord);
+                    } else {
+                        msgBanner.innerText = "અભિનંદન! રમત પૂર્ણ થઈ. 🎉";
+                        msgBanner.className = "py-1.5 px-4 text-center text-xs font-bold shrink-0 bg-green-100 text-green-700";
+                        renderGrid();
+                        speak("અભિનંદન");
+                    }
+                }, 1000);
+            } else {
+                msgBanner.innerText = "ખોટું છે! ફરી પ્રયત્ન કરો. ❌";
+                msgBanner.className = "py-1.5 px-4 text-center text-xs font-bold shrink-0 bg-red-100 text-red-700";
+                speak("ખોટું છે");
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
