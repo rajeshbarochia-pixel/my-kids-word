@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>લેખન ગેમ - રાજેશ બરોચીયા</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            touch-action: none;
+            overflow: hidden;
+            height: 100dvh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        .blackboard {
+            background-color: #1e3932;
+            border: 6px solid #5d4037;
+            border-radius: 12px;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.7);
+            cursor: crosshair;
+        }
+        .guide-box {
+            border: 3px dashed #1e3932;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="p-2 sm:p-4">
+
+    <!-- શરૂઆતની સ્ક્રીન -->
+    <div id="startScreen" class="flex-1 flex flex-col items-center justify-center bg-white rounded-3xl shadow-2xl p-6 text-center border-b-8 border-green-500">
+        <div class="mb-6 p-4 bg-green-50 rounded-full">
+            <span class="text-6xl">✍️</span>
+        </div>
+        <h1 class="text-4xl font-black text-green-700 mb-2">ગુજરાતી લેખન</h1>
+        <p class="text-gray-500 mb-10 text-lg italic">ચાલો સાથે મળીને "કાના" વાળા શબ્દો શીખીએ</p>
+        
+        <button onclick="startGame()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-5 px-16 rounded-2xl text-2xl shadow-xl transform active:scale-95 transition-all">
+            શરૂ કરો ▶️
+        </button>
+        
+        <footer class="mt-16 border-t pt-6 w-full max-w-xs">
+            <p class="text-gray-400 text-sm font-semibold tracking-wide uppercase">Created by</p>
+            <p class="text-green-800 text-xl font-bold">Rajesh Barochia</p>
+        </footer>
+    </div>
+
+    <!-- મુખ્ય ગેમ સ્ક્રીન -->
+    <div id="gameScreen" class="hidden h-full flex flex-col gap-2">
+        
+        <!-- હેડર અને પ્રોગ્રેસ -->
+        <div class="flex items-center justify-between px-1">
+            <button onclick="backToMenu()" class="text-green-700 font-bold bg-green-100 px-4 py-2 rounded-xl text-sm active:bg-green-200">
+                ⬅️ મેનુ
+            </button>
+            <div id="progressDots" class="flex gap-1.5 px-2"></div>
+            <div class="text-[10px] font-bold text-gray-400 text-right leading-tight">
+                DEV BY:<br>RAJESH B.
+            </div>
+        </div>
+
+        <!-- કાર્યકારી વિસ્તાર -->
+        <div class="flex-1 flex flex-col gap-2 overflow-hidden">
+            
+            <div class="flex gap-2 items-stretch h-full overflow-hidden">
+                <!-- નાનું ગાઈડ બોક્સ -->
+                <div class="flex flex-col items-center justify-start">
+                    <div class="guide-box w-20 h-20 sm:w-32 sm:h-32 flex items-center justify-center rounded-2xl">
+                        <span id="currentWord" class="text-3xl sm:text-5xl font-black text-gray-800">નામ</span>
+                    </div>
+                    <div class="mt-4 flex flex-col gap-3">
+                         <button onclick="changeColor('#ffffff')" class="w-8 h-8 rounded-full bg-white border-2 border-gray-300 shadow-md"></button>
+                         <button onclick="changeColor('#fbbf24')" class="w-8 h-8 rounded-full bg-yellow-400 border-2 border-gray-300 shadow-md"></button>
+                         <button onclick="changeColor('#f472b6')" class="w-8 h-8 rounded-full bg-pink-400 border-2 border-gray-300 shadow-md"></button>
+                    </div>
+                </div>
+
+                <!-- બ્લેકબોર્ડ એરિયા -->
+                <div class="flex-1 relative blackboard overflow-hidden">
+                    <canvas id="drawingCanvas"></canvas>
+                    
+                    <!-- ક્લીન બટન -->
+                    <button onclick="clearCanvas()" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-xl text-xs shadow-lg active:scale-90 transition-all">
+                        સાફ કરો 🧹
+                    </button>
+                </div>
+            </div>
+
+            <!-- નેવિગેશન કંટ્રોલ્સ -->
+            <div class="flex gap-3 py-1">
+                <button onclick="prevWord()" class="flex-1 bg-slate-200 text-slate-700 py-4 rounded-2xl font-bold text-lg active:bg-slate-300">
+                    પાછળ
+                </button>
+                <button onclick="nextWord()" class="flex-[2] bg-green-600 text-white py-4 rounded-2xl font-black text-xl shadow-lg active:bg-green-700 active:scale-[0.98] transition-all">
+                    આગળ વધો ➡️
+                </button>
+            </div>
+        </div>
+
+        <!-- ફૂટર ક્રેડિટ -->
+        <div class="text-center py-1">
+            <p class="text-[10px] text-gray-400 font-bold tracking-widest uppercase">
+                CREATED BY RAJESH BAROCHIA
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const words = ["નામ", "ગામ", "કામ", "આમ", "જાગ", "કાતર", "વાદળ", "સાગર", "મકાન", "બજાર", "દાદા", "મામા", "કાકા", "રાજા"];
+        let currentWordIndex = 0;
+        
+        const startScreen = document.getElementById('startScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const wordDisplay = document.getElementById('currentWord');
+        const progressDots = document.getElementById('progressDots');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let currentColor = '#ffffff';
+
+        function startGame() {
+            currentWordIndex = 0;
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            updateWord();
+            // ટાઇમઆઉટ જરૂરી છે કારણ કે કન્ટેનર વિઝિબલ થવામાં સમય લે છે
+            setTimeout(resizeCanvas, 50);
+        }
+
+        function backToMenu() {
+            startScreen.classList.remove('hidden');
+            gameScreen.classList.add('hidden');
+        }
+
+        function updateWord() {
+            wordDisplay.innerText = words[currentWordIndex];
+            clearCanvas();
+            
+            progressDots.innerHTML = '';
+            words.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = `h-1.5 rounded-full transition-all duration-300 ${i === currentWordIndex ? 'bg-green-600 w-6' : 'bg-gray-200 w-1.5'}`;
+                progressDots.appendChild(dot);
+            });
+        }
+
+        function nextWord() {
+            if (currentWordIndex < words.length - 1) {
+                currentWordIndex++;
+                updateWord();
+            } else {
+                alert("અભિનંદન! તમે બધા શબ્દો સફળતાપૂર્વક શીખી લીધા છે! 🌟");
+                backToMenu();
+            }
+        }
+
+        function prevWord() {
+            if (currentWordIndex > 0) {
+                currentWordIndex--;
+                updateWord();
+            }
+        }
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            
+            // સેટિંગ્સ રીસેટ કરવા પડે કારણ કે વિડ્થ બદલાય છે
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = window.innerWidth < 768 ? 5 : 8;
+            ctx.strokeStyle = currentColor;
+        }
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const pos = getPos(e);
+            [lastX, lastY] = [pos.x, pos.y];
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            [lastX, lastY] = [pos.x, pos.y];
+        }
+
+        function stopDrawing() { isDrawing = false; }
+        function changeColor(color) { 
+            currentColor = color; 
+            ctx.strokeStyle = color; 
+        }
+        function clearCanvas() { 
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+        }
+
+        // ઇવેન્ટ લિસનર્સ
+        window.addEventListener('resize', resizeCanvas);
+        
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', stopDrawing);
+
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { passive: false });
+        window.addEventListener('touchend', stopDrawing);
+
+    </script>
+</body>
+</html>
