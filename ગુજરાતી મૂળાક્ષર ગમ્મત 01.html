@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગુજરાતી મૂળાક્ષર ગમ્મત</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            min-height: 100vh;
+            user-select: none;
+            overflow-x: hidden;
+        }
+        .letter-card {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        .letter-card:active {
+            transform: scale(0.9);
+        }
+        .correct {
+            animation: success-pop 0.5s ease;
+            background-color: #4ade80 !important;
+            color: white !important;
+            border-color: #22c55e !important;
+        }
+        .wrong {
+            animation: shake 0.4s ease;
+            background-color: #f87171 !important;
+            color: white !important;
+            border-color: #ef4444 !important;
+        }
+        @keyframes success-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-start p-4">
+
+    <div class="w-full max-w-md bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border-b-8 border-orange-300 mt-4">
+        <div class="flex justify-between items-center mb-4">
+            <div class="text-2xl font-bold text-orange-600 flex items-center gap-2">
+                <span>🏆</span> <span id="score">૦૦</span>
+            </div>
+            <h1 class="text-2xl font-black text-blue-600">અક્ષર શોધો 🎈</h1>
+            <button onclick="resetGame()" class="bg-yellow-400 p-2 rounded-full shadow-md active:rotate-180 transition-transform">
+                🔄
+            </button>
+        </div>
+
+        <div id="target-container" class="text-center py-6 bg-blue-50 rounded-2xl border-4 border-dashed border-blue-200 relative">
+            <p class="text-blue-400 text-sm font-bold uppercase tracking-wider mb-2">આ અક્ષર શોધો</p>
+            <div class="flex items-center justify-center gap-4">
+                <span id="target-char" class="text-7xl font-black text-blue-600 animate-bounce">ક</span>
+                <button onclick="speakCurrentTarget()" class="bg-blue-500 text-white p-3 rounded-2xl shadow-lg hover:bg-blue-600 active:scale-95 transition-transform">
+                    🔊
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="message" class="mt-4 h-8 text-xl font-bold text-white drop-shadow-md text-center">
+        ચાલો રમીએ! 🚀
+    </div>
+
+    <div id="game-grid" class="grid grid-cols-3 gap-4 w-full max-w-md mt-6 mb-10">
+        </div>
+
+    <footer class="mt-auto mb-4 text-center">
+        <p class="text-white font-bold text-lg drop-shadow-lg">Created by: Rajesh Barochia</p>
+        <p class="text-white/80 text-xs">બાળકો માટે ગુજરાતી શીખવાની મજા ✨</p>
+    </footer>
+
+    <script>
+        const alphabet = [
+            "ક", "ખ", "ગ", "ઘ", "ચ", "છ", "જ", "ઝ", "ટ", "ઠ", "ડ", "ઢ", "ણ", 
+            "ત", "થ", "દ", "ધ", "ન", "પ", "ફ", "બ", "ભ", "મ", "ય", "ર", "લ", 
+            "વ", "શ", "ષ", "સ", "હ", "ળ", "ક્ષ", "જ્ઞ", "અ", "આ", "ઇ", "ઈ", "ઉ", "ઊ"
+        ];
+
+        const emojis = ["🌟", "🍦", "🍭", "🎈", "🎨", "🚀", "🐱", "🐶", "🌈"];
+        const gujNumbers = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'];
+
+        let score = 0;
+        let currentTarget = "";
+        let isProcessing = false;
+
+        // અંગ્રેજી આંકડાને ગુજરાતીમાં ફેરવવા માટે
+        function toGujaratiNumber(num) {
+            return num.toString().split('').map(d => gujNumbers[parseInt(d)] || d).join('');
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance();
+                msg.text = text;
+                msg.lang = 'gu-IN';
+                msg.rate = 0.9;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        function speakCurrentTarget() {
+            speak(currentTarget);
+        }
+
+        function createConfetti() {
+            for(let i=0; i<30; i++) {
+                const conf = document.createElement('div');
+                conf.classList.add('confetti');
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                conf.style.top = '-10px';
+                document.body.appendChild(conf);
+
+                conf.animate([
+                    { top: '-10px', opacity: 1, transform: 'rotate(0deg)' },
+                    { top: '100vh', opacity: 0, transform: `rotate(${Math.random() * 1000}deg)` }
+                ], {
+                    duration: Math.random() * 2000 + 1000,
+                    easing: 'linear'
+                }).onfinish = () => conf.remove();
+            }
+        }
+
+        function initLevel() {
+            isProcessing = false;
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = '';
+            
+            // 9 રેન્ડમ મૂળાક્ષરો પસંદ કરો
+            const shuffled = [...alphabet].sort(() => 0.5 - Math.random());
+            const levelLetters = shuffled.slice(0, 9);
+            
+            currentTarget = levelLetters[Math.floor(Math.random() * levelLetters.length)];
+            document.getElementById('target-char').innerText = currentTarget;
+            
+            levelLetters.forEach(char => {
+                const btn = document.createElement('div');
+                btn.className = "letter-card bg-white h-24 rounded-3xl shadow-xl flex items-center justify-center text-4xl font-black text-gray-700 border-b-8 border-gray-200 hover:border-blue-400 active:border-b-2";
+                btn.innerText = char;
+                btn.onclick = () => handleChoice(char, btn);
+                grid.appendChild(btn);
+            });
+
+            document.getElementById('message').innerText = "શોધો: " + currentTarget + " " + emojis[Math.floor(Math.random() * emojis.length)];
+            // થોડી વાર પછી અવાજ સંભળાશે
+            setTimeout(() => speak(currentTarget), 300);
+        }
+
+        function handleChoice(char, element) {
+            if(isProcessing) return;
+
+            if (char === currentTarget) {
+                isProcessing = true;
+                score += 10;
+                document.getElementById('score').innerText = toGujaratiNumber(score).padStart(2, '૦');
+                element.classList.add('correct');
+                document.getElementById('message').innerText = "ખૂબ સરસ! 🥳";
+                speak("સાચું છે");
+                createConfetti();
+                
+                setTimeout(initLevel, 1500);
+            } else {
+                element.classList.add('wrong');
+                document.getElementById('message').innerText = "ફરી પ્રયત્ન કરો! 🧐";
+                speak("ખોટું છે, આ " + char + " છે");
+                setTimeout(() => {
+                    element.classList.remove('wrong');
+                }, 500);
+            }
+        }
+
+        function resetGame() {
+            score = 0;
+            document.getElementById('score').innerText = "૦૦";
+            initLevel();
+        }
+
+        window.onload = initLevel;
+    </script>
+</body>
+</html>
