@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>અરીસાની જાદુઈ દુનિયા - બે અંકની ગેમ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #fdf2f8;
+            touch-action: manipulation;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* મિરર ઇફેક્ટ: અંકોને ડાબે-જમણે ઊંધા કરે છે */
+        .mirror-effect {
+            display: inline-block;
+            transform: scaleX(-1);
+            filter: drop-shadow(4px 4px 2px rgba(0,0,0,0.1));
+            letter-spacing: -2px;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.4s;
+        }
+
+        /* સાચો જવાબ હોય ત્યારે અંકને એનિમેશન સાથે સીધો કરવા માટે */
+        .straighten {
+            transform: scaleX(1) !important;
+            color: #16a34a !important;
+        }
+
+        .card {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .card:active {
+            transform: scale(0.92);
+        }
+
+        .correct {
+            background-color: #22c55e !important;
+            color: white;
+            border-color: #16a34a !important;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+        }
+
+        .wrong {
+            background-color: #ef4444 !important;
+            color: white;
+            border-color: #dc2626 !important;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scaleX(-1); }
+            50% { transform: translateY(-10px) scaleX(-1); }
+        }
+
+        .animate-mirror {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .no-animation {
+            animation: none !important;
+        }
+
+        /* સ્ક્રીન મુજબ કદ ગોઠવતું કન્ટેનર */
+        .game-wrapper {
+            width: 100%;
+            max-width: 450px;
+            margin: auto;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <!-- Header -->
+    <header class="text-center mb-4">
+        <h1 class="text-3xl font-bold text-pink-600 drop-shadow-sm">🪞 અરીસાનો જાદુ</h1>
+        <p class="text-gray-500 text-sm font-medium italic">સાચો જવાબ આપો અને અંક સીધો કરો!</p>
+    </header>
+
+    <!-- Game Content -->
+    <main class="game-wrapper">
+        <!-- Stats Section -->
+        <div class="flex gap-3 mb-6">
+            <div class="flex-1 bg-white p-3 rounded-2xl shadow-sm border-2 border-pink-100 text-center">
+                <p class="text-[10px] text-pink-400 font-bold uppercase tracking-wider">સ્કોર</p>
+                <p id="score" class="text-2xl font-bold text-pink-600">0</p>
+            </div>
+            <div class="flex-1 bg-white p-3 rounded-2xl shadow-sm border-2 border-blue-100 text-center">
+                <p class="text-[10px] text-blue-400 font-bold uppercase tracking-wider">લેવલ</p>
+                <p id="level" class="text-2xl font-bold text-blue-600">1</p>
+            </div>
+        </div>
+
+        <!-- The Mirror Display -->
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-white flex flex-col items-center">
+            <div class="relative w-48 h-48 md:w-56 md:h-56 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full border-8 border-gray-100 shadow-inner flex items-center justify-center mb-8">
+                <!-- Shine Effect -->
+                <div class="absolute top-8 left-10 w-12 h-5 bg-white opacity-50 rounded-full blur-sm -rotate-45"></div>
+                
+                <!-- Mirror Number -->
+                <span id="mirror-number" class="mirror-effect animate-mirror text-7xl md:text-8xl font-black text-indigo-500 tracking-tighter">10</span>
+            </div>
+
+            <p class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-[0.2em]">સાચો અંક કયો છે?</p>
+
+            <!-- Options Grid -->
+            <div id="options-grid" class="grid grid-cols-2 gap-4 w-full">
+                <!-- Buttons will be added by JS -->
+            </div>
+
+            <!-- Feedback Message -->
+            <div id="message" class="mt-6 text-xl font-black h-8 transition-transform duration-300"></div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-8 text-center">
+        <button onclick="resetGame()" class="text-pink-400 font-bold text-sm hover:text-pink-600 transition underline decoration-dotted underline-offset-4 mb-4">
+            રમત ફરીથી શરૂ કરો
+        </button>
+        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+            Created by: Rajesh Barochia
+        </p>
+    </footer>
+
+    <script>
+        let score = 0;
+        let level = 1;
+        let currentNumber = 0;
+
+        const mirrorNumberEl = document.getElementById('mirror-number');
+        const optionsGrid = document.getElementById('options-grid');
+        const scoreEl = document.getElementById('score');
+        const levelEl = document.getElementById('level');
+        const messageEl = document.getElementById('message');
+
+        function generateGame() {
+            // અંકને ફરીથી ઊંધો અને એનિમેટેડ કરો
+            mirrorNumberEl.classList.remove('straighten', 'no-animation');
+            mirrorNumberEl.classList.add('animate-mirror');
+            
+            messageEl.textContent = '';
+            messageEl.style.transform = 'scale(0)';
+            optionsGrid.innerHTML = '';
+            
+            // 10 થી 99 વચ્ચેની સંખ્યા
+            currentNumber = Math.floor(Math.random() * 90) + 10;
+            mirrorNumberEl.textContent = currentNumber;
+
+            // વિકલ્પો તૈયાર કરવા (1 સાચો, 3 ખોટા)
+            let choices = [currentNumber];
+            while (choices.length < 4) {
+                let diff = Math.floor(Math.random() * 20) - 10;
+                let rand = currentNumber + diff;
+                if (rand >= 10 && rand <= 99 && !choices.includes(rand)) {
+                    choices.push(rand);
+                } else {
+                    let completeRand = Math.floor(Math.random() * 90) + 10;
+                    if (!choices.includes(completeRand)) choices.push(completeRand);
+                }
+            }
+            
+            // વિકલ્પોને મિક્સ કરો
+            choices.sort(() => Math.random() - 0.5);
+
+            // બટનો બનાવો
+            choices.forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = 'card bg-pink-50 text-pink-600 text-3xl md:text-4xl font-bold py-5 rounded-3xl border-b-8 border-pink-100 active:border-b-0 active:translate-y-2';
+                btn.textContent = val;
+                btn.onclick = () => checkAnswer(val, btn);
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, btn) {
+            const buttons = optionsGrid.querySelectorAll('button');
+            buttons.forEach(b => b.disabled = true);
+            messageEl.style.transform = 'scale(1.2)';
+
+            if (selected === currentNumber) {
+                // જાદુઈ એનિમેશન: અંક સીધો થાય છે
+                mirrorNumberEl.classList.remove('animate-mirror');
+                mirrorNumberEl.classList.add('straighten', 'no-animation');
+                
+                score += 10;
+                scoreEl.textContent = score;
+                messageEl.textContent = "🥳 સરસ! 🥳";
+                messageEl.className = "mt-6 text-xl font-black text-green-500";
+                btn.classList.add('correct');
+                
+                if (score % 50 === 0) {
+                    level++;
+                    levelEl.textContent = level;
+                }
+                setTimeout(generateGame, 1600);
+            } else {
+                messageEl.textContent = "સાચો જવાબ " + currentNumber + " છે";
+                messageEl.className = "mt-6 text-xl font-black text-red-500";
+                btn.classList.add('wrong');
+                
+                buttons.forEach(b => {
+                    if (parseInt(b.textContent) === currentNumber) b.classList.add('correct');
+                });
+                setTimeout(generateGame, 2200);
+            }
+        }
+
+        function resetGame() {
+            score = 0;
+            level = 1;
+            scoreEl.textContent = '0';
+            levelEl.textContent = '1';
+            generateGame();
+        }
+
+        // પ્રથમ વખત ગેમ લોડ કરો
+        window.onload = generateGame;
+    </script>
+</body>
+</html>
