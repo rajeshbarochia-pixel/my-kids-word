@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ગુજરાતી ચિત્ર ક્વિઝ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rasa:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Rasa', serif;
+            background-color: #f0f9ff;
+            background-image: radial-gradient(#bae6fd 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .game-card {
+            transition: all 0.3s ease;
+        }
+
+        .option-btn {
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        .option-btn:active {
+            transform: scale(0.95);
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        .pop {
+            animation: pop 0.3s;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            z-index: 50;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(720deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <header class="text-center mb-6">
+        <h1 class="text-4xl md:text-5xl font-bold text-indigo-700 drop-shadow-sm mb-2">🎓 ગુજરાતી શીખો 🎓</h1>
+        <p class="text-lg text-slate-600 font-semibold">ચિત્ર જુઓ અને સાચું નામ શોધો!</p>
+    </header>
+
+    <div id="game-container" class="bg-white rounded-3xl shadow-xl p-6 md:p-8 w-full max-w-md border-4 border-indigo-200 game-card relative overflow-hidden">
+        
+        <div class="flex justify-between items-center mb-6 bg-slate-100 p-3 rounded-xl">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">⭐</span>
+                <span id="score" class="text-xl font-bold text-indigo-600">0</span>
+            </div>
+            <div class="text-slate-500 text-sm font-bold">
+                પ્રશ્ન: <span id="current-q">1</span>/10
+            </div>
+        </div>
+
+        <div class="text-center mb-8">
+            <div id="emoji-display" class="text-8xl md:text-9xl mb-4 cursor-pointer hover:scale-110 transition-transform duration-300 drop-shadow-md select-none">
+                🦁
+            </div>
+            <p class="text-slate-400 text-sm">(ઉચ્ચાર સાંભળવા માટે ઇમોજી પર ક્લિક કરો)</p>
+        </div>
+
+        <div id="options-grid" class="grid grid-cols-2 gap-4">
+            </div>
+
+        <div id="feedback" class="h-8 mt-4 text-center font-bold text-xl hidden"></div>
+
+        <button id="next-btn" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition-all hidden">
+            આગળ વધો ➡️
+        </button>
+
+    </div>
+
+    <div id="game-over" class="hidden bg-white rounded-3xl shadow-xl p-8 w-full max-w-md border-4 border-indigo-200 text-center">
+        <div class="text-6xl mb-4">🏆</div>
+        <h2 class="text-3xl font-bold text-indigo-800 mb-4">ખૂબ સરસ!</h2>
+        <p class="text-xl text-slate-600 mb-6">તમારો સ્કોર: <span id="final-score" class="font-bold text-indigo-600">0</span> / 10</p>
+        <button onclick="startGame()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg text-lg transform hover:scale-105 transition-all">
+            ફરીથી રમો 🔄
+        </button>
+    </div>
+
+    <footer class="mt-8 text-center">
+        <p class="text-slate-500 font-medium text-sm">Created by: Rajesh barochia</p>
+    </footer>
+
+    <script>
+        const gameData = [
+            { word: "સિંહ", emoji: "🦁" },
+            { word: "સફરજન", emoji: "🍎" },
+            { word: "કાર", emoji: "🚗" },
+            { word: "કેળું", emoji: "🍌" },
+            { word: "હાથી", emoji: "🐘" },
+            { word: "ઘર", emoji: "🏠" },
+            { word: "દડો", emoji: "⚽" },
+            { word: "બિલાડી", emoji: "🐱" },
+            { word: "પુસ્તક", emoji: "📚" },
+            { word: "સૂર્ય", emoji: "☀️" },
+            { word: "સાયકલ", emoji: "🚲" },
+            { word: "ફૂલ", emoji: "🌸" },
+            { word: "મોર", emoji: "🦚" },
+            { word: "માછલી", emoji: "🐟" },
+            { word: "કેરી", emoji: "🥭" },
+            { word: "ચશ્મા", emoji: "👓" },
+            { word: "વિમાન", emoji: "✈️" },
+            { word: "ચંદ્ર", emoji: "🌙" },
+            { word: "પેન્સિલ", emoji: "✏️" },
+            { word: "વૃક્ષ", emoji: "🌳" }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let totalQuestions = 10;
+        let currentItem = null;
+        let isAnsweringAllowed = true;
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
+            } else {
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+                oscillator.frequency.linearRampToValueAtTime(150, audioCtx.currentTime + 0.3);
+            }
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function speakWord(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'gu-IN';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function startGame() {
+            score = 0;
+            currentQuestion = 0;
+            document.getElementById('score').innerText = score;
+            document.getElementById('game-over').classList.add('hidden');
+            document.getElementById('game-container').classList.remove('hidden');
+            shuffle(gameData);
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (currentQuestion >= totalQuestions) {
+                showGameOver();
+                return;
+            }
+
+            isAnsweringAllowed = true;
+            document.getElementById('current-q').innerText = currentQuestion + 1;
+            document.getElementById('feedback').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+            
+            currentItem = gameData[currentQuestion];
+            const emojiDisplay = document.getElementById('emoji-display');
+            emojiDisplay.innerText = currentItem.emoji;
+            emojiDisplay.onclick = () => speakWord(currentItem.word);
+
+            let options = [currentItem];
+            let remaining = gameData.filter(item => item.word !== currentItem.word);
+            shuffle(remaining);
+            options.push(...remaining.slice(0, 3));
+            shuffle(options);
+
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+
+            options.forEach(opt => {
+                const btn = document.createElement('button'); // ભૂલ અહીં સુધારી છે
+                btn.className = "option-btn bg-blue-100 hover:bg-blue-200 text-blue-900 font-bold py-4 rounded-xl text-xl md:text-2xl shadow-sm border-b-4 border-blue-200 active:border-b-0 active:mt-1";
+                btn.innerText = opt.word;
+                btn.onclick = () => checkAnswer(opt, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, btnElement) {
+            if (!isAnsweringAllowed) return;
+            isAnsweringAllowed = false;
+
+            const isCorrect = selected.word === currentItem.word;
+            const feedback = document.getElementById('feedback');
+            const nextBtn = document.getElementById('next-btn');
+
+            if (isCorrect) {
+                playSound('correct');
+                score++;
+                document.getElementById('score').innerText = score;
+                btnElement.classList.replace('bg-blue-100', 'bg-green-500');
+                btnElement.classList.add('text-white', 'border-green-600');
+                feedback.innerText = "સાચો જવાબ! 🎉";
+                feedback.className = "mt-4 text-center font-bold text-xl text-green-600 pop";
+                createConfetti();
+            } else {
+                playSound('wrong');
+                btnElement.classList.replace('bg-blue-100', 'bg-red-500');
+                btnElement.classList.add('text-white', 'border-red-600', 'shake');
+                
+                const buttons = document.querySelectorAll('.option-btn');
+                buttons.forEach(b => {
+                    if (b.innerText === currentItem.word) {
+                        b.classList.add('bg-green-200', 'border-green-300');
+                    }
+                });
+                feedback.innerText = `ખોટું! સાચો જવાબ: ${currentItem.word}`;
+                feedback.className = "mt-4 text-center font-bold text-xl text-red-500 pop";
+            }
+
+            feedback.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+            setTimeout(() => speakWord(currentItem.word), 500);
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            currentQuestion++;
+            loadQuestion();
+        };
+
+        function showGameOver() {
+            document.getElementById('game-container').classList.add('hidden');
+            document.getElementById('game-over').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            if (score === 10) speakWord("અદ્ભુત! પૂરા માર્ક્સ!");
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = ['#ff0000', '#00ff00', '#0000ff', '#ffff00'][Math.floor(Math.random() * 4)];
+                confetti.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
