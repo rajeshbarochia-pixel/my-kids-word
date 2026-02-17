@@ -4,379 +4,229 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A,B,C,D ઓળખો</title>
-    <!-- Tailwind CSS લોડ કરો --><script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* કસ્ટમ સ્ટાઇલ અને ફોન્ટ */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');
+        
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f7f3f0; /* હળવો પૃષ્ઠભૂમિ રંગ */
+            background: radial-gradient(circle, #ffffff 0%, #f3f4f6 100%);
+            touch-action: manipulation;
         }
 
-        /* મુખ્ય કન્ટેનર માટે સ્થિતિ */
-        .wheel-container {
+        /* વ્હીલ કન્ટેનર */
+        .wheel-outer-container {
             position: relative;
-            width: 500px;
-            height: 500px;
-            /* મોબાઇલ પર નાનું થાય તે માટે */
-            max-width: 90vw;
-            max-height: 90vw;
+            width: min(90vw, 450px);
+            height: min(90vw, 450px);
+            margin: 20px auto;
         }
 
-        /* રોટેશન માટેના તત્વો */
-        .rotating-element {
-            position: absolute;
-            top: 0;
-            left: 0;
+        /* મુખ્ય ચક્ર */
+        #main-wheel {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            /* માત્ર ધીમા પડતી વખતે જ સંક્રમણનો ઉપયોગ કરો, ફરતી વખતે નહીં */
-            transition: transform 0.1s linear; 
+            position: relative;
+            border: 8px solid white;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1);
         }
 
-        /* 17 SDG પ્રેરિત રંગો (હવે A-Z માટે ઉપયોગમાં લેવાય છે) */
-        .sdg-color-1 { background-color: '#e5243b'; }
-        .sdg-color-2 { background-color: '#dda63a'; }
-        .sdg-color-3 { background-color: '#4c9f38'; }
-        .sdg-color-4 { background-color: '#c5192d'; }
-        .sdg-color-5 { background-color: '#ff3a21'; }
-        .sdg-color-6 { background-color: '#26bde2'; }
-        .sdg-color-7 { background-color: '#fcc30b'; }
-        .sdg-color-8 { background-color: '#a21942'; }
-        .sdg-color-9 { background-color: '#fd6925'; }
-        .sdg-color-10 { background-color: '#dd1367'; }
-        .sdg-color-11 { background-color: '#fd9d24'; }
-        .sdg-color-12 { background-color: '#bf8b2e'; }
-        .sdg-color-13 { background-color: '#3f7e44'; }
-        .sdg-color-14 { background-color: '#0a97d9'; }
-        .sdg-color-15 { background-color: '#59c9a6'; }
-        .sdg-color-16 { background-color: '#00689d'; }
-        .sdg-color-17 { background-color: '#19486a'; }
-
-        /* અંદરના ચક્રના ભાગો માટે (પાંખડીઓ) */
-        .inner-segment {
+        /* અક્ષર ગોળ (Icons) */
+        .char-icon {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 50%;
-            height: 50%;
-            transform-origin: 0% 0%;
-            /* This clip-path creates the wedge shape */
-            clip-path: polygon(0 0, 90% 0, 90% 3%, 0 3%); 
-            border-radius: 0 100% 0 0;
-            overflow: hidden;
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
-        }
-
-        /* બહારના અક્ષર ગોળ માટે */
-        .outer-icon {
-            position: absolute;
-            width: 60px;
-            height: 60px;
+            width: 44px;
+            height: 44px;
+            background: white;
             border-radius: 50%;
             display: flex;
-            justify-content: center;
             align-items: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 30;
+            transform-origin: center;
+            /* અક્ષર પોતે પણ સ્મૂધલી ફરે તે માટે */
+            transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1);
         }
 
-        /* મધ્ય ભાગ - પરિણામ દર્શાવવા માટે */
-        #center-image {
+        /* કેન્દ્રનું વર્તુળ */
+        .center-hub {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 180px;
-            height: 180px;
-            margin-left: -90px;
-            margin-top: -90px;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background: white;
             border-radius: 50%;
-            background-color: white;
+            z-index: 40;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            /* Winning Point Indicator removed */
-            box-shadow: 0 0 0 15px white, 0 0 0 18px #d1d5db; /* Border removed */
-            z-index: 20;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.15);
             text-align: center;
         }
 
-        /* પરિણામનું ટેક્સ્ટ */
-        #result-text {
-            font-size: 4rem; /* મોટો ફોન્ટ સાઇઝ */
-            font-weight: 800;
-            color: #1f2937;
-            transition: color 0.3s ease, transform 0.3s ease;
+        #result-display {
+            font-size: 3.5rem;
+            line-height: 1;
+            font-weight: 900;
+            color: #374151;
         }
 
-        /* સ્પિનિંગ ક્લાસ જે ટ્રાન્ઝિશનને ઓવરરાઇડ કરે છે જ્યારે ચક્ર ઝડપથી ફરે છે */
-        .no-transition {
-            transition: none !important;
+        /* સેગમેન્ટ્સ - ચક્રના રંગીન ભાગો */
+        .segment {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            clip-path: polygon(50% 50%, 50% 0%, 63% 0%);
         }
 
-        /* પરિણામ પોપ-અપ એનિમેશન */
-        @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.15); filter: brightness(1.2); }
-            100% { transform: scale(1); }
+        /* એનિમેશન */
+        @keyframes success-pop {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
         }
-        .animate-pop {
-            animation: pop 0.5s ease-out;
+        .pop-active {
+            animation: success-pop 0.5s ease-out;
         }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-4">
 
-    <header class="text-center mb-8">
-        <h1 class="text-3xl font-extrabold text-gray-800 mb-2">A,B,C,D ઓળખો</h1>
-        <p class="text-gray-600">ચક્ર ફેરવો. કેંદ્રમા દેખાતો અક્ષર ઓળખો.</p>
-        <!-- નિર્માતાનું નામ ઉમેર્યું -->
-        <p class="text-sm text-gray-500 mt-1">Created by: Rajesh Barochia</p>
+    <header class="text-center mb-6">
+        <h1 class="text-4xl font-extrabold text-gray-800 tracking-tight">A,B,C,D ઓળખો</h1>
+        <p class="text-gray-500 mt-2 font-medium">ચક્ર ફેરવો અને નવો અક્ષર શીખો!</p>
     </header>
 
-    <div class="wheel-container">
-        <!-- સ્થિર એરો (Pointer) દૂર કરવામાં આવ્યો છે -->
-
-        <!-- 1. અંદરનું ચક્ર (Inner Ring) - આ હવે સ્થિર રહેશે -->
-        <div id="inner-ring" class="rotating-element z-10" style="transform: rotate(0deg);">
-            <!-- 26 રંગીન સેગમેન્ટ્સ (પાંખડીઓ) અહીં JavaScript દ્વારા ઉમેરવામાં આવશે -->
+    <div class="wheel-outer-container">
+        <!-- કેન્દ્રનું વર્તુળ -->
+        <div class="center-hub" id="hub">
+            <span id="result-display">?</span>
+            <span class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">અક્ષર</span>
         </div>
 
-        <!-- 2. બહારના અક્ષર ગોળ (Outer Icons) - આ ઘડિયાળની દિશામાં ફરશે -->
-        <div id="outer-icons" class="rotating-element z-10" style="transform: rotate(0deg);">
-            <!-- 26 અક્ષર ગોળ અહીં JavaScript દ્વારા ઉમેરવામાં આવશે -->
-        </div>
-
-        <!-- 3. મધ્ય ભાગ - પરિણામ અહીં બતાવાશે -->
-        <div id="center-image">
-            <p id="result-text" class="text-gray-400 text-2xl font-semibold">શરૂ કરો</p>
-            <p class="text-sm text-gray-400">પરિણામ</p>
+        <!-- મુખ્ય ફરતું ચક્ર -->
+        <div id="main-wheel">
+            <!-- સેગમેન્ટ્સ અને અક્ષરો JS થી આવશે -->
         </div>
     </div>
-    
-    <div class="mt-8 flex space-x-4 p-4 bg-white rounded-xl shadow-lg">
-        <button id="spin-button" class="px-8 py-3 bg-red-600 text-white font-extrabold rounded-full shadow-lg hover:bg-red-700 transition duration-300 transform hover:scale-105" disabled>
-            ફેરવો
+
+    <div class="mt-10 flex flex-col items-center">
+        <button id="spin-btn" class="group relative px-12 py-4 bg-red-600 text-white text-xl font-black rounded-full shadow-[0_10px_0_0_#b91c1c] active:shadow-none active:translate-y-[10px] transition-all duration-150">
+            <span class="relative">ફેરવો!</span>
         </button>
+        
+        <div class="mt-12 text-center">
+            <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">નિર્માતા</p>
+            <p class="text-sm text-gray-600 font-bold">Rajesh Barochia</p>
+        </div>
     </div>
 
     <script>
-        // જાવાસ્ક્રિપ્ટ કોડ ગેમ અને ડબલ રોટેશન લોજિકને નિયંત્રિત કરવા માટે
+        const wheel = document.getElementById('main-wheel');
+        const spinBtn = document.getElementById('spin-btn');
+        const resultDisplay = document.getElementById('result-display');
+        const hub = document.getElementById('hub');
 
-        // ગ્લોબલ DOM એલિમેન્ટ્સ
-        const innerRing = document.getElementById('inner-ring');
-        const outerIcons = document.getElementById('outer-icons');
-        const spinButton = document.getElementById('spin-button');
-        const resultText = document.getElementById('result-text');
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+        const count = alphabet.length;
+        const anglePerStep = 360 / count;
         
-        // ગેમ કોન્સ્ટન્ટ્સ
-        const NUM_SEGMENTS = 26; // A થી Z માટે 26 સેગમેન્ટ
-        const SEGMENT_ANGLE = 360 / NUM_SEGMENTS; // 360/26 ≈ 13.846
-        // બહારના અક્ષરોની ગણતરી (A થી Z)
-        const labels = Array.from({ length: NUM_SEGMENTS }, (_, i) => String.fromCharCode(65 + i)); // A થી Z
-        
-        // Original 17 colors, 26 સેગમેન્ટ માટે રિસાઇકલ કરવામાં આવશે.
-        const originalColors = [
-            '#e5243b', '#dda63a', '#4c9f38', '#c5192d', '#ff3a21', 
-            '#26bde2', '#fcc30b', '#a21942', '#fd6925', '#dd1367', 
-            '#fd9d24', '#bf8b2e', '#3f7e44', '#0a97d9', '#59c9a6', 
-            '#00689d', '#19486a'
+        const colors = [
+            '#FF595E', '#FF924C', '#FFCA3A', '#C5CA30', '#8AC926', 
+            '#52A675', '#1982C4', '#4267AC', '#6A4C93', '#B5179E',
+            '#F72585', '#7209B7', '#3A0CA3', '#4361EE', '#4CC9F0'
         ];
-        
-        // 26 સેગમેન્ટ્સ માટે રંગો બનાવો
-        const colors = Array.from({ length: NUM_SEGMENTS }, (_, i) => originalColors[i % originalColors.length]);
-        
-        let innerAngle = 0; // Inner ring નો વર્તમાન રોટેશન એંગલ (સ્થિર)
-        let outerAngle = 0; // Outer icons નો વર્તમાન રોટેશન એંગલ (ક્લોકવાઇઝ)
+
+        let currentRotation = 0;
         let isSpinning = false;
-        let animationStartTime;
-        let animationFrameId;
+        let charIcons = [];
 
-        /**
-         * અંદરના રંગીન સેગમેન્ટ્સ બનાવે છે અને તેમને પોઝિશન કરે છે.
-         */
-        function createInnerRing() {
-            const angleStep = 360 / NUM_SEGMENTS;
-            for (let i = 0; i < NUM_SEGMENTS; i++) {
+        // ચક્ર તૈયાર કરવું
+        function initWheel() {
+            for (let i = 0; i < count; i++) {
+                // સેગમેન્ટ (રંગ)
                 const segment = document.createElement('div');
-                segment.style.backgroundColor = colors[i];
-                segment.classList.add('inner-segment');
+                segment.className = 'segment';
+                const rotation = i * anglePerStep;
+                segment.style.transform = `rotate(${rotation}deg)`;
+                segment.style.backgroundColor = colors[i % colors.length];
+                wheel.appendChild(segment);
+
+                // અક્ષર આઈકોન
+                const charEl = document.createElement('div');
+                charEl.className = 'char-icon';
+                charEl.textContent = alphabet[i];
+                charEl.style.color = colors[i % colors.length];
                 
-                const rotationAngle = angleStep * i;
-                // Skewing the segment to create the wedge shape
-                segment.style.transform = `rotate(${rotationAngle}deg) skewY(${90 - angleStep}deg) translateY(-50%)`;
+                // આઈકોન પોઝિશન (Radius)
+                const radius = 170; 
+                const rad = (rotation + anglePerStep / 2 - 90) * (Math.PI / 180);
+                const x = 50 + (radius / 450 * 100) * Math.cos(rad);
+                const y = 50 + (radius / 450 * 100) * Math.sin(rad);
                 
-                innerRing.appendChild(segment);
+                charEl.style.left = `${x}%`;
+                charEl.style.top = `${y}%`;
+                
+                // શરૂઆતની સ્થિતિ (સીધા અક્ષરો)
+                charEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+                
+                wheel.appendChild(charEl);
+                charIcons.push(charEl);
             }
         }
 
-        /**
-         * બહારના અક્ષરો (A, B, C...) બનાવે છે અને તેમને રેડિયલી પોઝિશન કરે છે.
-         */
-        function createOuterIcons() {
-            const angleStep = 360 / NUM_SEGMENTS;
-            const radius = 220; // મધ્યથી અંતર (px માં)
-
-            for (let i = 0; i < NUM_SEGMENTS; i++) {
-                const labelContainer = document.createElement('div');
-                labelContainer.classList.add('outer-icon');
-                labelContainer.style.backgroundColor = colors[i]; 
-                labelContainer.dataset.label = labels[i]; // Store data for result
-
-                const angle = (angleStep * i) * (Math.PI / 180); // Convert to radians
-                const x = radius * Math.cos(angle);
-                const y = radius * Math.sin(angle);
-
-                // Position the icon container
-                labelContainer.style.left = `calc(50% + ${x}px - 30px)`;
-                labelContainer.style.top = `calc(50% + ${y}px - 30px)`;
-                
-                labelContainer.textContent = labels[i];
-
-                outerIcons.appendChild(labelContainer);
-            }
-        }
-
-        /**
-         * અંતિમ પરિણામ નક્કી કરે છે.
-         * વિજેતા બિંદુ ટોચનું કેન્દ્ર (0 ડિગ્રી) છે.
-         */
-        function determineWinner(finalOuterAngle) {
-            // 1. એંગલને 0 થી 360 ની વચ્ચે નોર્મલાઇઝ કરો (સકારાત્મક દિશામાં, ક્લોકવાઇઝ).
-            let normalizedAngle = (finalOuterAngle % 360 + 360) % 360; 
-
-            // 2. 0 ડિગ્રી (ટોચનું કેન્દ્ર) પર કયો સેગમેન્ટ છે તે શોધો.
-            
-            // Outer icons ક્લોકવાઇઝ ફરે છે. સેગમેન્ટ A (ઇન્ડેક્સ 0) 0 ડિગ્રી પર શરૂ થાય છે.
-            
-            let totalRotationSegments = normalizedAngle / SEGMENT_ANGLE;
-            let segmentsRotated = Math.floor(totalRotationSegments);
-            
-            // વિજેતા ઇન્ડેક્સ એ સેગમેન્ટની સંખ્યા છે જે શરૂઆત (A=0) થી પાછળની બાજુએ (ક્લોકવાઇઝ) છે
-            let winningIndex = (NUM_SEGMENTS - segmentsRotated) % NUM_SEGMENTS;
-            
-            const resultLabel = labels[winningIndex];
-            const resultColor = colors[winningIndex];
-
-            // 3. મધ્યમાં પરિણામ બતાવો અને પોપ એનિમેશન ઉમેરો
-            resultText.textContent = resultLabel;
-            resultText.style.color = resultColor;
-            resultText.classList.add('animate-pop');
-            
-            // 0.5 સેકન્ડ પછી એનિમેશન ક્લાસ દૂર કરો
-            setTimeout(() => {
-                resultText.classList.remove('animate-pop');
-            }, 500);
-            
-            // બટનને ફરીથી સક્ષમ કરો
-            spinButton.disabled = false;
-            spinButton.textContent = 'ફરી ફેરવો';
-        }
-
-
-        /**
-         * સ્પિન એનિમેશન શરૂ કરે છે અને ધીમું પાડે છે.
-         */
-        function animateSpin(timestamp, duration, targetOuterAngle, startOuterAngle) {
-            if (!animationStartTime) {
-                animationStartTime = timestamp;
-            }
-
-            const elapsed = timestamp - animationStartTime;
-            const progress = Math.min(elapsed / duration, 1);
-
-            // સરળ deceleration માટે Easing ફંક્શન (Cubic Ease-Out)
-            const easedProgress = 1 - Math.pow(1 - progress, 3);
-            
-            // અંદરનું ચક્ર સ્થિર રહે છે, તેથી કોઈ ગણતરી નથી.
-
-            // બહારના ચક્ર માટે
-            const outerRotationRange = targetOuterAngle - startOuterAngle;
-            outerAngle = startOuterAngle + outerRotationRange * easedProgress;
-
-            // Outer Icons ને અપડેટ કરો (ક્લોકવાઇઝ)
-            outerIcons.style.transform = `rotate(${outerAngle}deg)`;
-            
-            // અક્ષરોને સ્થિર રાખવા માટે, તેમને વિરુદ્ધ દિશામાં ફેરવો (કાઉન્ટર-ક્લોકવાઇઝ)
-            const iconRotation = -outerAngle;
-            outerIcons.querySelectorAll('.outer-icon').forEach(icon => {
-                icon.style.transform = `rotate(${iconRotation}deg)`;
+        function updateCharRotation(rotationValue) {
+            // દરેક અક્ષરને ચક્રની વિરુદ્ધ દિશામાં ફેરવો જેથી તે હંમેશા સીધા દેખાય
+            charIcons.forEach((icon) => {
+                icon.style.transform = `translate(-50%, -50%) rotate(${rotationValue}deg)`;
             });
-
-            if (progress < 1) {
-                // Pass only the necessary arguments (excluding inner angle)
-                animationFrameId = requestAnimationFrame((t) => animateSpin(t, duration, targetOuterAngle, startOuterAngle));
-            } else {
-                // એનિમેશન સમાપ્ત
-                isSpinning = false;
-                animationStartTime = undefined;
-                
-                // પરિણામ બહારના ચક્રના અંતિમ એંગલ પર આધારિત છે
-                determineWinner(outerAngle);
-            }
         }
 
-        /**
-         * સ્પિન બટન ક્લિક હેન્ડલર
-         */
-        function spinWheel() {
+        function spin() {
             if (isSpinning) return;
-            
-            // ટ્રાન્ઝિશનને દૂર કરો જેથી સ્પિનિંગ સ્મૂધ હોય
-            innerRing.classList.add('no-transition');
-            outerIcons.classList.add('no-transition');
-            
+
             isSpinning = true;
-            spinButton.disabled = true;
-            spinButton.textContent = 'ફરી રહ્યું છે...';
-            resultText.textContent = '';
-            resultText.style.color = '#1f2937';
+            spinBtn.disabled = true;
+            hub.classList.remove('pop-active');
+            
+            const extraRounds = 5 + Math.floor(Math.random() * 5);
+            const randomAngle = Math.floor(Math.random() * 360);
+            currentRotation += (extraRounds * 360) + randomAngle;
 
-            // 1. રેન્ડમ સ્ટોપ પોઝિશન નક્કી કરો (0 થી 360 ડિગ્રી).
-            const randomStopPosition = Math.random() * 360; 
+            // ચક્ર ફેરવો
+            wheel.style.transform = `rotate(-${currentRotation}deg)`;
             
-            // 2. ઓછામાં ઓછા 5 થી 10 સંપૂર્ણ રાઉન્ડ ઉમેરો.
-            const fullRotations = Math.floor(5 + Math.random() * 5); 
-            const totalSpinDegrees = fullRotations * 360;
+            // અક્ષરોને સીધા રાખવા માટે તેને વિરુદ્ધ દિશામાં ફેરવો
+            updateCharRotation(currentRotation);
 
-            // 3. અંતિમ લક્ષ્ય એંગલ
-            
-            // Outer Icons (ક્લોકવાઇઝ = પોઝિટિવ રોટેશન) - આના પર પરિણામ આવશે
-            const targetOuterAngle = Math.abs(outerAngle) + totalSpinDegrees + randomStopPosition;
-            
-            // એનિમેશનની અવધિ (4 થી 6 સેકન્ડ)
-            const duration = 4000 + Math.random() * 2000; 
-
-            // એનિમેશન શરૂ કરો (inner angle removed from arguments)
-            requestAnimationFrame((t) => animateSpin(t, duration, targetOuterAngle, outerAngle));
-            
-            // વર્તમાન એંગલને અપડેટ કરો જેથી આગામી સ્પિન ત્યાંથી શરૂ થાય
-            outerAngle = targetOuterAngle % 360;
-            
-            // જ્યારે એનિમેશન સમાપ્ત થાય ત્યારે ટ્રાન્ઝિશન પાછું ઉમેરવું
             setTimeout(() => {
-                innerRing.classList.remove('no-transition');
-                outerIcons.classList.remove('no-transition');
-            }, duration);
+                isSpinning = false;
+                spinBtn.disabled = false;
+                
+                const actualStopAngle = currentRotation % 360;
+                // ટોચના ભાગ (0 degree) પર કયો અક્ષર છે તેની ગણતરી
+                const index = Math.floor(((actualStopAngle + (anglePerStep/2)) % 360) / anglePerStep);
+                
+                const winChar = alphabet[index % count];
+                const winColor = colors[(index % count) % colors.length];
+
+                resultDisplay.textContent = winChar;
+                resultDisplay.style.color = winColor;
+                hub.classList.add('pop-active');
+            }, 4000);
         }
 
-        // પ્રારંભિક રચના
-        createInnerRing();
-        createOuterIcons();
-
-        // બટન પર ક્લિક ઇવેન્ટ સેટ કરો
-        spinButton.addEventListener('click', spinWheel);
-        
-        // પેજ લોડ થયા પછી બટનને સક્ષમ કરો
-        window.onload = function () {
-            spinButton.disabled = false;
-            resultText.textContent = 'સ્પિન';
-            resultText.style.color = '#dc2626';
-        };
-
+        spinBtn.addEventListener('click', spin);
+        initWheel();
     </script>
 </body>
 </html>
