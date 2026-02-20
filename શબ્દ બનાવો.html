@@ -1,466 +1,350 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="gu">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>અક્ષર સ્પર્શ ગેમ</title>
-  <style>
-    :root {
-      font-family: 'Noto Sans Gujarati', sans-serif;
-      --primary: #4CAF50;
-      --secondary: #3b82f6;
-      --accent: #ff9800;
-      --light: #f9f9ff;
-      --dark: #333;
-      --correct: #4CAF50;
-      --wrong: #f44336;
-    }
-    
-    body {
-      max-width: 900px;
-      margin: 18px auto;
-      padding: 18px;
-      background: var(--light);
-      color: var(--dark);
-    }
-    
-    h1 {
-      font-size: 24px;
-      margin-bottom: 10px;
-      text-align: center;
-      color: var(--dark);
-    }
-    
-    .instructions {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #666;
-      padding: 10px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    
-    .progress-container {
-      margin: 20px 0;
-      background: #e0e0e0;
-      border-radius: 10px;
-      height: 10px;
-      overflow: hidden;
-    }
-    
-    .progress-bar {
-      height: 100%;
-      background: var(--primary);
-      width: 0%;
-      transition: width 0.5s ease;
-    }
-    
-    .game-container {
-      background: #fff;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    
-    .current-word {
-      text-align: center;
-      font-size: 18px;
-      margin-bottom: 15px;
-      color: #666;
-    }
-    
-    .word-number {
-      font-weight: bold;
-      color: var(--secondary);
-    }
-    
-    .row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin: 12px 0;
-      padding: 15px;
-      border-radius: 10px;
-      background: #fff;
-      border: 1px solid #ddd;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .row:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    .row.completed {
-      background: #f0f8f0;
-      border-color: var(--correct);
-    }
-    
-    .pic {
-      width: 84px;
-      height: 84px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      background: #eee;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .letters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      flex: 1;
-    }
-    
-    .letter-btn {
-      min-width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      border: 2px solid #ccc;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      background: #fff;
-      user-select: none;
-      transition: all 0.2s ease;
-    }
-    
-    .letter-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    
-    .letter-btn.correct {
-      background: var(--correct);
-      color: white;
-      border-color: var(--correct);
-    }
-    
-    .letter-btn.wrong {
-      animation: shake .3s;
-      border-color: var(--wrong);
-      background: #ffe6e6;
-    }
-    
-    .letter-btn:disabled {
-      cursor: not-allowed;
-      opacity: 0.7;
-    }
-    
-    .target-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      min-width: 160px;
-    }
-    
-    .target {
-      width: 100%;
-      height: 40px;
-      border-radius: 8px;
-      border: 2px dashed #bbb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 18px;
-      background: #f9f9f9;
-    }
-    
-    .target.done {
-      color: var(--correct);
-      border-color: var(--correct);
-      background: #f0f8f0;
-      animation: pulse 1s;
-    }
-    
-    .completion-message {
-      text-align: center;
-      padding: 20px;
-      margin: 20px 0;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: none;
-    }
-    
-    .completion-message.show {
-      display: block;
-      animation: fadeIn 0.5s ease;
-    }
-    
-    .celebration {
-      font-size: 40px;
-      margin-bottom: 10px;
-    }
-    
-    .countdown {
-      font-size: 18px;
-      margin-top: 10px;
-      color: #666;
-    }
-    
-    @keyframes shake {
-      0% { transform: translateX(0) }
-      25% { transform: translateX(-5px) }
-      75% { transform: translateX(5px) }
-      100% { transform: translateX(0) }
-    }
-    
-    @keyframes pulse {
-      0% { transform: scale(1) }
-      50% { transform: scale(1.05) }
-      100% { transform: scale(1) }
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px) }
-      to { opacity: 1; transform: translateY(0) }
-    }
-    
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      .row {
-        flex-direction: column;
-        text-align: center;
-        gap: 15px;
-      }
-      
-      .target-container {
-        width: 100%;
-      }
-      
-      .letters {
-        justify-content: center;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      body {
-        padding: 10px;
-      }
-      
-      .pic {
-        width: 70px;
-        height: 70px;
-        font-size: 32px;
-      }
-      
-      .letter-btn {
-        min-width: 35px;
-        height: 35px;
-        font-size: 16px;
-      }
-      
-      .target {
-        height: 35px;
-        font-size: 16px;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ગુજરાતી શબ્દ રમત - રાજેશ બારોચિયા</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrolling */
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .main-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: clamp(8px, 2vw, 20px);
+            box-sizing: border-box;
+            max-width: 500px; /* Limits width on large screens */
+        }
+
+        .game-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: clamp(16px, 5vw, 32px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 4px solid #fff;
+        }
+
+        .header {
+            background-color: #fbbf24;
+            padding: clamp(8px, 3vh, 16px);
+            text-align: center;
+            border-bottom: 4px solid #d97706;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: clamp(10px, 3vw, 20px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            gap: 10px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: clamp(6px, 2vw, 12px);
+            width: 100%;
+        }
+
+        .grid-cell {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.2rem, 5vw, 1.8rem);
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid #e2e8f0;
+            background-color: #f8fafc;
+            border-radius: clamp(8px, 3vw, 16px);
+            user-select: none;
+            transition: all 0.15s ease;
+            box-shadow: 0 3px 0 #cbd5e1;
+        }
+
+        .grid-cell:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        .grid-cell.selected {
+            background-color: #fbbf24;
+            border-color: #d97706;
+            color: #000;
+            box-shadow: 0 3px 0 #b45309;
+        }
+
+        .grid-cell.found {
+            background-color: #10b981;
+            color: white;
+            border-color: #059669;
+            box-shadow: 0 3px 0 #047857;
+        }
+
+        .writing-area {
+            background-color: #f0f9ff;
+            border-radius: 20px;
+            padding: clamp(8px, 2vh, 14px);
+            border: 2px solid #bae6fd;
+        }
+
+        .writing-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(6px, 2vw, 12px);
+        }
+
+        .writing-line {
+            border-top: 2px solid #f87171;
+            border-bottom: 2px solid #f87171;
+            height: clamp(35px, 8vh, 45px);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1rem, 4vw, 1.3rem);
+            font-weight: bold;
+            color: #1e293b;
+            background: #fff;
+            border-radius: 6px;
+        }
+
+        .writing-line::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            border-top: 1px dashed #94a3b8;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+        }
+
+        .btn-clear {
+            background-color: #fee2e2;
+            color: #ef4444;
+            font-weight: bold;
+            padding: clamp(8px, 2vh, 12px) clamp(16px, 5vw, 24px);
+            border-radius: 14px;
+            border: 2px solid #fecaca;
+            transition: all 0.2s;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+        }
+
+        .btn-clear:active {
+            transform: scale(0.95);
+        }
+
+        .creator-tag {
+            font-size: clamp(0.6rem, 2.5vw, 0.8rem);
+            color: #64748b;
+            text-align: center;
+            padding: 8px 0;
+            font-weight: bold;
+        }
+
+        #toast {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1e293b;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 50px;
+            display: none;
+            z-index: 100;
+            font-weight: bold;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            animation: bounceIn 0.5s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: translate(-50%, -100%) scale(0.5); opacity: 0; }
+            70% { transform: translate(-50%, -45%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+    </style>
 </head>
 <body>
-  <h1>અક્ષર સ્પર્શ ગેમ</h1>
 
-    <div class="progress-bar" id="progress-bar"></div>
-  </div>
-  
-  <p class="instructions">ચિત્ર મુજબ યોગ્ય અક્ષરો પસંદ કરીને શબ્દ બનાવો.</p>
-  <p class="instructions">By rajesh barochia</p>
-  
-  <div class="game-container">
-    <div class="current-word">શબ્દ: <span class="word-number" id="current-word-number">1</span>/<span id="total-words">6</span></div>
-    <div id="game"></div>
-  </div>
-  
-  <div class="completion-message" id="completion-message">
-    <div class="celebration">🎉</div>
-    <h2>અભિનંદન!</h2>
-    <p>તમે બધા શબ્દો સફળતાપૂર્વક પૂર્ણ કર્યા!</p>
-    <div class="countdown" id="countdown">ગેમ 5 સેકંડમાં ફરી શરૂ થશે...</div>
-  </div>
-  
-  <script>
-    /* ચિત્રમાં આપેલા શબ્દો અને તેના અક્ષરો મુજબ સુધારેલો ડેટા */
-    const items = [
-      {emoji:'🗡️', correctWord:'તલવાર', allLetters:['ત','ની','લ','વા','ર'], requiredLetters:['ત','લ','વા','ર']},
-      {emoji:'🌰', correctWord:'બદામ', allLetters:['ર','બ','દા','કા','મ'], requiredLetters:['બ','દા','મ']},
-      {emoji:'👂', correctWord:'કાન', allLetters:['મી','ન','કા','ર','ન'], requiredLetters:['કા','ન']},
-      {emoji:'🐍', correctWord:'નાગ', allLetters:['બે','ડા','ના','ગ','સા','મે'], requiredLetters:['ના', 'ગ']},
-      {emoji:'🏠', correctWord:'મકાન', allLetters:['તૈ','મ','કા','ની','રી','ન'], requiredLetters:['મ','કા','ન']},
-      {emoji:'🐒', correctWord:'વાંદરો', allLetters:['વા','ખે','છ','દે','ન','ર'], requiredLetters:['વા','ન','ર']}
-      // નવા શબ્દો અહીં ઉમેરો
-    ];
-    
-    const gameEl = document.getElementById('game');
-    const progressBar = document.getElementById('progress-bar');
-    const completionMessage = document.getElementById('completion-message');
-    const countdownEl = document.getElementById('countdown');
-    const currentWordNumber = document.getElementById('current-word-number');
-    const totalWordsEl = document.getElementById('total-words');
-    
-    let currentItemIndex = 0;
-    let completedItems = 0;
-    const totalItems = items.length;
-    let resetTimer;
-    
-    totalWordsEl.textContent = totalItems;
-    updateProgress();
-    renderCurrentItem();
-    
-    // પ્રગતિ અપડેટ કરવાનું ફંક્શન
-    function updateProgress() {
-      const progress = (completedItems / totalItems) * 100;
-      progressBar.style.width = `${progress}%`;
-    }
-    
-    // વર્તમાન આઇટમ રેન્ડર કરવાનું ફંક્શન
-    function renderCurrentItem() {
-      gameEl.innerHTML = '';
-      currentWordNumber.textContent = currentItemIndex + 1;
-      
-      const it = items[currentItemIndex];
-      const row = document.createElement('div');
-      row.className = 'row';
-      
-      const pic = document.createElement('div');
-      pic.className = 'pic';
-      pic.textContent = it.emoji;
-      row.appendChild(pic);
+    <div id="toast"></div>
 
-      const center = document.createElement('div');
-      center.style.flex = '1';
-      
-      const lettersWrap = document.createElement('div');
-      lettersWrap.className = 'letters';
+    <div class="main-wrapper">
+        <div class="game-card">
+            <div class="header">
+                <h1 class="text-xl sm:text-2xl font-black text-gray-800 tracking-tight">શબ્દ શોધો</h1>
+            </div>
 
-      // requiredLetters ને સેટની જેમ વાપરીએ છીએ જેથી સરળતાથી ચેક કરી શકાય
-      const requiredLettersSet = new Set(it.requiredLetters);
-      const selectedLetters = [];
+            <div class="content-area">
+                <!-- Grid -->
+                <div id="grid" class="grid-container">
+                    <!-- Cells Injected by JS -->
+                </div>
 
-      // ચિત્રમાં આપેલા બધા અક્ષરોને બટન તરીકે ઉમેરો
-      it.allLetters.forEach(ch => {
-        const btn = document.createElement('button');
-        btn.className = 'letter-btn';
-        btn.textContent = ch;
-        btn.dataset.letter = ch;
+                <!-- Found Words Area -->
+                <div class="writing-area">
+                    <p class="text-[10px] sm:text-xs font-bold text-blue-500 mb-2 text-center uppercase tracking-widest">શોધેલા શબ્દો</p>
+                    <div class="writing-grid">
+                        <div class="writing-line" id="slot-0"></div>
+                        <div class="writing-line" id="slot-1"></div>
+                        <div class="writing-line" id="slot-2"></div>
+                        <div class="writing-line" id="slot-3"></div>
+                        <div class="writing-line" id="slot-4"></div>
+                        <div class="writing-line" id="slot-5"></div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="footer">
+                    <button onclick="clearSelection()" class="btn-clear shadow-sm">
+                        ભૂંસો
+                    </button>
+                    <div class="bg-indigo-50 px-4 py-2 rounded-2xl border border-indigo-100">
+                        <span id="score" class="text-xl sm:text-2xl font-black text-indigo-600">0 / 6</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="creator-tag">
+                Created by: Rajesh Barochia
+            </div>
+        </div>
+    </div>
+
+    <!-- Win Modal -->
+    <div id="win-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50 p-6 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 text-center max-w-xs w-full shadow-2xl border-t-8 border-green-500">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 class="text-2xl font-black text-gray-800 mb-2">અદભૂત!</h2>
+            <p class="text-gray-500 mb-6 font-medium">તમે બધા શબ્દો શોધી લીધા!</p>
+            <button onclick="location.reload()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform text-lg">
+                ફરી રમો
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const gridData = [
+            'ધ', 'જા', 'ભ', 'ખે',
+            'ભા', 'ફૂ', 'મ', 'લ',
+            'ર', 'લ', 'રો', 'ર',
+            'ત', 'સા', 'ભા', 'જા'
+        ];
+
+        const targetWords = ['ધજા', 'ભમરો', 'ભારત', 'ખેલ', 'ફૂલ', 'રજા'];
         
-        btn.addEventListener('click', () => {
-          if (row.dataset.done === 'true') return;
-          
-          const letter = btn.dataset.letter;
-          
-          // જો અક્ષર જરૂરી હોય અને હજી સુધી પસંદ ન થયો હોય
-          if (requiredLettersSet.has(letter)) {
-            if (!selectedLetters.includes(letter)) {
-              // સાચો અક્ષર
-              selectedLetters.push(letter);
-              btn.classList.add('correct');
-              btn.disabled = true;
-              
-              // ચેક કરો કે શું શબ્દ પૂર્ણ થયો છે
-              if (checkComplete()) {
-                // પૂર્ણ થયેલ આઇટમ્સ અપડેટ કરો
-                completedItems++;
-                updateProgress();
-                
-                // જો બધા શબ્દો પૂર્ણ થયા હોય
-                if (completedItems === totalItems) {
-                  setTimeout(() => {
-                    completionMessage.classList.add('show');
-                    resetTimer = startResetTimer();
-                  }, 1000);
-                } else {
-                  // આગલો શબ્દ દર્શાવો
-                  setTimeout(() => {
-                    currentItemIndex++;
-                    renderCurrentItem();
-                  }, 1500);
-                }
-              }
+        let selectedIndices = [];
+        let foundWords = [];
+
+        function initGame() {
+            const gridContainer = document.getElementById('grid');
+            gridContainer.innerHTML = '';
+            gridData.forEach((char, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.innerText = char;
+                cell.dataset.index = index;
+                // Using click which works well for touch too
+                cell.addEventListener('click', () => handleCellClick(index));
+                gridContainer.appendChild(cell);
+            });
+        }
+
+        function handleCellClick(index) {
+            const cells = document.querySelectorAll('.grid-cell');
+            const cell = cells[index];
+
+            if (cell.classList.contains('found')) return;
+
+            if (selectedIndices.includes(index)) {
+                selectedIndices = selectedIndices.filter(i => i !== index);
+                cell.classList.remove('selected');
             } else {
-              // પહેલેથી પસંદ કરેલ અક્ષર
-              btn.classList.add('wrong');
-              setTimeout(() => btn.classList.remove('wrong'), 300);
+                selectedIndices.push(index);
+                cell.classList.add('selected');
             }
-          } else {
-            // ખોટો અક્ષર
-            btn.classList.add('wrong');
-            setTimeout(() => btn.classList.remove('wrong'), 300);
-          }
-        });
-        
-        lettersWrap.appendChild(btn);
-      });
-      
-      center.appendChild(lettersWrap);
 
-      const right = document.createElement('div');
-      right.className = 'target-container';
-      
-      const target = document.createElement('div');
-      target.className = 'target';
-      right.appendChild(target);
-
-      function checkComplete() {
-        // જ્યારે બધા જરૂરી અક્ષરો પસંદ થઈ જાય ત્યારે સાચો શબ્દ દેખાડો
-        if (selectedLetters.length === it.requiredLetters.length) {
-          target.textContent = it.correctWord;
-          target.classList.add('done');
-          row.dataset.done = 'true';
-          row.classList.add('completed');
-          
-          // અન્ય બટનોને પણ નિષ્ક્રિય કરો
-          lettersWrap.querySelectorAll('button').forEach(b => {
-            b.disabled = true;
-          });
-          return true;
+            checkSelection();
         }
-        return false;
-      }
 
-      row.appendChild(center);
-      row.appendChild(right);
-      gameEl.appendChild(row);
-    }
-    
-    // ગેમ રીસેટ કરવાનું ફંક્શન
-    function resetGame() {
-      currentItemIndex = 0;
-      completedItems = 0;
-      updateProgress();
-      completionMessage.classList.remove('show');
-      clearTimeout(resetTimer);
-      renderCurrentItem();
-    }
-    
-    // ઓટોમેટિક રીસેટ ટાઈમર
-    function startResetTimer() {
-      let seconds = 5;
-      countdownEl.textContent = `ગેમ ${seconds} સેકંડમાં ફરી શરૂ થશે...`;
-      
-      const timer = setInterval(() => {
-        seconds--;
-        countdownEl.textContent = `ગેમ ${seconds} સેકંડમાં ફરી શરૂ થશે...`;
-        
-        if (seconds <= 0) {
-          clearInterval(timer);
-          resetGame();
+        function checkSelection() {
+            const currentString = selectedIndices.map(i => gridData[i]).join('');
+            if (targetWords.includes(currentString) && !foundWords.includes(currentString)) {
+                
+                selectedIndices.forEach(idx => {
+                    const c = document.querySelector(`.grid-cell[data-index="${idx}"]`);
+                    c.classList.remove('selected');
+                    c.classList.add('found');
+                });
+
+                const currentSlot = document.getElementById(`slot-${foundWords.length}`);
+                if(currentSlot) {
+                    currentSlot.innerText = currentString;
+                    currentSlot.style.color = "#ef4444";
+                }
+                
+                foundWords.push(currentString);
+                selectedIndices = [];
+                
+                document.getElementById('score').innerText = `${foundWords.length} / 6`;
+                showToast(`શાબાશ! ✨`);
+
+                if (foundWords.length === 6) {
+                    setTimeout(() => {
+                        document.getElementById('win-modal').classList.remove('hidden');
+                    }, 600);
+                }
+            }
         }
-      }, 1000);
-      
-      return timer;
-    }
-  </script>
+
+        function clearSelection() {
+            selectedIndices = [];
+            document.querySelectorAll('.grid-cell').forEach(c => {
+                if (!c.classList.contains('found')) c.classList.remove('selected');
+            });
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => {
+                t.style.display = 'none';
+            }, 1200);
+        }
+
+        // Prevent default zoom behaviors on some mobile browsers
+        document.addEventListener('touchstart', function (event) {
+            if (event.touches.length > 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
+        window.onload = initGame;
+    </script>
 </body>
 </html>
