@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>શબ્દ શોધો રમત</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Vadodara:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Hind Vadodara', sans-serif;
+            background-color: #fff7ed;
+            overflow: hidden;
+            touch-action: manipulation;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .word-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1 / 1;
+            font-size: 0.85rem; /* Reduced font size to fit better */
+            padding: 1px;
+            line-height: 1;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+
+        .word-card:active {
+            transform: scale(0.9);
+        }
+
+        /* Group Colors when correct */
+        .correct-કેરી {
+            background-color: #fbbf24 !important; /* Yellow */
+            border-color: #b45309 !important;
+            color: white !important;
+        }
+        .correct-કેળું {
+            background-color: #a3e635 !important; /* Lime */
+            border-color: #4d7c0f !important;
+            color: white !important;
+        }
+        .correct-ઝાડ {
+            background-color: #22c55e !important; /* Green */
+            border-color: #15803d !important;
+            color: white !important;
+        }
+        .correct-દાડમ {
+            background-color: #ef4444 !important; /* Red */
+            border-color: #b91c1c !important;
+            color: white !important;
+        }
+
+        .correct-anim {
+            animation: pulse 0.5s ease-in-out;
+            pointer-events: none;
+        }
+
+        .wrong {
+            background-color: #fca5a5 !important;
+            border-color: #ef4444 !important;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            top: -10px;
+            z-index: 100;
+            border-radius: 50%;
+        }
+        
+        .game-container {
+            width: 98%;
+            max-width: 350px;
+            max-height: 98vh;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-orange-200">
+        <!-- Header - More Compact -->
+        <div class="bg-orange-400 p-2 text-center border-b-2 border-orange-500">
+            <h1 class="text-lg font-bold text-white leading-tight">બાલવાટિકા પ્રવૃત્તિ</h1>
+            <div class="mt-1 flex flex-col items-center">
+                <span class="text-[10px] text-orange-100 font-bold">હવે આ શોધો:</span>
+                <p id="targetDisplay" class="text-sm font-bold bg-white text-red-600 rounded-full px-4 py-0.5 shadow-sm mt-0.5 min-w-[80px]">
+                    કેરી
+                </p>
+            </div>
+        </div>
+
+        <!-- Info Bar -->
+        <div class="flex justify-between items-center px-4 py-1.5 bg-orange-50 border-b border-orange-100">
+            <div class="text-[11px] font-bold text-gray-700">સ્કોર: <span id="score" class="text-orange-600">0</span></div>
+            <div id="message" class="text-[10px] font-bold text-blue-600 italic">શરૂ કરો!</div>
+        </div>
+
+        <!-- Game Grid - Adjusted gap and padding to fit all 16 items -->
+        <div id="gameGrid" class="grid grid-cols-4 gap-1.5 p-2 overflow-hidden">
+            <!-- 16 boxes will be injected here -->
+        </div>
+
+        <!-- Footer / Progress -->
+        <div class="px-4 pb-3 bg-white">
+            <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1">
+                <div id="progressBar" class="bg-green-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            
+            <div class="flex justify-between items-center mt-2">
+                <span class="text-[10px] text-gray-500 font-bold">પ્રગતિ: <span id="progressText" class="text-orange-600">0</span>/4</span>
+                <button onclick="initGame()" class="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold py-1 px-3 rounded-lg shadow-md active:scale-95 transition-all">
+                    ફરી શરૂ
+                </button>
+            </div>
+            
+            <!-- Credit Line -->
+            <div class="text-center mt-2 border-t pt-1.5">
+                <p class="text-[9px] font-bold text-gray-400 italic">Created by : Rajesh Barochia</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const wordsToFind = ["કેરી", "કેળું", "ઝાડ", "દાડમ"];
+        let currentTargetIndex = 0;
+        let score = 0;
+        let currentWordFound = 0;
+        let totalItems = [];
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function initGame() {
+            const grid = document.getElementById('gameGrid');
+            const scoreDisplay = document.getElementById('score');
+            const message = document.getElementById('message');
+            const targetDisplay = document.getElementById('targetDisplay');
+            const progress = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            score = 0;
+            currentTargetIndex = 0;
+            currentWordFound = 0;
+            
+            scoreDisplay.innerText = score;
+            progress.style.width = '0%';
+            progressText.innerText = '0';
+            targetDisplay.innerText = wordsToFind[currentTargetIndex];
+            message.innerText = `${wordsToFind[currentTargetIndex]} શોધો!`;
+            
+            totalItems = [];
+            wordsToFind.forEach(w => {
+                for(let i=0; i<4; i++) {
+                    totalItems.push({ text: w, isFound: false });
+                }
+            });
+
+            shuffleArray(totalItems);
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            totalItems.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = "word-card bg-white border border-orange-100 font-bold text-gray-700 shadow-sm";
+                card.innerText = item.text;
+                card.id = `card-${index}`;
+                
+                if (item.isFound) {
+                    card.classList.add(`correct-${item.text}`);
+                    card.classList.add('pointer-events-none');
+                } else {
+                    card.onclick = () => checkWord(index);
+                }
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function checkWord(index) {
+            const item = totalItems[index];
+            const card = document.getElementById(`card-${index}`);
+            const target = wordsToFind[currentTargetIndex];
+
+            if (item.isFound) return;
+
+            if (item.text === target) {
+                item.isFound = true;
+                card.classList.add(`correct-${target}`);
+                card.classList.add('correct-anim');
+                
+                score += 25;
+                currentWordFound++;
+                
+                document.getElementById('score').innerText = score;
+                document.getElementById('progressText').innerText = currentWordFound;
+                document.getElementById('progressBar').style.width = (currentWordFound / 4) * 100 + '%';
+                document.getElementById('message').innerText = "ખૂબ સરસ! ✨";
+
+                if (currentWordFound === 4) {
+                    moveToNextWord();
+                }
+            } else {
+                card.classList.add('wrong');
+                document.getElementById('message').innerText = `ના, હમણાં "${target}" શોધો!`;
+                setTimeout(() => card.classList.remove('wrong'), 400);
+            }
+        }
+
+        function moveToNextWord() {
+            currentTargetIndex++;
+            currentWordFound = 0;
+
+            if (currentTargetIndex < wordsToFind.length) {
+                const nextTarget = wordsToFind[currentTargetIndex];
+                triggerEffect(15);
+                
+                setTimeout(() => {
+                    document.getElementById('targetDisplay').innerText = nextTarget;
+                    document.getElementById('message').innerText = `હવે "${nextTarget}" શોધો!`;
+                    document.getElementById('progressBar').style.width = '0%';
+                    document.getElementById('progressText').innerText = '0';
+                }, 800);
+            } else {
+                document.getElementById('targetDisplay').innerText = "જીતી ગયા!";
+                document.getElementById('message').innerText = "અભિનંદન! 🎉";
+                triggerEffect(60);
+            }
+        }
+
+        function triggerEffect(count) {
+            for (let i = 0; i < count; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = ['#FF5722','#FFC107','#4CAF50','#2196F3','#E91E63'][Math.floor(Math.random()*5)];
+                document.body.appendChild(confetti);
+
+                confetti.animate([
+                    { transform: `translate3d(0,0,0)`, opacity: 1 },
+                    { transform: `translate3d(${(Math.random()-0.5)*200}px,100vh,0)`, opacity: 0 }
+                ], {
+                    duration: 1500 + Math.random() * 1000,
+                    easing: 'ease-out'
+                }).onfinish = () => confetti.remove();
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
