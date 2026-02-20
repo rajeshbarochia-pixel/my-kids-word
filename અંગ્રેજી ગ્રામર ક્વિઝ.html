@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>અંગ્રેજી કાળ ક્વિઝ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+        }
+        .option-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .answer-fill {
+            color: #059669; /* green-600 */
+            text-decoration: underline;
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <div id="game-container" class="max-w-lg w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-200">
+        
+        <!-- Header -->
+        <div class="bg-gray-800 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold">અંગ્રેજી ગ્રામર ક્વિઝ</h1>
+        </div>
+
+        <div class="p-6">
+            <!-- Stats -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="bg-gray-100 px-4 py-1 rounded-full text-gray-600 text-sm font-bold">
+                    પ્રશ્ન: <span id="question-count">1</span>/10
+                </div>
+                <div class="bg-green-100 px-4 py-1 rounded-full text-green-700 text-sm font-bold">
+                    સ્કોર: <span id="score">0</span>
+                </div>
+            </div>
+
+            <!-- Question Area -->
+            <div id="quiz-box">
+                <div id="instruction-tag" class="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded mb-4"></div>
+                
+                <div class="bg-gray-50 p-6 rounded-2xl mb-6 border border-gray-100 min-h-[100px] flex flex-col justify-center">
+                    <div id="sentence-text" class="text-2xl font-bold text-gray-800 text-center mb-2"></div>
+                    <div id="translation-text" class="text-center text-gray-500 italic"></div>
+                </div>
+
+                <!-- Options -->
+                <div id="options-grid" class="grid grid-cols-2 gap-4">
+                    <!-- Buttons will be here -->
+                </div>
+
+                <!-- Next Button -->
+                <button id="next-btn" class="w-full mt-8 bg-blue-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-blue-700 transition hidden">
+                    આગળ વધો →
+                </button>
+            </div>
+
+            <!-- Result Screen -->
+            <div id="result-screen" class="hidden text-center py-10">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">પરિણામ</h2>
+                <div class="text-5xl font-black text-blue-600 mb-8"><span id="final-score">0</span>/10</div>
+                <button onclick="resetGame()" class="w-full bg-gray-800 text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-900 transition">
+                    ફરીથી શરૂ કરો
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 bg-gray-50 text-center border-t border-gray-100">
+            <p class="text-gray-400 text-xs font-medium">Created by: <span class="text-gray-600 font-bold">Rajesh Barochia</span></p>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { type: 'To Be', tense: 'Present', ans: 'am', s: 'I ___ a student.', gu: 'હું એક વિદ્યાર્થી છું.' },
+            { type: 'To Be', tense: 'Present', ans: 'are', s: 'You ___ my friend.', gu: 'તમે મારા મિત્ર છો.' },
+            { type: 'To Be', tense: 'Present', ans: 'is', s: 'It ___ a cat.', gu: 'તે બિલાડી છે.' },
+            { type: 'To Be', tense: 'Past', ans: 'was', s: 'I ___ at school.', gu: 'હું શાળાએ હતો.' },
+            { type: 'To Be', tense: 'Past', ans: 'were', s: 'They ___ in the park.', gu: 'તેઓ બગીચામાં હતા.' },
+            { type: 'To Be', tense: 'Future', ans: 'will be', s: 'We ___ happy.', gu: 'અમે ખુશ હોઈશું.' },
+            { type: 'To Do', tense: 'Present', ans: 'do', s: 'I ___ exercise.', gu: 'હું કસરત કરું છું.' },
+            { type: 'To Do', tense: 'Present', ans: 'does', s: 'He ___ his work.', gu: 'તે તેનું કામ કરે છે.' },
+            { type: 'To Do', tense: 'Past', ans: 'did', s: 'She ___ her job.', gu: 'તેણીએ તેનું કામ કર્યું.' },
+            { type: 'To Do', tense: 'Future', ans: 'will do', s: 'I ___ it tomorrow.', gu: 'હું તે આવતીકાલે કરીશ.' },
+            { type: 'To Have', tense: 'Present', ans: 'have', s: 'I ___ a red car.', gu: 'મારી પાસે લાલ કાર છે.' },
+            { type: 'To Have', tense: 'Present', ans: 'has', s: 'She ___ a phone.', gu: 'તેણી પાસે ફોન છે.' },
+            { type: 'To Have', tense: 'Past', ans: 'had', s: 'We ___ a party.', gu: 'અમારી પાસે પાર્ટી હતી.' },
+            { type: 'To Have', tense: 'Future', ans: 'will have', s: 'They ___ a gift.', gu: 'તેમની પાસે ભેટ હશે.' }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let sessionQ = [];
+        let hasWrongAttempt = false;
+
+        function initGame() {
+            sessionQ = [...quizData].sort(() => Math.random() - 0.5).slice(0, 10);
+            currentIdx = 0;
+            score = 0;
+            document.getElementById('score').innerText = "0";
+            document.getElementById('quiz-box').classList.remove('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = sessionQ[currentIdx];
+            hasWrongAttempt = false;
+            document.getElementById('question-count').innerText = currentIdx + 1;
+            document.getElementById('instruction-tag').innerText = `${q.type} | ${q.tense}`;
+            document.getElementById('sentence-text').innerHTML = q.s.replace('___', '<span id="blank-space" class="text-gray-300">___</span>');
+            document.getElementById('translation-text').innerText = q.gu;
+            
+            let options = [];
+            if (q.type === 'To Be') options = ['am', 'is', 'are', 'was', 'were', 'will be'];
+            else if (q.type === 'To Do') options = ['do', 'does', 'did', 'will do'];
+            else options = ['have', 'has', 'had', 'will have'];
+
+            let choices = [q.ans, ...options.filter(o => o !== q.ans).sort(() => Math.random() - 0.5).slice(0, 3)].sort(() => Math.random() - 0.5);
+
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            choices.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = "option-card bg-white p-4 rounded-xl border-2 border-gray-200 font-bold text-gray-700 shadow-sm hover:bg-gray-50";
+                btn.innerText = c;
+                btn.onclick = () => check(c, q.ans, btn);
+                grid.appendChild(btn);
+            });
+
+            document.getElementById('next-btn').classList.add('hidden');
+        }
+
+        function check(sel, cor, btn) {
+            const blank = document.getElementById('blank-space');
+
+            if (sel === cor) {
+                // સાચો જવાબ
+                if (!hasWrongAttempt) {
+                    score++;
+                    document.getElementById('score').innerText = score;
+                }
+                
+                // બધા બટન ડિસેબલ કરો
+                document.querySelectorAll('.option-card').forEach(b => b.disabled = true);
+                
+                btn.classList.replace('border-gray-200', 'border-green-500');
+                btn.classList.add('bg-green-500', 'text-white');
+                
+                blank.innerHTML = cor;
+                blank.className = "answer-fill";
+                
+                document.getElementById('next-btn').classList.remove('hidden');
+            } else {
+                // ખોટો જવાબ
+                hasWrongAttempt = true;
+                btn.classList.replace('border-gray-200', 'border-red-500');
+                btn.classList.add('bg-red-500', 'text-white');
+                btn.disabled = true; // આ બટન ફરી ન દબાવી શકાય
+            }
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            currentIdx++;
+            if (currentIdx < 10) showQuestion();
+            else finish();
+        };
+
+        function finish() {
+            document.getElementById('quiz-box').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+        }
+
+        function resetGame() { initGame(); }
+        window.onload = initGame;
+    </script>
+</body>
+</html>
