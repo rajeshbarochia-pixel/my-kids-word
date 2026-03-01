@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>નાની સંખ્યા શોધો ગેમ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+        }
+
+        .number-btn {
+            transition: all 0.2s ease;
+        }
+
+        .number-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* સાચો જવાબ આપવા પર બ્લુ કલર */
+        .correct-highlight {
+            background-color: #2563eb !important; /* Blue-600 */
+            border-color: #2563eb !important;
+            color: #ffffff !important;
+        }
+
+        /* ખોટો જવાબ આપવા પર લાલ બોર્ડર */
+        .wrong-highlight {
+            border-color: #ef4444 !important; /* Red-500 */
+            color: #ef4444 !important;
+        }
+    </style>
+</head>
+<body class="bg-white min-h-screen flex flex-col items-center justify-center p-4 text-gray-800">
+
+    <div id="game-container" class="max-w-md w-full flex flex-col items-center">
+        
+        <!-- સૂચના બોક્સ -->
+        <div class="w-full bg-yellow-50 border-2 border-yellow-100 rounded-2xl py-6 px-4 mb-8 text-center shadow-sm">
+            <h2 class="text-3xl font-bold text-yellow-900">નાની સંખ્યા ફરતે ગોળ કરો</h2>
+        </div>
+
+        <!-- શરૂઆતની સ્ક્રીન -->
+        <div id="start-screen" class="text-center space-y-6">
+            <p class="text-lg text-gray-500">કુલ ૫ પ્રશ્નો પૂછવામાં આવશે.</p>
+            <button onclick="startGame()" class="px-12 py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full text-2xl transition-all shadow-lg">
+                ગેમ શરૂ કરો
+            </button>
+        </div>
+
+        <!-- ગેમ રમવાની સ્ક્રીન -->
+        <div id="playing-screen" class="hidden w-full space-y-10">
+            <div id="question-counter" class="text-center text-gray-400 font-bold uppercase tracking-widest">
+                પ્રશ્ન: ૧ / ૫
+            </div>
+
+            <div class="flex justify-center items-center gap-8">
+                <button id="btn1" onclick="handleChoice(1)" class="number-btn w-32 h-32 flex items-center justify-center bg-white border-4 border-blue-400 rounded-full text-5xl font-bold text-blue-600 shadow-md pt-2">
+                    ૦
+                </button>
+                
+                <span class="text-2xl font-medium text-gray-400">અને</span>
+                
+                <button id="btn2" onclick="handleChoice(2)" class="number-btn w-32 h-32 flex items-center justify-center bg-white border-4 border-blue-400 rounded-full text-5xl font-bold text-blue-600 shadow-md pt-2">
+                    ૦
+                </button>
+            </div>
+
+            <div class="h-12 text-center">
+                <div id="feedback" class="text-2xl font-bold transition-all"></div>
+            </div>
+        </div>
+
+        <!-- ગેમ પૂરી થવાની સ્ક્રીન -->
+        <div id="finish-screen" class="hidden text-center space-y-8 bg-blue-50 p-8 rounded-3xl w-full border-2 border-blue-100">
+            <h2 class="text-3xl font-bold text-blue-800">અભિનંદન! ગેમ પૂરી થઈ.</h2>
+            <div class="space-y-2">
+                <p class="text-xl text-gray-600">તમારો સ્કોર</p>
+                <p id="final-score" class="text-7xl font-black text-blue-600">૦ / ૫</p>
+            </div>
+            <button onclick="startGame()" class="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl text-2xl transition-all shadow-lg">
+                નવી ગેમ શરૂ કરો
+            </button>
+        </div>
+
+        <!-- ફૂટર -->
+        <div class="mt-16 border-t border-gray-100 pt-4 w-full text-center">
+            <p class="text-gray-400 font-medium tracking-wide">
+                Created by: <span class="text-gray-600">Rajesh Barochia</span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let questionCount = 0;
+        const totalQuestions = 5;
+        let currentNumbers = { num1: 0, num2: 0 };
+        let isProcessing = false;
+
+        // અંગ્રેજી આંકડાને ગુજરાતીમાં ફેરવવાનું ફંક્શન
+        function toGujaratiDigits(num) {
+            const gujaratiDigits = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'];
+            return num.toString().split('').map(digit => gujaratiDigits[digit] || digit).join('');
+        }
+
+        function startGame() {
+            score = 0;
+            questionCount = 0;
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('finish-screen').classList.add('hidden');
+            document.getElementById('playing-screen').classList.remove('hidden');
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            if (questionCount >= totalQuestions) {
+                showFinishScreen();
+                return;
+            }
+
+            isProcessing = false;
+            let n1 = Math.floor(Math.random() * 90) + 10;
+            let n2 = Math.floor(Math.random() * 90) + 10;
+            while (n1 === n2) n2 = Math.floor(Math.random() * 90) + 10;
+            
+            currentNumbers = { num1: n1, num2: n2 };
+            
+            // UI Reset
+            document.getElementById('question-counter').innerText = `પ્રશ્ન: ${toGujaratiDigits(questionCount + 1)} / ${toGujaratiDigits(totalQuestions)}`;
+            document.getElementById('feedback').innerText = '';
+            
+            const btn1 = document.getElementById('btn1');
+            const btn2 = document.getElementById('btn2');
+            
+            // ગુજરાતી આંકડા સેટ કરો
+            btn1.innerText = toGujaratiDigits(n1);
+            btn2.innerText = toGujaratiDigits(n2);
+            
+            // Reset button styles
+            btn1.className = "number-btn w-32 h-32 flex items-center justify-center bg-white border-4 border-blue-400 rounded-full text-5xl font-bold text-blue-600 shadow-md pt-2";
+            btn2.className = "number-btn w-32 h-32 flex items-center justify-center bg-white border-4 border-blue-400 rounded-full text-5xl font-bold text-blue-600 shadow-md pt-2";
+        }
+
+        function handleChoice(btnIdx) {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const selectedNum = btnIdx === 1 ? currentNumbers.num1 : currentNumbers.num2;
+            const smallerNum = Math.min(currentNumbers.num1, currentNumbers.num2);
+            const isCorrect = selectedNum === smallerNum;
+
+            const btn = document.getElementById(`btn${btnIdx}`);
+            const feedbackEl = document.getElementById('feedback');
+
+            if (isCorrect) {
+                score++;
+                btn.classList.add('correct-highlight');
+                feedbackEl.innerText = 'સાચો જવાબ! 🌟';
+                feedbackEl.className = 'text-2xl font-bold text-green-500 animate-bounce';
+            } else {
+                btn.classList.add('wrong-highlight');
+                feedbackEl.innerText = 'ખોટો જવાબ! ❌';
+                feedbackEl.className = 'text-2xl font-bold text-red-500';
+            }
+
+            // ૧.૨ સેકન્ડ પછી આગલો પ્રશ્ન
+            setTimeout(() => {
+                questionCount++;
+                nextQuestion();
+            }, 1200);
+        }
+
+        function showFinishScreen() {
+            document.getElementById('playing-screen').classList.add('hidden');
+            document.getElementById('finish-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = `${toGujaratiDigits(score)} / ${toGujaratiDigits(totalQuestions)}`;
+        }
+    </script>
+</body>
+</html>
