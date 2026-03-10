@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>સંખ્યા પેટર્ન રમો</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .animate-shake {
+            animation: shake 0.15s ease-in-out 0s 2;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .rocket-bounce {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Input styling for smooth color transition */
+        .pattern-input {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col items-center p-4">
+
+    <!-- Header -->
+    <div class="w-full max-w-2xl text-center mb-8 mt-4">
+        <h1 id="main-title" class="text-4xl font-black text-indigo-800 drop-shadow-sm mb-2">
+            🚀 સંખ્યા પેટર્ન રમો
+        </h1>
+        <p class="text-slate-600 font-bold text-lg">ખાલી કાર્ડ્સમાં સાચી સંખ્યા લખો</p>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container" class="w-full max-w-4xl flex-grow flex flex-col items-center justify-center">
+        <!-- Menu State -->
+        <div id="menu-screen" class="flex flex-col items-center space-y-12">
+            <div onclick="startGame()" class="cursor-pointer group relative flex items-center justify-center w-64 h-64 bg-white rounded-full shadow-2xl border-b-[12px] border-indigo-200 hover:border-indigo-400 transition-all transform hover:scale-110 active:scale-95">
+                <div class="absolute inset-0 bg-indigo-50 rounded-full animate-pulse opacity-50 group-hover:bg-indigo-100"></div>
+                <span class="text-8xl rocket-bounce relative z-10">🚀</span>
+            </div>
+            
+            <button onclick="startGame()" class="group relative px-20 py-8 bg-indigo-600 text-white text-4xl font-black rounded-[50px] shadow-2xl hover:bg-indigo-700 transition-all transform hover:scale-105 active:scale-95 border-b-[10px] border-indigo-900">
+                ચાલો શરૂ કરીએ!
+            </button>
+        </div>
+
+        <!-- Playing State -->
+        <div id="playing-screen" class="hidden w-full max-w-4xl">
+            <div id="level-card" class="relative p-8 rounded-[48px] border-4 shadow-xl mb-6 transition-all duration-500">
+                
+                <div class="flex justify-between items-center mb-10">
+                    <span id="level-indicator" class="px-6 py-2 bg-white/90 text-slate-600 text-lg font-black rounded-full border-2 border-slate-200 shadow-sm">
+                        📌 પગલું ૧
+                    </span>
+                    <div id="dots-container" class="flex gap-1.5"></div>
+                </div>
+
+                <div class="relative mb-12">
+                    <div id="pattern-grid" class="flex flex-row items-center justify-center gap-4 overflow-x-auto pb-4 no-scrollbar">
+                        <!-- Cards will be generated here -->
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center gap-6">
+                    <button onclick="checkAnswers()" id="check-btn" class="w-full max-w-sm py-5 bg-indigo-900 text-white text-2xl font-black rounded-[28px] shadow-xl hover:bg-black transition-all active:scale-95 border-b-8 border-slate-950">
+                        જવાબ ચકાસો
+                    </button>
+                    
+                    <div id="feedback-msg" class="h-12 flex items-center justify-center text-xl font-black"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Win State -->
+        <div id="win-screen" class="hidden flex flex-col items-center space-y-10 text-center max-w-lg w-full px-8 py-16 bg-white rounded-[64px] shadow-2xl border-4 border-indigo-50 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-indigo-600"></div>
+            <div class="bg-yellow-100 p-10 rounded-full shadow-inner border-4 border-yellow-200">
+                <span class="text-7xl">🏆</span>
+            </div>
+            <div>
+                <h2 class="text-5xl font-black text-slate-800 mb-4">ખૂબ જ સરસ!</h2>
+                <p class="text-slate-500 text-xl font-bold px-6 leading-relaxed">તમે બધી જ પેટર્ન સફળતાપૂર્વક પૂર્ણ કરી છે! 🌈</p>
+            </div>
+            <button onclick="resetGame()" class="w-full py-6 bg-indigo-600 text-white text-2xl font-black rounded-[32px] shadow-2xl hover:bg-indigo-700 border-b-8 border-indigo-900 transition-all active:scale-95">
+                ફરીથી રમો
+            </button>
+        </div>
+    </div>
+
+    <div class="mt-8 text-center text-slate-400 font-black text-sm tracking-widest uppercase">
+        Created by Rajesh barochia
+    </div>
+
+    <script>
+        const levels = [
+            { pattern: [10, 20, 30, null, null, 60], answers: { 3: 40, 4: 50 }, bg: "bg-orange-50", border: "border-orange-200", box: "bg-orange-100 border-orange-400 text-orange-800" },
+            { pattern: [1, 3, null, 7, null, null], answers: { 2: 5, 4: 9, 5: 11 }, bg: "bg-blue-50", border: "border-blue-200", box: "bg-blue-100 border-blue-400 text-blue-800" },
+            { pattern: [5, 10, null, 20, null, null], answers: { 2: 15, 4: 25, 5: 30 }, bg: "bg-green-50", border: "border-green-200", box: "bg-green-100 border-green-400 text-green-800" },
+            { pattern: [22, 21, null, null, null, 17], answers: { 2: 20, 3: 19, 4: 18 }, bg: "bg-purple-50", border: "border-purple-200", box: "bg-purple-100 border-purple-400 text-purple-800" },
+            { pattern: [11, 22, null, null, 55, null], answers: { 2: 33, 3: 44, 5: 66 }, bg: "bg-pink-50", border: "border-pink-200", box: "bg-pink-100 border-pink-400 text-pink-800" },
+            { pattern: [9, null, 29, null, 49, null], answers: { 1: 19, 3: 39, 5: 59 }, bg: "bg-yellow-50", border: "border-yellow-200", box: "bg-yellow-100 border-yellow-400 text-yellow-800" },
+            { pattern: [51, null, null, 75, 83, null], answers: { 1: 59, 2: 67, 5: 91 }, bg: "bg-teal-50", border: "border-teal-200", box: "bg-teal-100 border-teal-400 text-teal-800" }
+        ];
+
+        let currentLevelIndex = 0;
+        const gujaratiDigits = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'];
+
+        function toGujarati(num) {
+            if (num === null || num === undefined || num === '') return '';
+            return num.toString().split('').map(d => gujaratiDigits[parseInt(d)] || d).join('');
+        }
+
+        function toEnglish(str) {
+            const map = { '૦': '0', '૧': '1', '૨': '2', '૩': '3', '૪': '4', '૫': '5', '૬': '6', '૭': '7', '૮': '8', '૯': '9' };
+            return str.split('').map(d => map[d] || d).join('');
+        }
+
+        function startGame() {
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('playing-screen').classList.remove('hidden');
+            renderLevel();
+        }
+
+        function renderLevel() {
+            const level = levels[currentLevelIndex];
+            const card = document.getElementById('level-card');
+            const grid = document.getElementById('pattern-grid');
+            const indicator = document.getElementById('level-indicator');
+            const dots = document.getElementById('dots-container');
+            const feedback = document.getElementById('feedback-msg');
+
+            card.className = `relative p-8 rounded-[48px] border-4 shadow-xl mb-6 transition-all duration-500 ${level.bg} ${level.border}`;
+            indicator.innerText = `📌 પગલું ${toGujarati(currentLevelIndex + 1)}`;
+            feedback.innerHTML = '';
+            
+            dots.innerHTML = levels.map((_, i) => `
+                <div class="w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm transition-all duration-300 ${i <= currentLevelIndex ? 'bg-indigo-500 scale-110' : 'bg-slate-300'}"></div>
+            `).join('');
+
+            grid.innerHTML = level.pattern.map((num, idx) => {
+                if (num !== null) {
+                    return `
+                        <div class="flex-shrink-0 w-20 h-28 sm:w-28 sm:h-40 flex items-center justify-center rounded-[32px] border-4 shadow-md text-4xl sm:text-6xl font-black ${level.box}">
+                            ${toGujarati(num)}
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <input type="text" inputmode="numeric" oninput="handleInput(this, ${idx})" 
+                            class="pattern-input flex-shrink-0 w-20 h-28 sm:w-28 sm:h-40 text-center text-4xl sm:text-6xl font-black rounded-[32px] border-4 border-slate-300 bg-white shadow-inner focus:outline-none focus:ring-8 focus:ring-indigo-200 transition-all"
+                            placeholder="?" data-index="${idx}">
+                    `;
+                }
+            }).join('');
+        }
+
+        function handleInput(el, idx) {
+            const level = levels[currentLevelIndex];
+            let valStr = toEnglish(el.value).replace(/[^0-9]/g, '');
+            el.value = toGujarati(valStr);
+            
+            const val = parseInt(valStr);
+            
+            // Real-time check to change color immediately when correct
+            if (val === level.answers[idx]) {
+                // Change to match other cards' style
+                el.className = `pattern-input flex-shrink-0 w-20 h-28 sm:w-28 sm:h-40 text-center text-4xl sm:text-6xl font-black rounded-[32px] border-4 shadow-md transition-all ${level.box}`;
+                document.getElementById('feedback-msg').innerHTML = '';
+            } else {
+                // Revert to input style if wrong or empty
+                el.className = `pattern-input flex-shrink-0 w-20 h-28 sm:w-28 sm:h-40 text-center text-4xl sm:text-6xl font-black rounded-[32px] border-4 border-slate-300 bg-white shadow-inner focus:outline-none focus:ring-8 focus:ring-indigo-200 transition-all`;
+            }
+        }
+
+        function checkAnswers() {
+            const level = levels[currentLevelIndex];
+            const inputs = document.querySelectorAll('.pattern-input');
+            let allCorrect = true;
+
+            inputs.forEach(input => {
+                const idx = parseInt(input.getAttribute('data-index'));
+                const val = parseInt(toEnglish(input.value));
+                
+                if (val === level.answers[idx]) {
+                    input.className = `pattern-input flex-shrink-0 w-20 h-28 sm:w-28 sm:h-40 text-center text-4xl sm:text-6xl font-black rounded-[32px] border-4 shadow-md ${level.box}`;
+                } else {
+                    allCorrect = false;
+                    input.classList.add('border-red-400', 'bg-red-50', 'animate-shake');
+                    setTimeout(() => input.classList.remove('animate-shake'), 300);
+                }
+            });
+
+            const feedback = document.getElementById('feedback-msg');
+            if (allCorrect) {
+                feedback.innerHTML = '<span class="text-green-600 animate-bounce">✅ વાહ! સાચો જવાબ!</span>';
+                setTimeout(() => {
+                    if (currentLevelIndex < levels.length - 1) {
+                        currentLevelIndex++;
+                        renderLevel();
+                    } else {
+                        showWin();
+                    }
+                }, 1500);
+            } else {
+                feedback.innerHTML = '<span class="text-red-500 animate-pulse">❌ ફરીથી કોશિશ કરો</span>';
+            }
+        }
+
+        function showWin() {
+            document.getElementById('playing-screen').classList.add('hidden');
+            document.getElementById('win-screen').classList.remove('hidden');
+        }
+
+        function resetGame() {
+            currentLevelIndex = 0;
+            document.getElementById('win-screen').classList.add('hidden');
+            document.getElementById('menu-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
