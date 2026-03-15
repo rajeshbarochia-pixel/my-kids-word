@@ -16,44 +16,55 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 1rem;
+            margin: 0;
         }
 
         .glass-card {
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
-            border-radius: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            width: 95%;
-            max-width: 500px;
-            padding: 28px;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 480px;
+            padding: 1.5rem;
             border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
         }
 
         .input-box {
             background: #ffffff;
             border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1rem;
             transition: all 0.3s ease;
         }
 
         .input-box:focus-within {
             border-color: #667eea;
-            box-shadow: 0 0 15px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 0 12px rgba(102, 126, 234, 0.15);
         }
 
         .output-box {
-            background: linear-gradient(to right, #e0e7ff, #f0f4ff);
+            background: linear-gradient(to right, #eef2ff, #f5f7ff);
             border: 2px solid #c7d2fe;
-        }
-
-        .btn-gradient {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-            box-shadow: 0 4px 15px rgba(56, 249, 215, 0.4);
+            border-radius: 16px;
+            padding: 1rem;
+            min-height: 100px;
         }
 
         .mic-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            box-shadow: 0 10px 20px rgba(118, 75, 162, 0.3);
+            box-shadow: 0 8px 16px rgba(118, 75, 162, 0.25);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
         }
 
         .mic-btn:active {
@@ -66,61 +77,90 @@
         }
 
         @keyframes pulse-ring {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 8, 68, 0.7); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(255, 8, 68, 0); }
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 8, 68, 0.6); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(255, 8, 68, 0); }
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 8, 68, 0); }
         }
 
-        textarea::-webkit-scrollbar {
-            width: 4px;
+        textarea {
+            width: 100%;
+            background: transparent;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+            outline: none;
+            resize: none;
+            border: none;
+            min-height: 80px;
+            line-height: 1.5;
         }
 
-        textarea::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
+        .credit-badge {
+            margin-top: 1.5rem;
+            background: rgba(0, 0, 0, 0.15);
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            backdrop-filter: blur(4px);
+        }
+
+        @media (max-width: 400px) {
+            .glass-card {
+                padding: 1.25rem;
+            }
+            textarea {
+                font-size: 1rem;
+            }
+            .mic-btn {
+                width: 60px;
+                height: 60px;
+            }
         }
     </style>
 </head>
-<body class="p-4">
+<body>
 
     <div class="glass-card">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">ટ્રાન્સલેટર</h1>
-            <button id="clearBtn" class="bg-red-100 text-red-600 px-5 py-2 rounded-full text-sm font-bold hover:bg-red-200 transition-all active:scale-95 shadow-sm">
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">ટ્રાન્સલેટર</h1>
+            <button id="clearBtn" class="bg-red-100 text-red-600 px-4 py-1.5 rounded-full text-xs font-black hover:bg-red-200 transition-all active:scale-95">
                 સાફ કરો
             </button>
         </div>
 
-        <div class="space-y-6 mb-8">
+        <div class="flex flex-col gap-4">
             <!-- Gujarati Input -->
-            <div class="relative p-5 rounded-2xl input-box shadow-sm">
-                <p class="text-[11px] font-black text-indigo-500 uppercase mb-3 tracking-[0.2em]">ગુજરાતી (ટાઈપ અથવા બોલો)</p>
-                <textarea id="gujaratiInput" class="w-full bg-transparent text-xl text-gray-800 font-bold outline-none resize-none min-h-[90px]" placeholder="અહીં લખો..."></textarea>
+            <div class="input-box">
+                <p class="text-[10px] font-black text-indigo-400 uppercase mb-2 tracking-widest">ગુજરાતી</p>
+                <textarea id="gujaratiInput" placeholder="અહીં લખો અથવા બોલો..."></textarea>
             </div>
 
             <!-- English Translation -->
-            <div class="relative p-5 rounded-2xl output-box shadow-sm">
-                <p class="text-[11px] font-black text-purple-500 uppercase mb-3 tracking-[0.2em]">અંગ્રેજી ભાષાંતર</p>
-                <div id="englishText" class="text-2xl text-indigo-900 font-extrabold leading-tight italic">...</div>
+            <div class="output-box">
+                <p class="text-[10px] font-black text-purple-400 uppercase mb-2 tracking-widest">English Translation</p>
+                <div id="englishText" class="text-xl text-indigo-900 font-extrabold leading-snug italic">...</div>
             </div>
         </div>
 
-        <div class="flex flex-col items-center space-y-5">
-            <button id="micBtn" class="mic-btn text-white p-8 rounded-full outline-none shadow-2xl">
-                <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="flex flex-col items-center gap-3">
+            <button id="micBtn" class="mic-btn text-white outline-none">
+                <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m8 0h-4m-4-8a3 3 0 013-3V5a3 3 0 116 0v6a3 3 0 01-3 3 3 3 0 01-3-3z" />
                 </svg>
             </button>
-            <div id="statusLabel" class="flex items-center gap-3 text-sm font-black text-gray-500 bg-white/50 backdrop-blur-md px-6 py-2 rounded-full uppercase tracking-widest shadow-inner transition-all">
-                <span id="statusDot" class="h-3 w-3 rounded-full bg-gray-300"></span>
+            <div id="statusLabel" class="flex items-center gap-2 text-[10px] font-black text-gray-500 bg-white/50 px-4 py-1.5 rounded-full uppercase tracking-widest">
+                <span id="statusDot" class="h-2 w-2 rounded-full bg-gray-300"></span>
                 તૈયાર છે
             </div>
         </div>
     </div>
 
     <!-- Credit Footer -->
-    <div class="mt-8 text-white/80 text-sm font-bold tracking-widest bg-black/10 px-6 py-2 rounded-full backdrop-blur-sm">
-        Created by <span class="text-white font-black underline decoration-indigo-400">Rajesh Barochia</span>
+    <div class="credit-badge">
+        Created by <span class="text-white font-black underline decoration-indigo-300">Rajesh Barochia</span>
     </div>
 
     <script>
@@ -134,10 +174,31 @@
         const apiKey = ""; 
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'gu-IN';
-        recognition.interimResults = true;
-        recognition.continuous = false;
+        let recognition;
+        
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'gu-IN';
+            recognition.interimResults = true;
+            recognition.continuous = false;
+
+            recognition.onresult = (event) => {
+                let interim = '';
+                let final = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) final += event.results[i][0].transcript;
+                    else interim += event.results[i][0].transcript;
+                }
+                gujaratiInput.value = final || interim;
+                if (final !== "") performTranslation(final);
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                micBtn.classList.remove('mic-active');
+                if (gujaratiInput.value === "") updateStatus("ready");
+            };
+        }
 
         let isListening = false;
         let debounceTimer;
@@ -156,6 +217,10 @@
         };
 
         micBtn.onclick = () => {
+            if (!recognition) {
+                alert("તમારું બ્રાઉઝર વોઇસ રેકોગ્નિશન સપોર્ટ કરતું નથી.");
+                return;
+            }
             if (isListening) {
                 recognition.stop();
             } else {
@@ -168,43 +233,36 @@
             englishText.innerText = "...";
             updateStatus("ready");
             window.speechSynthesis.cancel();
-            if(isListening) recognition.stop();
+            if(isListening && recognition) recognition.stop();
         };
 
         function updateStatus(state) {
-            statusLabel.className = "flex items-center gap-3 text-sm font-black bg-white/50 backdrop-blur-md px-6 py-2 rounded-full uppercase tracking-widest shadow-inner transition-all";
-            statusDot.className = "h-3 w-3 rounded-full transition-all";
+            statusDot.className = "h-2 w-2 rounded-full transition-all";
             
             switch(state) {
                 case "listening":
-                    statusLabel.classList.add('text-red-600');
                     statusDot.classList.add('bg-red-500', 'animate-pulse');
                     statusLabel.childNodes[2].nodeValue = "સાંભળી રહ્યો છું...";
                     break;
                 case "translating":
-                    statusLabel.classList.add('text-indigo-600');
                     statusDot.classList.add('bg-indigo-500', 'animate-bounce');
                     statusLabel.childNodes[2].nodeValue = "ભાષાંતર...";
                     break;
                 case "typing":
-                    statusLabel.classList.add('text-gray-600');
                     statusDot.classList.add('bg-gray-400');
                     statusLabel.childNodes[2].nodeValue = "લખી રહ્યા છો";
                     break;
                 case "ready":
-                    statusLabel.classList.add('text-gray-500');
                     statusDot.classList.add('bg-gray-300');
                     statusLabel.childNodes[2].nodeValue = "તૈયાર છે";
                     break;
                 case "done":
-                    statusLabel.classList.add('text-emerald-600');
                     statusDot.classList.add('bg-emerald-500');
                     statusLabel.childNodes[2].nodeValue = "પૂર્ણ!";
                     break;
                 case "error":
-                    statusLabel.classList.add('text-orange-600');
                     statusDot.classList.add('bg-orange-500');
-                    statusLabel.childNodes[2].nodeValue = "ફરી પ્રયાસ કરો";
+                    statusLabel.childNodes[2].nodeValue = "ફરી ટ્રાય કરો";
                     break;
             }
         }
@@ -219,23 +277,6 @@
                 englishText.innerText = "...";
             } catch (e) { console.error(e); }
         }
-
-        recognition.onresult = (event) => {
-            let interim = '';
-            let final = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) final += event.results[i][0].transcript;
-                else interim += event.results[i][0].transcript;
-            }
-            gujaratiInput.value = final || interim;
-            if (final !== "") performTranslation(final);
-        };
-
-        recognition.onend = () => {
-            isListening = false;
-            micBtn.classList.remove('mic-active');
-            if (gujaratiInput.value === "") updateStatus("ready");
-        };
 
         async function performTranslation(text, retryCount = 0) {
             updateStatus("translating");
