@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>પ્રાણીઓ અને પક્ષીઓની રમત</title>
+    <style>
+        :root {
+            --animal-brown: #d2b48c;
+            --animal-light: #f5f5dc;
+            --bird-pink: #ffd1dc;
+            --bird-light: #fff0f5;
+            --cloud-white: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            transition: background 1s ease;
+            background: linear-gradient(to bottom, #8d6e63 0%, #d7ccc8 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* પક્ષીઓ માટે આછો ગુલાબી મોડ */
+        body.bird-mode {
+            background: linear-gradient(to bottom, #ffc1e3 0%, #fce4ec 100%);
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 600px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        body.bird-mode .header { color: #880e4f; text-shadow: none; }
+
+        .category-tag {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 5px 15px;
+            border-radius: 20px;
+            color: white;
+            font-size: 18px;
+            margin-bottom: 10px;
+            backdrop-filter: blur(5px);
+            font-weight: bold;
+        }
+
+        body.bird-mode .category-tag {
+            color: #880e4f;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .word-display {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            justify-content: center;
+            width: 100%;
+            padding: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .letter-slot {
+            width: 40px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px dashed white;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+        }
+
+        body.bird-mode .letter-slot {
+            border-color: #880e4f;
+            color: #880e4f;
+        }
+
+        .letter-slot.filled {
+            background: var(--cloud-white);
+            border-style: solid;
+            color: var(--text-color);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #status-message {
+            height: 130px;
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            z-index: 10;
+        }
+
+        .success-msg {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            color: #4e342e;
+            font-weight: bold;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            animation: popIn 0.4s ease;
+            text-align: center;
+        }
+
+        .emoji-pop {
+            font-size: 45px;
+            display: block;
+            margin-bottom: 5px;
+            animation: bounce 0.6s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-12px); }
+        }
+
+        .options-container {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            justify-content: center;
+            width: 100%;
+            padding: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .bubble-letter {
+            width: 48px;
+            height: 48px;
+            background: var(--cloud-white);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--text-color);
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: transform 0.1s;
+        }
+
+        .bubble-letter:active { transform: scale(0.9); }
+        .bubble-letter.used { visibility: hidden; pointer-events: none; }
+
+        .btn {
+            background: #795548;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-size: 18px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #4e342e;
+        }
+        
+        body.bird-mode .btn {
+            background: #ad1457;
+            box-shadow: 0 4px 0 #880e4f;
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #4e342e;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            width: 90%;
+            text-align: center;
+            color: white;
+        }
+
+        body.bird-mode .footer, body.bird-mode #hint-text {
+            color: #880e4f;
+        }
+
+        .creator-tag {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: #333;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .final-score { font-size: 36px; margin: 20px 0; color: #4e342e; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="header">
+        <div id="timer">0:00</div>
+        <div id="score">✓ 0</div>
+    </div>
+
+    <div class="category-tag" id="category-label">વિભાગ: પ્રાણીઓ</div>
+    
+    <div style="color: white; margin-bottom: 10px; font-size: 20px; font-weight: bold;" id="hint-text">
+        હિન્ટ: લોડિંગ...
+    </div>
+
+    <div class="word-display" id="word-slots"></div>
+    <div id="status-message"></div>
+    <div class="options-container" id="letter-options"></div>
+
+    <div class="footer">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>☰</span>
+            <span id="level-indicator">1 of 10</span>
+            <span onclick="resetLevel()" style="cursor:pointer">🔄</span>
+        </div>
+        <div class="creator-tag">Created by: Rajesh barochia</div>
+    </div>
+
+    <div id="game-over-screen">
+        <h1 style="color: #795548;">🎉 અભિનંદન! 🎉</h1>
+        <p style="font-size: 18px; padding: 0 20px;">તમે બધા જ પ્રાણીઓ અને પક્ષીઓના સ્પેલિંગ પૂરા કર્યા!</p>
+        <div class="final-score" id="final-score-val">સ્કોર: 10/10</div>
+        <p id="final-time">સમય: 0:00</p>
+        <button class="btn" onclick="restartEntireGame()">ફરીથી રમો</button>
+        <div class="creator-tag" style="margin-top: 40px;">Created by: Rajesh barochia</div>
+    </div>
+</div>
+
+<script>
+    const levels = [
+        // Category: Animals
+        { name: "LION", hint: "સિંહ", cat: "પ્રાણીઓ", emoji: "🦁" },
+        { name: "ELEPHANT", hint: "હાથી", cat: "પ્રાણીઓ", emoji: "🐘" },
+        { name: "TIGER", hint: "વાઘ", cat: "પ્રાણીઓ", emoji: "🐯" },
+        { name: "DEER", hint: "હરણ", cat: "પ્રાણીઓ", emoji: "🦌" },
+        { name: "ZEBRA", hint: "ઝીબ્રા", cat: "પ્રાણીઓ", emoji: "🦓" },
+        // Category: Birds
+        { name: "PEACOCK", hint: "મોર", cat: "પક્ષીઓ", emoji: "🦚" },
+        { name: "PARROT", hint: "પોપટ", cat: "પક્ષીઓ", emoji: "🦜" },
+        { name: "PIGEON", hint: "કબૂતર", cat: "પક્ષીઓ", emoji: "🐦" },
+        { name: "DUCK", hint: "બતક", cat: "પક્ષીઓ", emoji: "🦆" },
+        { name: "SPARROW", hint: "ચકલી", cat: "પક્ષીઓ", emoji: "🐤" }
+    ];
+
+    let currentLevelIndex = 0;
+    let score = 0;
+    let currentInput = [];
+    let startTime = Date.now();
+    let isGameActive = true;
+
+    function initGame() {
+        setInterval(updateTimer, 1000);
+        loadLevel();
+    }
+
+    function updateTimer() {
+        if (!isGameActive) return;
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const mins = Math.floor(elapsed / 60);
+        const secs = elapsed % 60;
+        document.getElementById('timer').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function loadLevel() {
+        if (currentLevelIndex >= levels.length) {
+            endGame();
+            return;
+        }
+
+        const currentData = levels[currentLevelIndex];
+        
+        if (currentData.cat === "પક્ષીઓ") {
+            document.body.classList.add('bird-mode');
+        } else {
+            document.body.classList.remove('bird-mode');
+        }
+
+        const slotsContainer = document.getElementById('word-slots');
+        const optionsContainer = document.getElementById('letter-options');
+        const messageArea = document.getElementById('status-message');
+        
+        slotsContainer.innerHTML = '';
+        optionsContainer.innerHTML = '';
+        messageArea.innerHTML = '';
+        currentInput = [];
+        
+        document.getElementById('category-label').textContent = `વિભાગ: ${currentData.cat}`;
+        document.getElementById('hint-text').textContent = `હિન્ટ: ${currentData.hint}`;
+        document.getElementById('level-indicator').textContent = `${currentLevelIndex + 1} of ${levels.length}`;
+
+        for (let i = 0; i < currentData.name.length; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'letter-slot';
+            slot.id = `slot-${i}`;
+            slotsContainer.appendChild(slot);
+        }
+
+        const scrambled = currentData.name.split('').sort(() => Math.random() - 0.5);
+        scrambled.forEach(char => {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble-letter';
+            bubble.textContent = char;
+            bubble.onclick = () => handleLetterClick(char, bubble);
+            optionsContainer.appendChild(bubble);
+        });
+    }
+
+    function handleLetterClick(char, element) {
+        if (!isGameActive) return;
+        const currentData = levels[currentLevelIndex];
+        if (currentInput.length < currentData.name.length) {
+            const slotIndex = currentInput.length;
+            currentInput.push(char);
+            
+            const slot = document.getElementById(`slot-${slotIndex}`);
+            slot.textContent = char;
+            slot.classList.add('filled');
+            element.classList.add('used');
+
+            if (currentInput.length === currentData.name.length) {
+                checkWord();
+            }
+        }
+    }
+
+    function checkWord() {
+        const currentData = levels[currentLevelIndex];
+        if (currentInput.join('') === currentData.name) {
+            score++;
+            document.getElementById('score').textContent = `✓ ${score}`;
+            showSuccessUI();
+        } else {
+            // ખોટો સ્પેલિંગ હોય તો 600ms પછી લેવલ રીસેટ કરો
+            setTimeout(resetLevel, 600);
+        }
+    }
+
+    function showSuccessUI() {
+        const messageArea = document.getElementById('status-message');
+        const currentData = levels[currentLevelIndex];
+        const isLastLevel = currentLevelIndex === levels.length - 1;
+        
+        messageArea.innerHTML = `
+            <div class="success-msg">
+                <span class="emoji-pop">${currentData.emoji}</span>
+                <div>શાબાશ! સાચો જવાબ છે</div>
+                <button class="btn" onclick="nextLevel()">
+                    ${isLastLevel ? 'રમત પૂર્ણ' : 'આગળ વધો'}
+                </button>
+            </div>
+        `;
+    }
+
+    function nextLevel() {
+        if (currentLevelIndex < levels.length - 1) {
+            currentLevelIndex++;
+            loadLevel();
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        isGameActive = false;
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreVal = document.getElementById('final-score-val');
+        const finalTime = document.getElementById('final-time');
+        const currentTime = document.getElementById('timer').textContent;
+
+        finalScoreVal.textContent = `સ્કોર: ${score}/${levels.length}`;
+        finalTime.textContent = `કુલ સમય: ${currentTime}`;
+        gameOverScreen.style.display = 'flex';
+    }
+
+    function restartEntireGame() {
+        currentLevelIndex = 0;
+        score = 0;
+        isGameActive = true;
+        startTime = Date.now();
+        document.getElementById('score').textContent = `✓ 0`;
+        document.getElementById('game-over-screen').style.display = 'none';
+        loadLevel();
+    }
+
+    function resetLevel() {
+        if (!isGameActive) return;
+        loadLevel();
+    }
+
+    window.onload = initGame;
+</script>
+
+</body>
+</html>
