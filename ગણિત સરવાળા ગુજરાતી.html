@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ગણિતની સરવાળા - Rajesh Barochia</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Mukta+Vaani:wght@400;700&display=swap');
+
+        :root {
+            --primary-bg: #f0f7ff;
+            --card-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            --correct-color: #27ae60;
+            --wrong-color: #e74c3c;
+            --accent-color: #4834d4;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Mukta Vaani', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            margin-top: 10px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #2d3436;
+            margin: 5px 0;
+            font-size: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .author {
+            font-size: 1rem;
+            color: #4834d4;
+            margin-bottom: 15px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .math-card {
+            background: var(--card-bg);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+            cursor: pointer;
+            border: 3px solid #f1f2f6;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 130px;
+            position: relative;
+        }
+
+        .vertical-math {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #2d3436;
+            line-height: 1.1;
+        }
+
+        .math-line {
+            border-bottom: 4px solid #2d3436;
+            width: 100%;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        .operator {
+            align-self: flex-start;
+            margin-right: 12px;
+            color: var(--accent-color);
+        }
+
+        .math-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            border-color: var(--accent-color);
+        }
+
+        .math-card.solved {
+            background: var(--correct-color);
+            color: white;
+            border-color: #2ecc71;
+            pointer-events: none;
+            animation: bounceIn 0.5s;
+        }
+
+        .math-card.error {
+            background: var(--wrong-color);
+            border-color: #c0392b;
+            animation: shake 0.4s;
+        }
+
+        .math-card.solved .vertical-math,
+        .math-card.solved .answer-text,
+        .math-card.error .vertical-math {
+            color: white;
+        }
+
+        .answer-text {
+            font-size: 2.2rem;
+            color: var(--correct-color);
+            font-weight: bold;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); opacity: 1; }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 35px;
+            border-radius: 30px;
+            width: 85%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-problem { 
+            margin-bottom: 25px; 
+            display: flex;
+            justify-content: center;
+            transform: scale(1.2);
+        }
+
+        .answer-input {
+            width: 100%;
+            font-size: 2.5rem;
+            text-align: center;
+            padding: 15px;
+            border-radius: 20px;
+            border: 3px solid #dfe6e9;
+            margin-bottom: 25px;
+            box-sizing: border-box;
+            outline: none;
+            color: #2d3436;
+            background: #f9f9f9;
+            font-family: 'Mukta Vaani', sans-serif;
+        }
+
+        .answer-input:focus {
+            border-color: var(--accent-color);
+            background: #fff;
+        }
+
+        .submit-btn {
+            background: var(--accent-color);
+            color: white;
+            font-size: 1.5rem;
+            padding: 18px;
+            border-radius: 20px;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 8px 20px rgba(72, 52, 212, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.95);
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 15px 35px;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            z-index: 2000;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .refresh-btn {
+            margin-top: 25px;
+            background: #fff;
+            border: 3px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 12px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            display: block;
+            width: 100%;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>સરવાળા</h1>
+        <div class="author">Created by : Rajesh Barochia</div>
+    </header>
+
+    <div class="game-board" id="board">
+        <!-- Cards will be generated here -->
+    </div>
+
+    <button class="refresh-btn" onclick="generateBoard()">નવા દાખલા મેળવો</button>
+</div>
+
+<!-- Modal for solving -->
+<div id="solveModal" class="modal">
+    <div class="modal-content">
+        <div id="modalProblem" class="modal-problem"></div>
+        <input type="text" id="userAnswer" class="answer-input" placeholder="?" inputmode="numeric">
+        <button class="submit-btn" onclick="checkTypedAnswer()">જવાબ તપાસો</button>
+    </div>
+</div>
+
+<div id="customToast" class="toast"></div>
+
+<script>
+    let currentAnswer = 0;
+    let activeCard = null;
+    let score = 0;
+    const totalQuestions = 10;
+
+    // અંગ્રેજી અંકોને ગુજરાતીમાં ફેરવવા માટેનું ફંક્શન
+    function toGujaratiDigits(number) {
+        const gujaratiDigits = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'];
+        return number.toString().split('').map(digit => {
+            return isNaN(digit) ? digit : gujaratiDigits[parseInt(digit)];
+        }).join('');
+    }
+
+    // ગુજરાતી અંકોને અંગ્રેજીમાં ફેરવવા માટેનું ફંક્શન (ગણતરી માટે)
+    function toEnglishDigits(str) {
+        const gujaratiDigits = {
+            '૦': '0', '૧': '1', '૨': '2', '૩': '3', '૪': '4',
+            '૫': '5', '૬': '6', '૭': '7', '૮': '8', '૯': '9'
+        };
+        return str.split('').map(char => gujaratiDigits[char] || char).join('');
+    }
+
+    function showToast(message, color) {
+        const toast = document.getElementById('customToast');
+        toast.innerText = message;
+        toast.style.backgroundColor = color;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    function createVerticalProblemHTML(n1, n2, showAnswer = false, ans = "?") {
+        const displayN1 = toGujaratiDigits(n1);
+        const displayN2 = toGujaratiDigits(n2);
+        const displayAns = ans === "?" ? "?" : toGujaratiDigits(ans);
+        
+        return `
+            <div class="vertical-math">
+                <div>${displayN1}</div>
+                <div><span class="operator">+</span>${displayN2}</div>
+                <div class="math-line"></div>
+                <div class="${showAnswer ? 'answer-text' : ''}">${displayAns}</div>
+            </div>
+        `;
+    }
+
+    function generateBoard() {
+        const board = document.getElementById('board');
+        board.innerHTML = '';
+        score = 0;
+        
+        for (let i = 0; i < totalQuestions; i++) {
+            let n1 = Math.floor(Math.random() * 20) + 1;
+            let n2 = Math.floor(Math.random() * 15) + 1;
+
+            const card = document.createElement('div');
+            card.className = 'math-card';
+            card.dataset.n1 = n1;
+            card.dataset.n2 = n2;
+            card.innerHTML = createVerticalProblemHTML(n1, n2);
+            card.onclick = () => openModal(n1, n2, card);
+            board.appendChild(card);
+        }
+    }
+
+    function openModal(n1, n2, card) {
+        activeCard = card;
+        currentAnswer = n1 + n2;
+        document.getElementById('modalProblem').innerHTML = createVerticalProblemHTML(n1, n2);
+        document.getElementById('userAnswer').value = '';
+        document.getElementById('solveModal').style.display = 'flex';
+        
+        setTimeout(() => {
+            document.getElementById('userAnswer').focus();
+        }, 100);
+    }
+
+    function checkTypedAnswer() {
+        const inputElement = document.getElementById('userAnswer');
+        let val = inputElement.value;
+        
+        if (val === "") return;
+
+        // જો યુઝરે ગુજરાતી અંક લખ્યો હોય તો તેને ઇંગ્લીશમાં ફેરવીને ચેક કરવું
+        const englishVal = toEnglishDigits(val);
+
+        if (parseInt(englishVal) === currentAnswer) {
+            score++;
+            showToast("ખૂબ સરસ! સાચો જવાબ છે 🎉", "#27ae60");
+            
+            const n1 = activeCard.dataset.n1;
+            const n2 = activeCard.dataset.n2;
+
+            activeCard.classList.remove('error');
+            activeCard.classList.add('solved');
+            activeCard.innerHTML = createVerticalProblemHTML(n1, n2, true, currentAnswer);
+            
+            closeModal();
+
+            if (score === totalQuestions) {
+                setTimeout(() => {
+                    alert("અભિનંદન! તમે બધા જ દાખલા સાચા ગણ્યા છે!");
+                    generateBoard();
+                }, 500);
+            }
+        } else {
+            showToast("ખોટું છે, ફરી પ્રયત્ન કરો ❌", "#e74c3c");
+            activeCard.classList.add('error');
+            closeModal();
+            setTimeout(() => {
+                activeCard.classList.remove('error');
+            }, 2000);
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('solveModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('solveModal')) {
+            closeModal();
+        }
+    }
+
+    // ઇનપુટ બોક્સમાં ઇંગ્લીશ અંકોને ઓટોમેટિક ગુજરાતીમાં ફેરવવા માટે
+    document.getElementById('userAnswer').addEventListener('input', function(e) {
+        this.value = toGujaratiDigits(toEnglishDigits(this.value));
+    });
+
+    document.getElementById('userAnswer').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            checkTypedAnswer();
+        }
+    });
+
+    window.onload = generateBoard;
+</script>
+
+</body>
+</html>
