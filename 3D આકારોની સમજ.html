@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ત્રિ-પરિમાણીય આકારોની સમજ - સ્ટેપ બાય સ્ટેપ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            background-color: #f0fdfa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 10px;
+        }
+        /* મુખ્ય કાર્ડ માટે સ્ક્રોલિંગ સપોર્ટ */
+        .main-card {
+            max-height: 95vh;
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+        }
+        .main-card::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+        }
+        .info-panel {
+            animation: slideIn 0.4s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn-hover {
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+        }
+        .btn-hover:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl border-2 border-teal-100 p-5 flex flex-col main-card">
+        <!-- Header -->
+        <div class="text-center mb-3">
+            <h1 class="text-xl font-extrabold text-teal-800">3D આકારોની સમજ</h1>
+            <div id="progress-text" class="text-xs text-teal-500 font-bold mt-1">1 / 7</div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="content-area" class="flex-1 flex flex-col justify-between">
+            <div class="info-panel flex flex-col items-center">
+                <!-- Shape Title -->
+                <h2 id="shape-name" class="text-2xl font-bold text-teal-700 mb-4"></h2>
+                
+                <!-- Shape Visual -->
+                <div id="shape-visual" class="w-full aspect-square max-h-[220px] bg-teal-50 rounded-2xl flex items-center justify-center border border-teal-100 mb-4 shadow-inner">
+                    <!-- SVG will be injected here -->
+                </div>
+
+                <!-- Data Grid -->
+                <div class="w-full grid grid-cols-1 gap-2">
+                    <div class="flex justify-between items-center p-3 bg-orange-50 rounded-xl border-l-4 border-orange-400">
+                        <span class="text-base font-bold text-orange-800">ફલક (Faces)</span>
+                        <span id="val-faces" class="text-xl font-black text-orange-600"></span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-blue-50 rounded-xl border-l-4 border-blue-400">
+                        <span class="text-base font-bold text-blue-800">ધાર (Edges)</span>
+                        <span id="val-edges" class="text-xl font-black text-blue-600"></span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-purple-50 rounded-xl border-l-4 border-purple-400">
+                        <span class="text-base font-bold text-purple-800">શિરોબિંદુ (Vertices)</span>
+                        <span id="val-vertices" class="text-xl font-black text-purple-600"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="flex gap-3 mt-5">
+                <button id="prev-btn" class="btn-hover flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 disabled:opacity-30">
+                    ← અગાઉનું
+                </button>
+                <button id="next-btn" class="btn-hover flex-1 bg-teal-600 text-white font-bold py-3 rounded-xl hover:bg-teal-700 shadow-md">
+                    આગળનું →
+                </button>
+            </div>
+
+            <!-- Footer Credit -->
+            <div class="text-center mt-4 pt-2 border-t border-teal-50">
+                <p class="text-[10px] text-teal-400 font-medium tracking-wider uppercase">Created by Rajesh barochia</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const shapesData = [
+            {
+                name: "ગોલક (Sphere)",
+                faces: "1 (વક્ર)", edges: "0", vertices: "0",
+                largeSvg: `<svg viewBox="0 0 100 100" class="w-40 h-40"><defs><radialGradient id="gSphere" cx="30%" cy="30%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#0284c7"/></radialGradient></defs><circle cx="50" cy="50" r="45" fill="url(#gSphere)" stroke="#075985" stroke-width="1"/><ellipse cx="50" cy="50" rx="45" ry="15" fill="none" stroke="#ffffff" stroke-width="0.5" stroke-dasharray="2" opacity="0.5"/></svg>`
+            },
+            {
+                name: "શંકુ (Cone)",
+                faces: "2", edges: "1", vertices: "1",
+                largeSvg: `<svg viewBox="0 0 100 100" class="w-40 h-40"><ellipse cx="50" cy="80" rx="35" ry="12" fill="none" stroke="#166534" stroke-width="1" stroke-dasharray="3"/><path d="M15 80 Q50 68 85 80" fill="none" stroke="#166534" stroke-width="1" stroke-dasharray="3"/><path d="M15 80 L50 10 L85 80" fill="#22c55e" stroke="#166534" stroke-width="2" opacity="0.9"/><ellipse cx="50" cy="80" rx="35" ry="12" fill="#4ade80" stroke="#166534" stroke-width="1.5" clip-path="inset(50% 0 0 0)"/></svg>`
+            },
+            {
+                name: "પિરામિડ (Pyramid)",
+                faces: "5", edges: "8", vertices: "5",
+                largeSvg: `<svg viewBox="0 0 100 100" class="w-40 h-40">
+                    <!-- Invisible edges -->
+                    <line x1="20" y1="70" x2="60" y2="55" stroke="#854d0e" stroke-width="1" stroke-dasharray="3" />
+                    <line x1="90" y1="70" x2="60" y2="55" stroke="#854d0e" stroke-width="1" stroke-dasharray="3" />
+                    <line x1="50" y1="10" x2="60" y2="55" stroke="#854d0e" stroke-width="1" stroke-dasharray="3" />
+                    <!-- Visible faces -->
+                    <path d="M50 10 L20 70 L55 85 Z" fill="#eab308" stroke="#854d0e" stroke-width="1.5" opacity="0.8"/>
+                    <path d="M50 10 L55 85 L90 70 Z" fill="#facc15" stroke="#854d0e" stroke-width="1.5" opacity="0.9"/>
+                </svg>`
+            },
+            {
+                name: "ત્રિકોણીય પ્રિઝમ",
+                faces: "5", edges: "9", vertices: "6",
+                largeSvg: `<svg viewBox="0 0 100 100" class="w-40 h-40">
+                    <!-- Invisible Back Edges -->
+                    <path d="M50 65 L20 80 M50 65 L80 80 M50 65 L50 15" fill="none" stroke="#701a75" stroke-width="1" stroke-dasharray="3"/>
+                    <!-- Visible side walls -->
+                    <path d="M20 30 L50 15 L80 30 L80 80 L20 80 Z" fill="#d946ef" stroke="#701a75" stroke-width="1.5" opacity="0.3"/>
+                    <path d="M20 30 L20 80 L80 80 L80 30 Z" fill="none" stroke="#701a75" stroke-width="1.5"/>
+                    <path d="M20 30 L50 15 L80 30" fill="none" stroke="#701a75" stroke-width="1.5"/>
+                </svg>`
+            },
+            {
+                name: "ષટ્કોણ પ્રિઝમ",
+                faces: "8", edges: "18", vertices: "12",
+                largeSvg: `<svg viewBox="0 0 100 100" class="w-40 h-40">
+                    <!-- Invisible Back Edges -->
+                    <path d="M15 80 L40 65 L75 65 L100 80 M40 65 L40 25 M75 65 L75 25" fill="none" stroke="#9a3412" stroke-width="1" stroke-dasharray="3"/>
+                    <!-- Visible side walls -->
+                    <path d="M15 40 L15 80 L40 95 L75 95 L100 80 L100 40 Z" fill="#f97316" stroke="#9a3412" stroke-width="1.5" opacity="0.4"/>
+                    <!-- Top Face -->
+                    <path d="M15 40 L40 25 L75 25 L100 40 L75 55 L40 55 Z" fill="#ffedd5" stroke="#9a3412" stroke-width="2"/>
+                    <!-- Visible Vertical Edges -->
+                    <path d="M15 40 L15 80 M40 55 L40 95 M75 55 L75 95 M100 40 L100 80" fill="none" stroke="#9a3412" stroke-width="1.5"/>
+                    <path d="M15 80 L40 95 L75 95 L100 80" fill="none" stroke="#9a3412" stroke-width="1.5"/>
+                </svg>`
+            },
+            {
+                name: "સમઘન (Cube)",
+                faces: "6", edges: "12", vertices: "8",
+                largeSvg: `<svg viewBox="0 0 100 100" class="w-40 h-40">
+                    <!-- Invisible Back Edges -->
+                    <path d="M40 20 L40 70 L15 95 M40 70 L90 70" fill="none" stroke="#164e63" stroke-width="1" stroke-dasharray="3"/>
+                    <!-- Front face and top/side lines -->
+                    <rect x="15" y="45" width="50" height="50" fill="#22d3ee" stroke="#164e63" stroke-width="1.5" opacity="0.6"/>
+                    <path d="M15 45 L40 20 L90 20 L90 70 L65 95" fill="none" stroke="#164e63" stroke-width="1.5"/>
+                    <path d="M65 45 L90 20" stroke="#164e63" stroke-width="1.5"/>
+                    <path d="M65 45 L65 95" stroke="#164e63" stroke-width="1.5"/>
+                </svg>`
+            },
+            {
+                name: "નળાકાર (Cylinder)",
+                faces: "3", edges: "2", vertices: "0",
+                largeSvg: `<svg viewBox="0 0 100 100" class="w-40 h-40">
+                    <!-- Back curve of bottom ellipse -->
+                    <path d="M15 80 Q50 68 85 80" fill="none" stroke="#a16207" stroke-width="1" stroke-dasharray="3"/>
+                    <!-- Cylinder body -->
+                    <path d="M15 25 L15 80 Q50 92 85 80 L85 25" fill="#facc15" stroke="#a16207" stroke-width="1.5" opacity="0.8"/>
+                    <!-- Top Face -->
+                    <ellipse cx="50" cy="25" rx="35" ry="12" fill="#fef08a" stroke="#a16207" stroke-width="2"/>
+                </svg>`
+            }
+        ];
+
+        let currentIndex = 0;
+
+        const shapeName = document.getElementById('shape-name');
+        const shapeVisual = document.getElementById('shape-visual');
+        const valFaces = document.getElementById('val-faces');
+        const valEdges = document.getElementById('val-edges');
+        const valVertices = document.getElementById('val-vertices');
+        const progressText = document.getElementById('progress-text');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        function updateDisplay() {
+            const shape = shapesData[currentIndex];
+            
+            const content = document.querySelector('.info-panel');
+            content.style.animation = 'none';
+            content.offsetHeight; 
+            content.style.animation = null;
+
+            shapeName.innerText = shape.name;
+            shapeVisual.innerHTML = shape.largeSvg;
+            valFaces.innerText = shape.faces;
+            valEdges.innerText = shape.edges;
+            valVertices.innerText = shape.vertices;
+            progressText.innerText = `${currentIndex + 1} / ${shapesData.length}`;
+
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.innerText = currentIndex === shapesData.length - 1 ? "ફરીથી શરૂ કરો" : "આગળનું →";
+            
+            document.querySelector('.main-card').scrollTop = 0;
+        }
+
+        prevBtn.onclick = () => { if (currentIndex > 0) { currentIndex--; updateDisplay(); } };
+        nextBtn.onclick = () => { currentIndex = (currentIndex < shapesData.length - 1) ? currentIndex + 1 : 0; updateDisplay(); };
+
+        updateDisplay();
+    </script>
+</body>
+</html>
