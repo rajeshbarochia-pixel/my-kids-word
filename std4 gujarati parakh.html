@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCERT ધોરણ ૪ - ગુજરાતી સમજણ કસોટી (PARAKH)</title>
+    <!-- Tailwind CSS for outstanding responsive layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhai+2:wght@400;600;800&family=Hind+Vadodara:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Baloo Bhai 2', 'Hind Vadodara', sans-serif;
+            background-color: #f0fdf4; /* Light fresh green background */
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bubbly-button {
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        .bubbly-button:active {
+            transform: scale(0.95);
+        }
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            user-select: none;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <header class="bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 text-white text-center py-6 px-4 shadow-lg rounded-b-3xl relative overflow-hidden">
+        <div class="absolute -top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+        <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-xl"></div>
+        
+        <span class="bg-white/20 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider">GCERT - ગાંધીનગર પ્રશ્નબેંક (PARAKH)</span>
+        <h1 class="text-3xl md:text-5xl font-extrabold mt-2 drop-shadow-md">ધોરણ : ૪ ગુજરાતી કસોટી</h1>
+        <p class="text-sm md:text-lg font-medium mt-1 text-emerald-100">વર્ષ: ૨૦૨૫-૨૬ (દ્વિતીય સત્ર સત્તાવાર પ્રશ્નપત્ર સંગ્રહ)</p>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-6">
+
+        <!-- Dashboard Section: Displaying all 10 passages + 1 grammar challenge -->
+        <div id="dashboard-view" class="block">
+            <div class="text-center my-6">
+                <h2 class="text-2xl md:text-3xl font-extrabold text-teal-900 bg-teal-100 inline-block px-6 py-2 rounded-full border-2 border-teal-200 shadow-sm">
+                    📚 પ્રકરણ અથવા ટેસ્ટ પસંદ કરો 🎯
+                </h2>
+                <p class="text-gray-600 mt-2 text-sm md:text-base">સત્તાવાર પ્રશ્નબેંકમાંથી ગમે તે એક વિભાગ પર ક્લિક કરીને રમો:</p>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="dashboard-grid">
+                <!-- Loaded dynamically by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Quiz View Section (Initially Hidden) -->
+        <div id="quiz-view" class="hidden">
+            <!-- Go Back Button -->
+            <button onclick="showDashboard()" class="mb-4 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold px-5 py-2 rounded-full text-sm shadow-md transition-all flex items-center gap-2">
+                🏠 બધી કસોટીઓ પર પાછા જાઓ
+            </button>
+
+            <!-- Progress Bar Card -->
+            <div class="bg-white p-4 rounded-2xl shadow-md border-2 border-orange-100 mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-bold text-gray-600" id="current-quiz-title">પ્રગતિ</span>
+                    <span id="progress-text" class="text-sm font-extrabold text-teal-600">૦/૫ પૂર્ણ</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-4 overflow-hidden border border-gray-200">
+                    <div id="progress-bar" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full w-0 transition-all duration-500 rounded-full"></div>
+                </div>
+            </div>
+
+            <!-- Passage Content Display Card -->
+            <section id="passage-container" class="bg-white rounded-3xl p-5 md:p-8 shadow-xl border-4 border-amber-300 relative mb-8">
+                <div class="absolute -top-4 left-6 bg-amber-400 text-amber-950 font-bold px-4 py-1 rounded-md shadow-md text-xs" id="passage-badge-text">
+                    📖 ફકરો
+                </div>
+                
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2 mb-4 gap-2">
+                    <h2 class="text-xl md:text-2xl font-bold text-amber-800" id="passage-title">વાર્તા શીર્ષક</h2>
+                    <!-- Speaker & Help Buttons Group -->
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="readAloud()" class="bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-amber-800 px-3 py-2 rounded-full transition-all flex items-center gap-1 text-xs md:text-sm font-bold shadow-sm" title="મોટેથી વાંચો">
+                            <span id="speaker-icon">🔊</span> <span id="speaker-text">સાંભળો</span>
+                        </button>
+                        <button onclick="showVoiceHelpModal()" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-2 rounded-full transition-all text-xs md:text-sm font-bold shadow-sm flex items-center gap-1">
+                            ❓ અવાજ સુધારો
+                        </button>
+                    </div>
+                </div>
+
+                <p id="comprehension-passage" class="text-base md:text-lg leading-relaxed text-gray-700 font-medium text-justify bg-amber-50/50 p-4 rounded-xl border border-amber-100 whitespace-pre-line">
+                    <!-- Text dynamic -->
+                </p>
+            </section>
+
+            <!-- Confetti container -->
+            <div id="confetti-container" class="relative"></div>
+
+            <!-- Questions Layout Header -->
+            <div class="text-center my-6">
+                <h3 class="text-xl md:text-2xl font-extrabold text-teal-800 inline-block bg-teal-50 px-6 py-2 rounded-full shadow-inner border-2 border-teal-100">
+                    ❓ સાચો જવાબ શોધો 📝
+                </h3>
+            </div>
+
+            <!-- MCQ Questions Container -->
+            <div class="space-y-6" id="questions-container">
+                <!-- Dynamically loaded -->
+            </div>
+
+            <!-- Dynamic Celebrate Scorecard -->
+            <div id="score-summary" class="hidden mt-8 bg-gradient-to-br from-teal-600 to-emerald-700 rounded-3xl p-6 text-white text-center shadow-2xl relative overflow-hidden transform scale-95 transition-all duration-500">
+                <div class="absolute -top-10 -right-10 w-36 h-36 bg-white/10 rounded-full"></div>
+                <h3 class="text-2xl md:text-3xl font-extrabold mb-2" id="score-heading">🎉 શાબાશ! ખૂબ સરસ! 🌟</h3>
+                <p class="text-emerald-100 text-sm md:text-base mb-6">તમે આ વિભાગના બધા જ પ્રશ્નોના ઉત્તરો આપી દીધા છે!</p>
+                
+                <div class="flex justify-center items-center gap-4 mb-6">
+                    <div class="bg-white/20 p-4 rounded-2xl backdrop-blur-sm min-w-[95px]">
+                        <div id="total-q-badge" class="text-2xl font-extrabold">૫</div>
+                        <div class="text-[10px] text-teal-100">કુલ પ્રશ્નો</div>
+                    </div>
+                    <div class="bg-white/20 p-4 rounded-2xl backdrop-blur-sm min-w-[95px]">
+                        <div id="attempt-counter" class="text-2xl font-extrabold">૫</div>
+                        <div class="text-[10px] text-teal-100">તમારા પ્રયત્નો</div>
+                    </div>
+                </div>
+
+                <div class="flex justify-center gap-3">
+                    <button onclick="restartQuiz()" class="bg-white hover:bg-teal-50 active:scale-95 text-emerald-800 font-extrabold px-6 py-2.5 rounded-full text-sm md:text-base shadow-lg transition-all">
+                        🔄 ફરી રમો
+                    </button>
+                    <button onclick="showDashboard()" class="bg-teal-800 hover:bg-teal-950 active:scale-95 text-white font-extrabold px-6 py-2.5 rounded-full text-sm md:text-base shadow-lg transition-all">
+                        🏠 બધી કસોટીઓ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 🌟 Voice Helper Guide Modal 🌟 -->
+    <div id="voice-help-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl relative border-4 border-blue-400">
+            <button onclick="closeVoiceHelpModal()" class="absolute top-4 right-4 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center font-bold text-gray-600 text-lg">&times;</button>
+            
+            <div class="text-center mb-6">
+                <span class="text-4xl">🔊</span>
+                <h3 class="text-2xl font-extrabold text-blue-900 mt-2">અસલ ગુજરાતી અવાજ કેવી રીતે ચાલુ કરવો?</h3>
+                <p class="text-sm text-gray-500">જો અવાજ અંગ્રેજી જેવા લહેકામાં અથવા અજીબ આવતો હોય તો આ સેટિંગ કરો:</p>
+            </div>
+
+            <div class="space-y-4 text-sm md:text-base text-gray-700">
+                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                    <h4 class="font-extrabold text-blue-800 flex items-center gap-1 mb-1">🤖 એન્ડ્રોઇડ (Android) મોબાઈલ માટે:</h4>
+                    <ol class="list-decimal pl-5 space-y-1 text-xs md:text-sm">
+                        <li>તમારા ફોનની <strong>Settings (સેટિંગ્સ)</strong> માં જાઓ.</li>
+                        <li><strong>System ➔ Language & Input ➔ Text-to-Speech</strong> (અથવા સર્ચમાં "Text to speech" લખો) પર ક્લિક કરો.</li>
+                        <li>Preferred Engine ની બાજુમાં આવેલા સેટિંગ્સ આયકન પર ક્લિક કરો ➔ <strong>Install Voice Data</strong> પસંદ કરો.</li>
+                        <li>ત્યાંથી <strong>Gujarati (India)</strong> અથવા <strong>ગુજરાતી (ભારત)</strong> શોધીને અવાજ ડાઉનલોડ (Download) કરી લો.</li>
+                    </ol>
+                </div>
+
+                <div class="bg-purple-50 p-4 rounded-2xl border border-purple-100">
+                    <h4 class="font-extrabold text-purple-800 flex items-center gap-1 mb-1">🍎 આઇફોન (iPhone / iOS) માટે:</h4>
+                    <ol class="list-decimal pl-5 space-y-1 text-xs md:text-sm">
+                        <li>આઇફોન ના <strong>Settings</strong> ➔ <strong>Accessibility</strong> માં જાઓ.</li>
+                        <li><strong>Spoken Content</strong> ➔ <strong>Voices</strong> પર ક્લિક કરો.</li>
+                        <li>ત્યાંથી <strong>Gujarati</strong> પસંદ કરીને સિસ્ટમ વોઇસ (Lekha) ડાઉનલોડ કરી લો.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <button onclick="closeVoiceHelpModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-full mt-6 transition-all shadow-md">
+                સમજાઈ ગયું, રમત ચાલુ રાખો! 👍
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer Credit Badge with English Name -->
+    <footer class="mt-12 text-center border-t border-gray-200 pt-6 px-4">
+        <div class="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-5 py-2 shadow-sm">
+            <span class="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping"></span>
+            <span class="text-xs md:text-sm font-semibold text-gray-600">Developer:</span>
+            <span class="text-sm md:text-base font-bold text-amber-800">Rajesh Barochia</span>
+        </div>
+        <p class="text-[10px] text-gray-400 mt-2">© 2026 All Rights Reserved. Grade 4 Gujarati Interactive PARAKH App.</p>
+    </footer>
+
+    <script>
+        // Complete Std 4 Gujarati PDF database (10 Passages + 15 Grammar MCQ questions)
+        const examData = [
+            {
+                id: 1,
+                title: "નવરાત્રી",
+                emoji: "💃",
+                badge: "📖 ફકરો ૧ ધ્યાનથી વાંચો",
+                isPoem: false,
+                text: "વર્ષ દરમિયાન હવામાનમાં ફેરફાર થવાથી વિવિધ તહેવારોની ઉજવણી કરવામાં આવે છે. આ તહેવાર ધાર્મિક અને સાંસ્કૃતિક તહેવાર છે. આ તહેવારમાં નવ દિવસ અને નવ રાત સુધી ઉજવવામાં આવે છે. નવરાત્રી દરમિયાન માતા દુર્ગાના નવ સ્વરૂપોની પૂજા કરવામાં આવે છે. લોકો શેરીમાં અને મંદિરોમાં ગરબા ગાય છે અને દાંડિયા રમે છે. આ સમયે લોકો પરંપરાગત વસ્ત્રો પહેરે છે અને ઉપવાસ પણ કરે છે. નવરાત્રી આપણને ભક્તિ, શિસ્ત, આનંદ અને એકતાનો સંદેશ આપે છે.",
+                questions: [
+                    {
+                        id: 1,
+                        q: "૧. નવરાત્રી કેટલા રાત્રી સુધી ઉજવવામાં આવે છે?",
+                        options: { A: "A) પાંચ", B: "B) સાત", C: "C) નવ", D: "D) દસ" },
+                        correct: "C",
+                        exp: "ફકરામાં લખ્યું છે: 'આ તહેવારમાં નવ દિવસ અને નવ રાત સુધી ઉજવવામાં આવે છે.' તેથી નવ સાચો જવાબ છે!"
+                    },
+                    {
+                        id: 2,
+                        q: "૨. નવરાત્રીમાં કોની પૂજા કરવામાં આવે છે?",
+                        options: { A: "A) ગણેશજી", B: "B) માતા દુર્ગાના નવ સ્વરૂપોની", C: "C) ભગવાન શિવ", D: "D) શ્રી કૃષ્ણ" },
+                        correct: "B",
+                        exp: "ફકરાની ચોથી લીટી અનુસાર: 'નવરાત્રી દરમિયાન માતા દુર્ગાના નવ સ્વરૂપોની પૂજા કરવામાં આવે છે.'"
+                    },
+                    {
+                        id: 3,
+                        q: "૩. નવરાત્રી દરમિયાન લોકો શું કરે છે?",
+                        options: { A: "A) વાંચન કરે છે", B: "B) રમતો rમે છે", C: "C) ગરબા ગાય છે અને દાંડિયા રમે છે", D: "D) પ્રવાસ કરે છે" },
+                        correct: "C",
+                        exp: "ફકરામાં સ્પષ્ટ રીતે લખ્યું છે કે 'લોકો શેરીમાં અને મંદિરોમાં ગરબા ગાય છે અને દાંડિયા રમે છે.'"
+                    },
+                    {
+                        id: 4,
+                        q: "૪. નવરાત્રીમાં લોકો કયા પ્રકારના વસ્ત્રો પહેરે છે?",
+                        options: { A: "A) ઔપચારિક", B: "B) સ્કુલડ્રેસ", C: "C) પરંપરાગત", D: "D) રમતના" },
+                        correct: "C",
+                        exp: "ઉજવણી વખતે લોકો સુંદર ચણિયાચોળી અને કેડિયું જેવા 'પરંપરાગત' વસ્ત્રો પહેરે છે."
+                    },
+                    {
+                        id: 5,
+                        q: "૫. નવરાત્રી આપણને શું શીખવે છે?",
+                        options: { A: "A) આળસ", B: "B) ભક્તિ, શિસ્ત અને એકતા", C: "C) ડર", D: "D) ગુસ્સો" },
+                        correct: "B",
+                        exp: "છેલ્લું વાક્ય સમજાવે છે: 'નવરાત્રી આપણને ભક્તિ, શિસ્ત, આનંદ અને એકતાનો સંદેશ આપે છે.'"
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: "અધ્યાત્મ અને પ્રાર્થના",
+                emoji: "🌸",
+                badge: "📖 ફકરો ૨ ધ્યાનથી વાંચો",
+                isPoem: false,
+                text: "ભાઈ, અનેક દિનદુખિયાના દુઃખ દૂર કરનારનાં દુઃખ આપોઆપ જ ટળી જાય છે. જે બીજાનાં આંસુ લૂછે છે તેને આંસુ ભગવાન લૂછે છે. જે અન્યની તકલીફ દૂર કરે છે તેનો સંતાપ પ્રભુ હરી લે છે. આગળ એક સરોવર છે, તેમાં ધોળા અને લાલ કમળ ખીલેલાં છે. તેમાંથી પાંચ સફેદ અને પાંચ લાલ કમળ લઈ લેજે. સવારે માં ભગવાનની પૂજા કરવા બેસે ત્યારે પૂજામાં મૂકવા આપજે, એમ કહીને સોનેરી અદ્રશ્ય થઈ ગઈ.",
+                questions: [
+                    {
+                        id: 1,
+                        q: "૧. ફકરામાં 'દુઃખ દૂર કરવાના કામમાં ઈશ્વર વ્યાધિ નડવા દે છે' - આ વાક્ય દ્વારા લેખક શું સમજાવવા માંગે છે?",
+                        options: { A: "A. ભગવાન મુશ્કેલીઓ વધારે છે.", B: "B. ઈશ્વર કસોટી કરીને મનુષ્યને વધારે મજબૂત બનાવે છે.", C: "C. ભક્તિ કરવાથી મુશ્કેલીઓ વધે છે.", D: "D. ઈશ્વર માત્ર દુઃખ જ આપે છે." },
+                        correct: "B",
+                        exp: "સાહિત્યિક દ્રષ્ટિએ, પરોપકાર અને દુખિયાની સેવામાં ઈશ્વર આપણી કસોટી કરી મજબૂત બનાવે છે."
+                    },
+                    {
+                        id: 2,
+                        q: "૨. \"હૃદયમાં ભગવાન બેઠા છે.\" - આ વિચારધારા જીવનમાં કયો ફેરફાર લાવી શકે?",
+                        options: { A: "A. માણસ આળસુ બની જાય છે.", B: "B. માણસ ડરપોક બની જાય છે.", C: "C. માણસના વિચારો અને વર્તનમાં પવિત્રતા આવે છે.", D: "D. માણસને કોઈ કામ કરવાની જરૂર રહેતી નથી." },
+                        correct: "C",
+                        exp: "જ્યારે આપણે માનીએ કે પ્રભુ આપણા હૃદયમાં છે, ત્યારે આપણા વિચારો અને વ્યવહાર આપોઆપ શુદ્ધ અને પવિત્ર થાય છે."
+                    },
+                    {
+                        id: 3,
+                        q: "૩. આ ફકરામાં લેખકનો ભગવાન પ્રત્યેનો કયો ભાવ મુખ્યત્વે વ્યક્ત થાય છે?",
+                        options: { A: "A. ડર અને ભય", B: "B. સંપૂર્ણ શરણાગતિ અને શ્રદ્ધા", C: "C. માત્ર ધાર્મિક વિધિઓ", D: "D. ભૌતિક વસ્તુઓની માગણી" },
+                        correct: "B",
+                        exp: "વાર્તામાં બીજાની નિઃસ્વાર્થ સેવા અને ઈશ્વર પ્રત્યે અતૂટ શ્રદ્ધા દર્શાવવામાં આવી છે."
+                    },
+                    {
+                        id: 4,
+                        q: "૪. ફકરાના સંદર્ભમાં 'સાચી પ્રાર્થના' એટલે શું?",
+                        options: { A: "A. લાંબી વિધિઓ કરવી.", B: "B. ભગવાન પાસે ફક્ત માંગણીઓ જ કરવી.", C: "C. પોતાના કર્મોને ઈશ્વરને સમર્પિત કરવા.", D: "D. માત્ર મંદિરે જઈને બેસવું." },
+                        correct: "C",
+                        exp: "બીજાના દુઃખ લૂછવા અને પરોપકારના સારા કર્મો ભગવાનને સમર્પિત કરવા તે જ સાચી પ્રાર્થના છે."
+                    },
+                    {
+                        id: 5,
+                        q: "૫. ફકરા મુજબ સાચી શાંતિ અને પ્રગતિ ક્યારે અનુભવાય છે?",
+                        options: { A: "A. જ્યારે આપણે ખૂબ પૈસા કમાઈએ.", B: "B. જ્યારે આપણે કોઈની મદદ ન કરીએ.", C: "C. જ્યારે બધું ભગવાનને સોંપીને નિશ્ચિત થઈએ.", D: "D. જ્યારે આપણે જ્ઞાનનો ઉપયોગ કરીએ." },
+                        correct: "C",
+                        exp: "પ્રભુમાં સમર્પણ કરવાથી મન શાંત થાય છે અને મુશ્કેલીઓનો ભાર ઓછો થાય છે."
+                    }
+                ]
+            },
+            {
+                id: 3,
+                title: "બિલ અને સિક્કા",
+                emoji: "🪙",
+                badge: "📖 ફકરો ૩ ધ્યાનથી વાંચો",
+                isPoem: false,
+                text: "ઊભા થઈ મેં દરવાજા પાસેના કાઉન્ટર ઉપર પેલું ૬૦ પૈસાનું બિલ અને સાથે એક રૂપિયાની નોટ રજૂ કરી. કેશિયરે તે સ્વીકારતા મને ૬૦ પૈસા પરત આપ્યા. તે જોઈ હું આશ્ચર્ય પામ્યો, કેમ કે મારે ફક્ત ૪૦ પૈસા જ પાછા લેવાના હતા. તેના બદલે કેશિયરે ભૂલથી શરતચૂકથી ૬૦ પૈસા પરત કર્યા. હા, તેની ભૂલ જાણવા છતાં મેં ૬૦ પૈસા લઈ લીધા. પાછા ન આપ્યા કે ન તો તેની તેને ભૂલ બતાવી.દશ-દશ પૈસાના છ સિક્કા લઈને મેં મારા શર્ટના ઉપરના ખિસ્સામાં મૂકી દીધા. વીસ પૈસા વધુ મળવાની હું રાજી પણ થઈ ગયો. હું શાળાએ દરવાજે પહોંચી ગયો.",
+                questions: [
+                    {
+                        id: 1,
+                        q: "૧. કાઉન્ટર ઉપર કેટલા રૂપિયાની નોટ રજૂ કરી?",
+                        options: { A: "A. બે રૂપિયાની", B: "B. એક રૂપિયાની", C: "C. પાંચ રૂપિયાની", D: "D. દસ રૂપિયાની" },
+                        correct: "B",
+                        exp: "ફકરાની પ્રથમ લાઈનમાં લખ્યું છે: '...સાથે એક રૂપિયાની નોટ રજૂ કરી.'"
+                    },
+                    {
+                        id: 2,
+                        q: "૨. કેશિયરે કેટલા પૈસા પરત આપ્યા?",
+                        options: { A: "A. ૪૦ પૈસા", B: "B. ૬૦ પૈસા", C: "C. ૨૦ પૈસા", D: "D. ૫૦ પૈસા" },
+                        correct: "B",
+                        exp: "કેશિયરે ભૂલથી ૪૦ ના બદલે '૬૦ પૈસા' પરત આપ્યા હતા."
+                    },
+                    {
+                        id: 3,
+                        q: "૩. કેશિયર પાસેથી ખરેખર કેટલા પૈસા પરત લેવાના હતા?",
+                        options: { A: "A. ફક્ત ૪૦ પૈસા", B: "B. ફક્ત ૬૦ પૈસા", C: "C. ફક્ત ૨૦ પૈસા", D: "D. ફક્ત ૧૦ પૈસા" },
+                        correct: "A",
+                        exp: "૧ રૂપિયા (૧૦૦ પૈસા) માંથી ૬૦ પૈસાનું બિલ હતું, તેથી ખરેખર ૧૦૦ - ૬૦ = ૪૦ પૈસા જ પાછા મળવાના હતા."
+                    },
+                    {
+                        id: 4,
+                        q: "૪. 'હું રાજી થઈ ગયો' આ વાક્યમાં રાજી શબ્દ નો સમાનાર્થી શબ્દ કયો છે?",
+                        options: { A: "A. દુ:ખી", B: "B. ગુસ્સે", C: "C. ખુશ", D: "D. શાંત" },
+                        correct: "C",
+                        exp: "'રાજી' થવું એટલે 'ખુશ' અથવા આનંદિત થવું."
+                    },
+                    {
+                        id: 5,
+                        q: "૫. ભૂલથી તમને કોઈ પૈસા પાછા વધુ આપી દે તો તમે શું કરશો?",
+                        options: { A: "A. પૈસા પરત આપી દઈશ", B: "B. પૈસા ચૂપચાપ મૂકી દઈશ", C: "C. પૈસા ખર્ચી નાખીશ", D: "D. મંદિર મા આપી દઈશ" },
+                        correct: "A",
+                        exp: "સાચી નૈતિકતા અને ઈમાનદારી એ જ છે કે આપણે વધારાના પૈસા સામે ચાલીને પરત આપી દઈએ."
+                    },
+                    {
+                        id: 6,
+                        q: "૬. 'દરવાજા' શબ્દ માટે ફકરામાં કયો સમાન અર્થ ધરાવતો શબ્દ વપરાયો છે?",
+                        options: { A: "A. બારી", B: "B. દરવાજા", C: "C. કાઉન્ટર", D: "D. ખડકી" },
+                        correct: "B",
+                        exp: "ફકરામાં 'દરવાજા પાસેના' અને 'શાળાએ દરવાજે' માં 'દરવાજા' શબ્દ જ વણાયો છે."
+                    },
+                    {
+                        id: 7,
+                        q: "૭. સ્વીકારવું શબ્દનો વિરોધી શબ્દ ફકરાના સંદર્ભમાં જણાવો.",
+                        options: { A: "A. આપવું", B: "B. લેવું", C: "C. અસ્વીકારવું / નકારવું", D: "D. મૂકવું" },
+                        correct: "C",
+                        exp: "'સ્વીકારવું' નું સચોટ વિરોધી 'અસ્વીકારવું' અથવા 'નકારવું' થાય છે."
+                    }
+                ]
+            },
+            {
+                id: 4,
+                title: "પ્રતાપ અને સુખડી",
+                emoji: "🌳",
+                badge: "📖 ફકરો ૪ ધ્યાનથી વાંચો",
+                isPoem: false,
+                text: "પ્રતાપ ચાલ્યો જાય છે. માર્ગે જતાં એક મોટું જંગલ આવ્યું. બપોરનો સમય થયો છે. પ્રતાપને ભૂખ લાગી છે. રસ્તે પાકાં, બોર-જામફળ ખાતો જાય છે. એક મોટો વડલો આવે છે. વડલાની છાયામાં પ્રતાપ પોતાનું ભાથું છોડીને ખાવા બેસે છે. ભાથાની પોટલી છોડીને હાથમાં સુખડી લે છે ને તેની સામે એક ડોશી આવીને કહે છે, 'બેટા, ચાર દિવસની ભૂખી છું, મને એક ટુકડો આપીશ? તો ભગવાન તને સુખી કરશે.' પ્રતાપે થોડી સુખડી આપી, બે-ચાર પૂરી આપી.",
+                questions: [
+                    {
+                        id: 1,
+                        q: "૧. પ્રતાપ કયા સમયે રસ્તા પરથી જઈ રહ્યો હતો?",
+                        options: { A: "A. સવારના સમયે", B: "B. બપોરના સમયે", C: "C. સાંજના સમયે", D: "D. રાત્રિના સમયે" },
+                        correct: "B",
+                        exp: "વાર્તામાં ઉલ્લેખ છે: 'બપોરનો સમય થયો છે. પ્રતાપને ભૂખ લાગી છે.'"
+                    },
+                    {
+                        id: 2,
+                        q: "૨. 'વડલાની છાયા' શબ્દનો વિરોધી શબ્દ કયો થાય?",
+                        options: { A: "A. ઠંડક", B: "B. તડકો", C: "C. અંધારું", D: "D. પવન" },
+                        correct: "B",
+                        exp: "છાંયડાનો સાચો વિરોધી અર્થ 'તડકો' થાય છે."
+                    },
+                    {
+                        id: 3,
+                        q: "૩. ડોશીએ પ્રતાપને આશીર્વાદ આપતા શું કહ્યું?",
+                        options: { A: "A. તારું ભલું થશે", B: "B. ભગવાન તને સુખી કરશે", C: "C. તને પૈસા મળશે", D: "D. તું મોટો માણસ બનીશ" },
+                        correct: "B",
+                        exp: "ડોશીએ કહ્યું: 'બેટા, ચાર દિવસની ભૂખી છું... તો ભગવાન તને સુખી કરશે.'"
+                    },
+                    {
+                        id: 4,
+                        q: "૪. આ વાર્તામાં પ્રતાપના સ્વભાવ વિશે શું કહી શકાય?",
+                        options: { A: "A. તે આળસુ હતો", B: "B. તે દયાળુ અને પરોપકારી હતો", C: "C. તે ડરપોક હતો", D: "D. તે ખૂબ લોભી હતો" },
+                        correct: "B",
+                        exp: "ભૂખી ડોશીને પોતાના ભોજનમાંથી સુખડી અને પૂરી આપી દેવી તે પ્રતાપનો 'દયાળુ અને પરોપકારી' સ્વભાવ બતાવે છે."
+                    },
+                    {
+                        id: 5,
+                        q: "૫. 'વડલો' એ કયા પ્રકારની સંજ્ઞા છે?",
+                        options: { A: "A. વ્યક્તિવાચક", B: "B. જાતિવાચક", C: "C. ભાવવાચક", D: "D. સમૂહવાચક" },
+                        correct: "B",
+                        exp: "વડલો સમગ્ર વૃક્ષ જાતિનો નિર્દેશ કરે છે માટે તે 'જાતિવાચક સંજ્ઞા' છે."
+                    }
+                ]
+            },
+            {
+                id: 5,
+                title: "દેશભક્તિ અને આઝાદી",
+                emoji: "🇮🇳",
+                badge: "📖 ફકરો ૫ ધ્યાનથી વાંચો",
+                isPoem: false,
+                text: "આપણો દેશ ભારત ૧૫ મી ઓગસ્ટ, ૧૯૪૭ ના દિવસે આઝાદ થયો.આ આઝાદી મેળવવા માટે ગાંધીજી,સરદાર પટેલ, ભગતસિંહ અને સુભાષચંદ્ર બોઝ જેવા અનેક દેશ ભક્તોએ પોતાનું જીવન સમર્પિત કરી દીધું હતું.દેશભક્તિ એટલે માત્ર સરહદ પર જઈને લડવું એવું નથી.પણ પોતાના દેશના નિયમોનું પાલન કરવું, પર્યાવરણને બચાવવું અને દેશના વિકાસમાં મદદરૂપ થવું એ પણ દેશભક્તિ જ છે.આપણે દર વર્ષે ૧૫ મી ઓગસ્ટના દિવસે શાળાઓમાં અને સરકારી કચેરીઓમાં ત્રિરંગો લહેરાવીએ છીએ.આપણે હંમેશા આપણા રાષ્ટ્રધ્વજ અને રાષ્ટ્રગીતનું સન્માન કરવું જોઈએ.ભારતમાતાની રક્ષા કરવી એ દરેક નાગરિકની પવિત્ર ફરજ છે.",
+                questions: [
+                    {
+                        id: 1,
+                        q: "૧. ભારત દેશ ક્યારે આઝાદ થયો?",
+                        options: { A: "A. ૨૬ મી જાન્યુઆરી ૧૯૫૦", B: "B. ૧૫ મી ઓગસ્ટ ૧૯૪૭", C: "C. ૨ ઓક્ટોબર ૧૮૬૯", D: "D. ૧ મે ૧૯૬૦" },
+                        correct: "B",
+                        exp: "આપણો ભારત દેશ '૧૫મી ઓગસ્ટ, ૧૯૪૭' ના રોજ બ્રિટિશ શાસનમાંથી મુક્ત આઝાદ થયો."
+                    },
+                    {
+                        id: 2,
+                        q: "૨. ફકરામાં કયા દેશભક્તનું નામ આપવામાં આવ્યું નથી?",
+                        options: { A: "A. ગાંધીજી", B: "B. ભગતસિંહ", C: "C. લાલબહાદુર શાસ્ત્રી", D: "D. સુભાષચંદ્ર બોઝ" },
+                        correct: "C",
+                        exp: "ફકરામાં ગાંધીજી, સરદાર પટેલ, ભગતસિંહ અને સુભાષચંદ્ર બોઝનો ઉલ્લેખ છે, લાલબહાદુર શાસ્ત્રીજીનું નામ ફકરામાં નથી."
+                    },
+                    {
+                        id: 3,
+                        q: "૩. દેશભક્તિ એટલે શું?",
+                        options: { A: "A. માત્ર સરહદ પર લડવું", B: "B. દેશના નિયમોનું પાલન કરવું અને પર્યાવરણ બચાવવું", C: "C. પર્યાવરણને નુકશાન પહોચાડવું", D: "D. ગમે ત્યાં કચરો ફેંકવો" },
+                        correct: "B",
+                        exp: "સરહદ પર લડવા ઉપરાંત દેશના કાયદા-નિયમો પાળવા અને પર્યાવરણને બચાવવું તે પણ દેશભક્તિ જ છે."
+                    },
+                    {
+                        id: 4,
+                        q: "૪. દરેક નાગરિકની પવિત્ર ફરજ કઈ છે?",
+                        options: { A: "A. વિદેશમાં જઈને વસવું", B: "B. ઝગડા કરવા", C: "C. આરામ કરવો", D: "D. ભારતમાતાની રક્ષા કરવી" },
+                        correct: "D",
+                        exp: "છેલ્લી લીટીમાં સ્પષ્ટ કહ્યું છે: 'ભારતમાતાની રક્ષા કરવી એ દરેક નાગરિકની પવિત્ર ફરજ છે.'"
+                    }
+                ]
+            },
+            {
+                id: 6,
+                title: "વાદળાં અને દીવો",
+                emoji: "☁️",
+                badge: "📖 ફકરો ૬ ધ્યાનથી વાંચો",
+                isPoem: false,
+                text: "દીવો સળગાવ્યો એટલે નીચેથી લોકો કહેવા લાગ્યા કે સૂર્યોદય થાય છે.દીવાની જ્યોત મોટી થઇ એટલે કેટલાક વાદળાં ફિક્કા થવા લાગ્યા.એમણે મોટા વાદળાને આ વિશે ફરિયાદ કરી.મોટા વાદળાએ કહ્યું, “બધા વાદળા ભેગા થઇ જાઓ.અને દીવાને કહી દો કે એવું એકલાનું અહીં રાજ નથી.” બધા વાદળા ભેગા થઇ જવા માંડ્યા.ઘણા મોટા પહાડ જેવા કાળા વાદળાની પાછળ જઈને બેસી ગયા.નીચેથી લોકો કહેવા લાગ્યા કે આકાશ ઘેરાવા લાગ્યું છે.",
+                questions: [
+                    {
+                        id: 1,
+                        q: "૧. નાના વાદળાએ કોને ફરિયાદ કરી?",
+                        options: { A: "A. સૂરજને", B: "B. પવનને", C: "C. મોટા વાદળાને", D: "D. ધરતીના લોકોને" },
+                        correct: "C",
+                        exp: "ફકરામાં લખ્યું છે: 'એમણે મોટા વાદળાને આ વિશે ફરિયાદ કરી.'"
+                    },
+                    {
+                        id: 2,
+                        q: "૨. વાદળા કોની પાછળ જઈને બેસી ગયા?",
+                        options: { A: "A. પહાડ જેવા કાળા વાદળની પાછળ", B: "B. ચંદ્રની પાછળ", C: "C. પહાડની પાછળ", D: "D. ઝાડની પાછળ" },
+                        correct: "A",
+                        exp: "તેઓ ભીડ કરીને 'ઘણા મોટા પહાડ જેવા કાળા વાદળાની પાછળ' જઈને બેસી ગયા."
+                    },
+                    {
+                        id: 3,
+                        q: "૩. દીવાની જ્યોત મોટી થવાથી વાદળાં કેવા દેખાય?",
+                        options: { A: "A. લાલ અને લીલા", B: "B. કાળા અને ઘટ્ટ", C: "C. પીળા અને ફિક્કા", D: "D. વાદળી અને સફેદ" },
+                        correct: "C",
+                        exp: "દીવાની જ્યોત મોટી થતા કેટલાક વાદળાં 'ફિક્કા' (નિસ્તેજ) થવા લાગ્યા હતા."
+                    },
+                    {
+                        id: 4,
+                        q: "૪. દીવો સળગાવ્યો એટલે ....",
+                        options: { A: "A. સૂર્યોદય થવો", B: "B. બપોર થવી", C: "C. દીવો સળગવો", D: "D. સૂર્યાસ્ત થવો" },
+                        correct: "A",
+                        exp: "પ્રથમ વાક્ય મુજબ: 'દીવો સળગાવ્યો એટલે નીચેથી લોકો કહેવા લાગ્યા કે સૂર્યોદય થાય છે.'"
+                    }
+                ]
+            },
+            {
+                id: 7,
+                title: "વડનું ઝાડ",
+                emoji: "🌳",
+                badge: "📖 ફકરો ૭ ધ્યાનથી વાંચો",
+                isPoem: false,
+                text: "વડનું ઝાડ ખૂબ મોટું અને ઘટાદાર હોય છે.વડના ઝાડ પર રાતા ( લાલ ) રંગના ટેટા આવે છે.આ ટેટા પક્ષીઓને ખૂબ ભાવે છે.વડની ડાળીઓ પરથી વડવાઈ લટકે છે.બાળકો આ વડવાઈ પકડીને હિંચકા ખાય છે.વડનું ઝાડ વર્ષો સુધી જીવે છે.તેથી તેને ‘અક્ષયવટ' પણ કહેવામાં આવે છે.વડના છાંયડામાં પશુઓ અને મુસાફરો આરામ કરે છે.વડ આપણું રાષ્ટ્રીય વૃક્ષ છે.",
+                questions: [
+                    {
+                        id: 1,
+                        q: "૧. વડના ફળને શું કહેવામાં આવે છે?",
+                        options: { A: "A. કેરી", B: "B. ટેટા", C: "C. જામફળ", D: "D. મરચાં" },
+                        correct: "B",
+                        exp: "વડના લાલ રંગના નાનકડા ગોળ ફળને 'ટેટા' કહેવાય છે જે પક્ષીઓ ખૂબ ઉત્સાહથી ખાય છે."
+                    },
+                    {
+                        id: 2,
+                        q: "૨. બાળકો શાના પર હિંચકા ખાય છે?",
+                        options: { A: "A. ડાળી પર", B: "B. પાન પર", C: "C. વડવાઈ પર", D: "D. દોરડા પર" },
+                        correct: "C",
+                        exp: "વડની લટકતી શાખાઓ (મૂળિયાં) જેને 'વડવાઈ' કહે છે, તેના પર બાળકો આનંદથી હિંચકા ખાય છે."
+                    },
+                    {
+                        id: 3,
+                        q: "૩. વડના ટેટાનો રંગ કેવો હોય છે?",
+                        options: { A: "A. લીલો", B: "B. પીળો", C: "C. કાળો", D: "D. રાતો (લાલ)" },
+                        correct: "D",
+                        exp: "ફકરામાં લખ્યું છે: 'વડના ઝાડ પર રાતા ( લાલ ) રંગના ટેટા આવે છે.'"
+                    },
+                    {
+                        id: 4,
+                        q: "૪. આપણું રાષ્ટ્રીય વૃક્ષ કયું છે?",
+                        options: { A: "A. લીમડો", B: "B. આસોપાલવ", C: "C. વડ", D: "D. પીપળો" },
+                        correct: "C",
+                        exp: "છેલ્લી લીટી મુજબ: 'વડ આપણું રાષ્ટ્રીય વૃક્ષ છે.'"
+                    },
+                    {
+                        id: 5,
+                        q: "૫. 'ખૂબ લાંબુ આયુષ્ય ધરાવનાર' માટે ફકરામાં કયો શબ્દ વપરાયો છે?",
+                        options: { A: "A. ઘટાદાર", B: "B. અક્ષયવટ", C: "C. વડવાઈ", D: "D. રાષ્ટ્રીય" },
+                        correct: "B",
+                        exp: "અક્ષય એટલે જેનો કદી ક્ષય ન થાય. વડ વર્ષો સુધી જીવતો હોવાથી તેને 'અક્ષયવટ' કહે છે."
+                    },
+                    {
+                        id: 6,
+                        q: "૬. 'આરામ' શબ્દનો વિરોધી શબ્દ કયો થાય?",
+                        options: { A: "A. આનંદ", B: "B. થાક / પરિશ્રમ", C: "C. કંટાળો", D: "D. વિશ્રામ" },
+                        correct: "B",
+                        exp: "આરામ કે વિશ્રામનો વિરોધી અર્થ 'થાક' અથવા 'પરિશ્રમ/મહેનત' થાય."
+                    }
+                ]
+            },
+            {
+                id: 8,
+                title: "સમયનું મહત્વ",
+                emoji: "⏰",
+                badge: "📖 ફકરો ૮ ધ્યાનથી વાંચો",
+                isPoem: false,
+                text: "સમય માનવજીવનની અમૂલ્ય સંપત્તિ છે.એકવાર પસાર થયેલો સમય ફરી પાછો મળતો નથી.તેથી તેનો સંયમપૂર્વક અને સમજદારીથી ઉપયોગ કરવો જરૂરી છે.જે વ્યક્તિ સમયનું યોગ્ય આયોજન કરે છે તે પોતાના લક્ષ્ય સુધી પહોચી શકે છે.સમયની અવગણના કરનાર વ્યક્તિ ઘણી નિષ્ફળતા અનુભવે છે.કારણ કે આ સમય ભવિષ્યની પાયાદારી ઘડે છે.અભ્યાસ, રમતો અને આરામ આ ત્રણેય વચ્ચે સંતુલન જાળવવાથી જીવન સુવ્યવસ્થિત બને છે.સમયનું મૂલ્ય સમજીને કરેલી મહેનત સફળતાના દ્વાર ખોલે છે.",
+                questions: [
+                    {
+                        id: 1,
+                        q: "૧. સમયનું આયોજન કરનાર વ્યક્તિ શું મેળવી શકે છે?",
+                        options: { A: "A. આરામ", B: "B. લક્ષ્ય", C: "C. મિત્રો", D: "D. રમતો" },
+                        correct: "B",
+                        exp: "ફકરામાં લખ્યું છે: 'જે વ્યક્તિ સમયનું યોગ્ય આયોજન કરે છે તે પોતાના લક્ષ્ય સુધી પહોચી શકે છે.'"
+                    },
+                    {
+                        id: 2,
+                        q: "૨. સમયનો વ્યર્થ ઉપયોગ શું બનશે?",
+                        options: { A: "A. સફળતાનું દ્વાર", B: "B. આનંદનું કારણ", C: "C. પસ્તાવાનું/નિષ્ફળતાનું કારણ", D: "D. પ્રગતિનું કારણ" },
+                        correct: "C",
+                        exp: "સમય વેડફવાથી ભવિષ્ય બગડે છે અને છેવટે 'નિષ્ફળતા કે પસ્તાવો' અનુભવવો પડે છે."
+                    },
+                    {
+                        id: 3,
+                        q: "૩. વિદ્યાર્થી જીવનમાં સમયનું મહત્વ શા માટે છે?",
+                        options: { A: "A. સમય ઝડપથી પસાર થાય છે", B: "B. આ સમય ભવિષ્યની પાયાદારી ઘડવામાં મદદ કરે છે", C: "C. મિત્રો સાથે સમય પસાર થાય છે", D: "D. રમતો માટે સમય મળે છે" },
+                        correct: "B",
+                        exp: "બાળપણ અને વિદ્યાર્થી અવસ્થાનો સમય ખૂબ અગત્યનો છે કારણ કે તે ભવિષ્યની પાયાદારી ઘડે છે."
+                    },
+                    {
+                        id: 4,
+                        q: "૪. ફકરા અનુસાર સમયનું મહત્વ શું છે?",
+                        options: { A: "A. તે રોકી શકાય છે.", B: "B. તે મોજ માટે હોય છે", C: "C. તેનું મહત્વ ઓછું છે", D: "D. તે અમૂલ્ય છે" },
+                        correct: "D",
+                        exp: "સમય ક્યારેય અટકતો નથી અને તે ખૂબ જ 'અમૂલ્ય' સંપત્તિ છે."
+                    }
+                ]
+            },
+            {
+                id: 9,
+                title: "ઉચ્ચ વિચારો અને પ્રયત્ન",
+                emoji: "💡",
+                badge: "📖 ફકરો ૯ ધ્યાનથી વાંચો",
+                isPoem: false,
+                text: "આપણને ગતિ આપનારું બળ વિચાર છે.મનને ઉચ્ચ વિચારોથી ભરી દો, તેના વિશે રોજ રોજ શ્રવણ કરો, મહિનાઓ સુધી વિચાર કરો.નિષ્ફળતાની કદી પરવા ન કરો.આ નિષ્ફળતાઓ સાવ સ્વાભાવિક છે, જીવનનું તે સૌંદર્ય છે.તેમના વિના જીવનનો શો અર્થ છે? જીવનમાં જો મથામણ ન હોય તો જીવનની કોઈ કિંમત નથી, તો પછી જીવનનું કાવ્ય ક્યાં રહે? મથામણોની, ભૂલોની પરવા ન કરો.ગાયને મેં કદી ખોટું બોલતી સાંભળી નથી, પણ માત્ર તે ગાય જ છે, મનુષ્ય નથી.માટે નિષ્ફળતાની, આ નાના નાના પતનોની પરવા ન કરો, ગભરાયા વગર હજારવાર આદર્શને વળગી રહો અને હજારોવાર તમે ભલે નિષ્ફળ જાઓ તો પણ વધુ એક વખત પ્રયાસ કરો.",
+                questions: [
+                    {
+                        id: 1,
+                        q: "૧. ફકરાને આધારે જીવનમાં નિષ્ફળતાઓનું શું મહત્વ છે?",
+                        options: { A: "A. નિષ્ફળતા એ જીવનનો અંત છે", B: "B. નિષ્ફળતા એ જીવનનું સૌંદર્ય છે અને તે સ્વાભાવિક છે", C: "C. નિષ્ફળતાથી મનુષ્યે માર્ગ બદલવો જોઈએ", D: "D. નિષ્ફળતા માત્ર નબળા લોકોના જીવનમાં આવે છે." },
+                        correct: "B",
+                        exp: "લેખક કહે છે કે ભૂલો અને નિષ્ફળતા સ્વાભાવિક છે, તેનાથી જ જીવનમાં સુંદરતા અને શીખવાનો અવકાશ રહે છે."
+                    },
+                    {
+                        id: 2,
+                        q: "૨. “ગાય ક્યારેય ખોટું બોલતી નથી” - આ ઉદાહરણ દ્વારા ફકરામાં શું સમજાવવામાં આવ્યું છે?",
+                        options: { A: "A. ભૂલ ન કરવી એ પશુતાનું લક્ષણ હોઈ શકે, પણ સંઘર્ષ અને ભૂલ કરવી એ માનવ હોવાની નિશાની છે.", B: "B. મનુષ્યે પ્રાણીઓ જેવું જીવન જીવવું જોઈએ.", C: "C. ગાય મનુષ્ય કરતાં શ્રેષ્ઠ પ્રાણી છે", D: "D. મનુષ્યે હંમેશા સાચું જ બોલવું જોઈએ." },
+                        correct: "A",
+                        exp: "ભૂલ કરવી એ મનુષ્યનો સ્વભાવ છે, તેના સંઘર્ષ અને શીખવાના ગુણો જ તેને પ્રાણી કરતાં અલગ પાડે છે."
+                    },
+                    {
+                        id: 3,
+                        q: "૩. જો જીવનમાં ‘સંઘર્ષ કે મથામણ’ ન હોય તો જીવન કેવું બની જાય છે?",
+                        options: { A: "A. જીવન શાંત અને સુખી બની જાય છે", B: "B. જીવન આદર્શ બની જાય છે", C: "C. જીવનમાં સફળતા સરળતાથી મળે છે", D: "D. જીવનમાં કોઈ કાવ્ય કે કિંમત રહેતી નથી" },
+                        correct: "D",
+                        exp: "મુશ્કેલીઓ વગરનું જીવન રસહીન બની જાય છે. સંઘર્ષ જ જીવનમાં મૂલ્ય અને મધુરતા ભરે છે."
+                    },
+                    {
+                        id: 4,
+                        q: "૪. આદર્શ સુધી પહોચવા માટે લેખકે કઈ સલાહ આપી છે?",
+                        options: { A: "A. એકવાર નિષ્ફળ જાવ તો નસીબનો દોષ આપો", B: "B. જો આદર્શ અઘરો લાગે તો તેને બદલી નાખો", C: "C. જો હજારવાર નિષ્ફળ જાવ તો પણ એક વધુ વાર પ્રયત્ન કરો", D: "D. નિષ્ફળતાના ડરથી આદર્શ રાખવો જ નહીં." },
+                        correct: "C",
+                        exp: "હજાર વાર પડીએ તો પણ ગભરાયા વગર ફરી એક વાર આગળ વધવા અને પ્રયાસ કરવાની હિંમત રાખવી જોઈએ."
+                    },
+                    {
+                        id: 5,
+                        q: "૫. આ ફકરાનો મુખ્ય સંદેશ (કેન્દ્રીય વિચાર) શું છે?",
+                        options: { A: "A. ઉચ્ચ વિચારો સાથે સતત સંઘર્ષ અને મથામણનું મહત્વ", B: "B. પવનોની ગણતરી કરવાનું મહત્વ", C: "C. ગાયના ગુણોનું વર્ણન", D: "D. ભણતરની આવશ્યકતા" },
+                        correct: "A",
+                        exp: "મનને શ્રેષ્ઠ વિચારોથી ભરીને સતત મથામણ સાથે લક્ષ્ય તરફ આગળ વધવું એ જ જીવનનો સાચો ઉપદેશ છે."
+                    }
+                ]
+            },
+            {
+                id: 10,
+                title: "બસ સમયપત્રક - રતનપુર ડેપો",
+                emoji: "🚌",
+                badge: "📖 સમયપત્રક ધ્યાનથી વાંચો",
+                isPoem: false,
+                text: "બસ સમયપત્રક : રતનપુર ડેપો\n\n૧. રતનપુર થી અમદાવાદ ➔ સવારે ૬.૩૦ વાગે ➔ પ્લેટફોર્મ ૧ ➔ બસ પ્રકાર: એક્સપ્રેસ\n૨. રતનપુર થી તાલુકામથક ➔ સવારે ૮.૦૦ વાગે ➔ પ્લેટફોર્મ ૨ ➔ બસ પ્રકાર: લોકલ\n૩. રતનપુર થી વડોદરા ➔ સવારે ૯.૧૫ વાગે ➔ પ્લેટફોર્મ ૩ ➔ બસ પ્રકાર: ગુર્જરનગરી\n૪. રતનપુર થી હાઇસ્કુલ ➔ સવારે ૧૦.૩૦ વાગે ➔ પ્લેટફોર્મ ૪ ➔ બસ પ્રકાર: લોકલ\n૫. રતનપુર થી રાજકોટ ➔ બપોરે ૧૨.૦૦ વાગે ➔ પ્લેટફોર્મ ૫ ➔ બસ પ્રકાર: એક્સપ્રેસ\n૬. રતનપુર થી સુરત ➔ સાંજે ૪.૪૫ વાગે ➔ પ્લેટફોર્મ ૬ ➔ બસ પ્રકાર: સ્લીપર\n૭. રતનપુર થી રાત્રીબસ ➔ રાત્રે ૬.૩૦ વાગે ➔ પ્લેટફોર્મ ૭ ➔ બસ પ્રકાર: લોકલ",
+                questions: [
+                    {
+                        id: 1,
+                        q: "૧. બપોરે ૧૨.૦૦ વાગે કઈ બસ રતનપુરથી ઉપડશે?",
+                        options: { A: "A. સુરત", B: "B. રાજકોટ", C: "C. વડોદરા", D: "D. લોકલ" },
+                        correct: "B",
+                        exp: "પત્રક મુજબ બપોરે ૧૨:૦૦ વાગે પ્લેટફોર્મ ૫ પરથી 'રાજકોટ' જતી એક્સપ્રેસ બસ ઉપડશે."
+                    },
+                    {
+                        id: 2,
+                        q: "૨. સુરત જવા માટે કયા પ્રકારની બસની સુવિધા છે?",
+                        options: { A: "A. લોકલ", B: "B. સ્લીપર", C: "C. એક્સપ્રેસ", D: "D. ગુર્જરનગરી" },
+                        correct: "B",
+                        exp: "બસ નંબર ૬ (સુરત જવા માટે સાંજે ૪:૪૫ વાગે) નો પ્રકાર 'સ્લીપર' (Sleeper) બતાવેલો છે."
+                    },
+                    {
+                        id: 3,
+                        q: "૩. અમદાવાદ જવા માટેની બસ સવારે કેટલા વાગે ઉપડશે?",
+                        options: { A: "A. ૧૦.૩૦ સવાર", B: "B. ૮.૦૦ સવાર", C: "C. ૬.૩૦ સવાર", D: "D. ૯.૩૦ સાંજ" },
+                        correct: "C",
+                        exp: "બસ નંબર ૧ અનુસાર અમદાવાદ એક્સપ્રેસ વહેલી સવારે '૬:૩૦ વાગે' પ્લેટફોર્મ નંબર ૧ પરથી ઉપડે છે."
+                    }
+                ]
+            },
+            {
+                id: 11,
+                title: "વ્યાકરણ અને સામાન્ય સમજણ કસોટી",
+                emoji: "📝",
+                badge: "✏️ ૧૫ મહત્વના બહુવિકલ્પ પ્રશ્નો",
+                isPoem: false,
+                text: "આ કસોટીમાં તમારા ધોરણ ૪ ના સત્તાવાર પ્રશ્નપત્રના પાછળના પાનાઓ પર આપેલા તમામ ૧૫ અતિ મહત્વના વ્યાકરણ અને ભાષા સજ્જતાના પ્રશ્નો સામેલ કરવામાં આવ્યા છે. ચાલો ઉત્તરો આપીને ટેસ્ટ રમીએ!",
+                questions: [
+                    {
+                        id: 1,
+                        q: "૧. બધાને હતું કે વિમલ હારી જશે ______ તે જીતી ગયો.",
+                        options: { A: "(A) કારણ કે", B: "(B) અથવા", C: "(C) પણ", D: "(D) કે" },
+                        correct: "C",
+                        exp: "અહીં વિરોધાભાસ દર્શાવવાનો હોવાથી સાચો સંયોજક 'પણ' આવશે: '...હારશે પણ તે જીતી ગયો.'"
+                    },
+                    {
+                        id: 2,
+                        q: "૨. નીચેનામાંથી કયું વાદ્ય તાળી કે હાથના ધબકારા અથવા સુંદર અવાજ માટે વપરાય છે?",
+                        options: { A: "(A) નગારું", B: "(B) ઢોલ", C: "(C) તબલાં", D: "(D) ખંજરી" },
+                        correct: "D",
+                        exp: "હાથથી તાલ મેળવવા માટે વ્યાપકપણે 'ખંજરી' નો ઉપયોગ થાય છે."
+                    },
+                    {
+                        id: 3,
+                        q: "૩. દિવાળી-દીવો, ઉત્તરાયણ-પતંગ, હોળી- ______",
+                        options: { A: "(A) ફટાકડા", B: "(B) પિચકારી", C: "(C) ચીકી", D: "(D) રાખડી" },
+                        correct: "B",
+                        exp: "દિવાળીએ દીવો સળગે, ઉત્તરાયણે પતંગ ચગે, તેમ હોળી-ધૂળેટીના તહેવારમાં 'પિચકારી' થી રંગ ઉડાડાય."
+                    },
+                    {
+                        id: 4,
+                        q: "૪. આપેલ શબ્દમાંથી નીચે પૈકી કયો શબ્દ ન બને? 'ભારતમાતા'",
+                        options: { A: "(A) માતર", B: "(B) માતા", C: "(C) ભાત", D: "(D) તારા" },
+                        correct: "D",
+                        exp: "'ભારતમાતા' શબ્દના મૂળ અક્ષરોમાં 'રા' નથી આવતો, માટે 'તારા' શબ્દ બની શકે નહીં."
+                    },
+                    {
+                        id: 5,
+                        q: "૫. ______ રોજ સવારે વહેલા ઊઠી કસરત કરું છું.",
+                        options: { A: "(A) અમે", B: "(B) મને", C: "(C) આપણે", D: "(D) હું" },
+                        correct: "D",
+                        exp: "વાક્યના અંતે 'કરું છું' હોવાથી યોગ્ય પ્રથમ પુરુષ એકવચન સર્વનામ 'હું' આવશે."
+                    },
+                    {
+                        id: 6,
+                        q: "૬. ઉમેશ ______ શાળામાં આવ્યો છે.",
+                        options: { A: "(A) આજે", B: "(B) ગઈકાલે", C: "(C) હજુ", D: "(D) આવતીકાલે" },
+                        correct: "A",
+                        exp: "વાક્યમાં વર્તમાનકાળ 'આવ્યો છે' હોવાથી સમયવાચક ક્રિયાવિશેષણ 'આજે' બંધબેસે છે."
+                    },
+                    {
+                        id: 7,
+                        q: "૭. પક્ષી-માળો, સ્પર્ધા-ઇનામ, સાયકલ- ______",
+                        options: { A: "(A) સવારી", B: "(B) ફરારી", C: "(C) લવારી", D: "(D) શિકારી" },
+                        correct: "A",
+                        exp: "પક્ષી માળામાં રહે, સ્પર્ધાથી ઇનામ મળે, તેમ સાયકલ ચલાવવા માટે 'સવારી' સંબંધ બંધબેસતો છે."
+                    },
+                    {
+                        id: 8,
+                        q: "૮. બોરનો ઠળિયો, પેન્ટનું ખિસ્સું, પતંગની ______",
+                        options: { A: "(A) સ્ટેન્ડ", B: "(B) ચીકી", C: "(C) પાંખ", D: "(D) દોરી" },
+                        correct: "D",
+                        exp: "બોરમાં ઠળિયો હોય, પેન્ટમાં ખિસ્સું હોય, તેમ પતંગ ચગાવવા માટે 'દોરી' હોવી અનિવાર્ય છે."
+                    },
+                    {
+                        id: 9,
+                        q: "૯. હેમા તેના બાને રસોઈકામમાં રોજ ટેકો કરતી. ટેકો કરવો એટલે?",
+                        options: { A: "(A) હેરાન કરતી", B: "(B) મદદ કરતી", C: "(C) શીખવા બેસતી", D: "(D) ચનો આપતી" },
+                        correct: "B",
+                        exp: "'ટેકો કરવો' એ રૂઢિપ્રયોગનો અર્થ કોઈને કામમાં સહાય કરવી એટલે કે 'મદદ કરવી' થાય."
+                    },
+                    {
+                        id: 10,
+                        q: "૧૦. યોગ્ય માત્રા ઉમેરી અર્થપૂર્ણ શબ્દ બનાવો: 'પછડ'",
+                        options: { A: "(A) પૂંછડી", B: "(B) પીછુડા", C: "(C) પાછુડ", D: "(D) પંછીડે" },
+                        correct: "A",
+                        exp: "'પછડ' માં યોગ્ય સ્વરચિહ્નો (માત્રા) ઉમેરવાથી પ્રાણીનું અંગ દર્શાવતો શબ્દ 'પૂંછડી' બને છે."
+                    },
+                    {
+                        id: 11,
+                        q: "૧૧. ક્ષિતિજ, નાવ, માછલી, દરિયો, દીવાદાંડી, ______",
+                        options: { A: "(A) પાકીટ", B: "(B) છીપલાં", C: "(C) દીવો", D: "(D) પેન" },
+                        correct: "B",
+                        exp: "બાકીના બધા શબ્દો સમુદ્ર કે દરિયા કિનારા સંબંધિત છે, માટે તે જ વર્ગનો શબ્દ 'છીપલાં' બંધબેસે છે."
+                    },
+                    {
+                        id: 12,
+                        q: "૧૨. મારો દોસ્ત જતન એટલો મસ્તીખોર છે કે બધા શાંતિથી ભણતા હોય ત્યારે તે ______",
+                        options: { A: "(A) શાંતિથી ભણે", B: "(B) શાંતિથી લખે", C: "(C) અડપલાં કરે", D: "(D) વાંચન કરે" },
+                        correct: "C",
+                        exp: "મસ્તીખોર બાળક બીજાને ભણવામાં ખલેલ પહોંચાડે એટલે કે વંટોળ કે 'અડપલાં' (તોફાન) કરે છે."
+                    },
+                    {
+                        id: 13,
+                        q: "૧૩. આડાઅવળા અક્ષરો વ્યવસ્થિત ગોઠવી સાચો શબ્દ બનાવો: 'વણીસાર'",
+                        options: { A: "(A) સારણીવ", B: "(B) રણીવસા", C: "(C) સાવરણી", D: "(D) વસારણી" },
+                        correct: "C",
+                        exp: "'વ-ણી-સા-ર' અક્ષરોને ક્રમમાં ગોઠવતા ઘર સફાઈ માટેનું સાધન 'સાવરણી' શબ્દ સાચો બને છે."
+                    },
+                    {
+                        id: 14,
+                        q: "૧૪. માને જોતાની સાથે જ બકરીનું બચ્ચું તો ______ ",
+                        options: { A: "(A) ઉદાસ", B: "(B) નિરાશ", C: "(C) હતાશ", D: "(D) ખુશખુશાલ" },
+                        correct: "D",
+                        exp: "પોતાની માતાને જોઈને બાળક હંમેશા અતિ આનંદિત એટલે કે 'ખુશખુશાલ' થઈ જાય છે."
+                    },
+                    {
+                        id: 15,
+                        q: "૧૫. બે ભાઈઓ ખેતરમાં ગયા અને જોયું તો આંબાના ઝાડ પર તો ખૂબ ______",
+                        options: { A: "(A) આંબળા", B: "(B) કેરીઓ", C: "(C) બોર", D: "(D) રાયણ" },
+                        correct: "B",
+                        exp: "આંબાના ઝાડ પર માત્ર મીઠા સ્વાદિષ્ટ ફળ તરીકે 'કેરીઓ' જ થાય છે."
+                    }
+                ]
+            }
+        ];
+
+        // Global variables for progress tracking
+        let currentQuizId = 1;
+        let answeredQuestions = {}; // Structure: { "quizId-qId": true }
+        let currentQuizAttempts = 0;
+        let speechSynth = window.speechSynthesis;
+        let speechUtterance = null;
+
+        window.onload = function() {
+            renderDashboard();
+        }
+
+        // Render available reading comprehension passages and grammar cards
+        function renderDashboard() {
+            const grid = document.getElementById('dashboard-grid');
+            grid.innerHTML = '';
+
+            examData.forEach(item => {
+                const solvedCount = getSolvedCountForQuiz(item.id);
+                const totalQCount = item.questions.length;
+                let progressBadge = '';
+
+                if (solvedCount === totalQCount) {
+                    progressBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-black px-2.5 py-1 rounded-full shrink-0">પરફેક્ટ: ${solvedCount}/${totalQCount} 🏆</span>`;
+                } else if (solvedCount > 0) {
+                    progressBadge = `<span class="bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold px-2.5 py-1 rounded-full shrink-0">પ્રગતિ: ${solvedCount}/${totalQCount} 🌟</span>`;
+                } else {
+                    progressBadge = `<span class="bg-gray-100 text-gray-600 border border-gray-300 text-xs font-semibold px-2.5 py-1 rounded-full shrink-0">રમવાનું બાકી 🎯</span>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-2xl shadow-md border-2 border-orange-100 hover:border-amber-300 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer flex justify-between items-center gap-4";
+                card.onclick = () => loadQuiz(item.id);
+                
+                card.innerHTML = `
+                    <div class="flex items-center gap-4 min-w-0">
+                        <span class="text-4xl bg-orange-50 p-2.5 rounded-xl border border-orange-100 shrink-0">${item.emoji}</span>
+                        <div class="min-w-0">
+                            <h3 class="text-base md:text-lg font-extrabold text-amber-900 leading-tight truncate">${item.id}. ${item.title}</h3>
+                            <p class="text-xs text-gray-500 mt-1">${totalQCount} બહુવિકલ્પ પ્રશ્નો</p>
+                        </div>
+                    </div>
+                    <div>
+                        ${progressBadge}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Helper count of solved items
+        function getSolvedCountForQuiz(quizId) {
+            let count = 0;
+            const quiz = examData.find(q => q.id === quizId);
+            quiz.questions.forEach(qObj => {
+                if (answeredQuestions[`${quizId}-${qObj.id}`] === true) {
+                    count++;
+                }
+            });
+            return count;
+        }
+
+        // Load Selected Reading Comprehension or Grammar Quiz
+        function loadQuiz(id) {
+            currentQuizId = id;
+            currentQuizAttempts = 0;
+            const quiz = examData.find(q => q.id === id);
+
+            // Set Title & Passage Details
+            document.getElementById('passage-title').innerText = quiz.title;
+            document.getElementById('comprehension-passage').innerText = quiz.text;
+            document.getElementById('current-quiz-title').innerText = `${quiz.title} ની પ્રગતિ 🚀`;
+            document.getElementById('passage-badge-text').innerText = quiz.badge;
+
+            // Render Questions List
+            const questionsContainer = document.getElementById('questions-container');
+            questionsContainer.innerHTML = '';
+
+            quiz.questions.forEach((qObj) => {
+                const qCard = document.createElement('div');
+                qCard.id = `q-card-${qObj.id}`;
+                qCard.className = "bg-white rounded-2xl p-5 shadow-md border-2 border-gray-100 transition-all duration-300 question-card";
+                
+                qCard.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <span class="bg-amber-500 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-xs shrink-0 mt-1">${qObj.id}</span>
+                        <h4 class="text-base md:text-lg font-bold text-gray-800 leading-snug">${qObj.q}</h4>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                        <button onclick="checkAnswer(${qObj.id}, 'A', this)" class="option-btn text-left p-3.5 rounded-xl border-2 border-gray-200 hover:border-amber-300 hover:bg-amber-50/50 font-semibold text-gray-700 transition-all duration-200 text-sm md:text-base bubbly-button">
+                            ${qObj.options.A}
+                        </button>
+                        <button onclick="checkAnswer(${qObj.id}, 'B', this)" class="option-btn text-left p-3.5 rounded-xl border-2 border-gray-200 hover:border-amber-300 hover:bg-amber-50/50 font-semibold text-gray-700 transition-all duration-200 text-sm md:text-base bubbly-button">
+                            ${qObj.options.B}
+                        </button>
+                        <button onclick="checkAnswer(${qObj.id}, 'C', this)" class="option-btn text-left p-3.5 rounded-xl border-2 border-gray-200 hover:border-amber-300 hover:bg-amber-50/50 font-semibold text-gray-700 transition-all duration-200 text-sm md:text-base bubbly-button">
+                            ${qObj.options.C}
+                        </button>
+                        <button onclick="checkAnswer(${qObj.id}, 'D', this)" class="option-btn text-left p-3.5 rounded-xl border-2 border-gray-200 hover:border-amber-300 hover:bg-amber-50/50 font-semibold text-gray-700 transition-all duration-200 text-sm md:text-base bubbly-button">
+                            ${qObj.options.D}
+                        </button>
+                    </div>
+
+                    <!-- Answer explanation block -->
+                    <div class="explanation hidden mt-4 p-4 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 transition-all duration-500 text-xs md:text-sm">
+                        <span class="font-extrabold text-teal-700">💡 કેમ સાચું? :</span> ${qObj.exp}
+                    </div>
+                `;
+                questionsContainer.appendChild(qCard);
+            });
+
+            // Update Progress UI
+            updateProgress();
+
+            // Toggle Page Screen
+            document.getElementById('dashboard-view').classList.replace('block', 'hidden');
+            document.getElementById('quiz-view').classList.replace('hidden', 'block');
+            document.getElementById('score-summary').classList.add('hidden');
+
+            // Reset Speech Synthesis
+            if (speechSynth && speechSynth.speaking) {
+                speechSynth.cancel();
+                updateSpeechButton(false);
+            }
+
+            // Scroll Smooth to Top of screen
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Show Dashboard View
+        function showDashboard() {
+            document.getElementById('quiz-view').classList.replace('block', 'hidden');
+            document.getElementById('dashboard-view').classList.replace('hidden', 'block');
+            
+            if (speechSynth && speechSynth.speaking) {
+                speechSynth.cancel();
+                updateSpeechButton(false);
+            }
+            
+            renderDashboard();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Answer validation logic
+        function checkAnswer(qNum, selectedOption, btnElement) {
+            const key = `${currentQuizId}-${qNum}`;
+            if (answeredQuestions[key] === true) return;
+
+            currentQuizAttempts++;
+            const quiz = examData.find(q => q.id === currentQuizId);
+            const qObj = quiz.questions.find(q => q.id === qNum);
+            const correctOpt = qObj.correct;
+
+            const cardElement = document.getElementById(`q-card-${qNum}`);
+            const buttons = cardElement.querySelectorAll('.option-btn');
+            const explanationBox = cardElement.querySelector('.explanation');
+
+            if (selectedOption === correctOpt) {
+                // Correct answer selected
+                playTone('correct');
+                createConfetti(btnElement);
+
+                btnElement.classList.remove('border-gray-200', 'hover:border-amber-300', 'hover:bg-amber-50/50');
+                btnElement.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-900', 'font-bold');
+                btnElement.innerHTML += ' <span class="text-emerald-600 font-extrabold float-right">✅ સાચું</span>';
+
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    if (btn !== btnElement) {
+                        btn.classList.add('opacity-50');
+                    }
+                });
+
+                explanationBox.classList.remove('hidden');
+                explanationBox.classList.add('animate-pulse');
+                setTimeout(() => explanationBox.classList.remove('animate-pulse'), 1000);
+
+                answeredQuestions[key] = true;
+                updateProgress();
+
+            } else {
+                // Incorrect answer selected
+                playTone('incorrect');
+                cardElement.classList.add('border-red-400', 'scale-[0.98]');
+                setTimeout(() => {
+                    cardElement.classList.remove('border-red-400', 'scale-[0.98]');
+                }, 300);
+
+                btnElement.classList.add('bg-red-50', 'border-red-400', 'text-red-900', 'opacity-60');
+                if (!btnElement.innerHTML.includes('❌')) {
+                    btnElement.innerHTML += ' <span class="text-red-500 font-bold float-right">❌ ફરીથી પ્રયત્ન કરો</span>';
+                }
+                btnElement.disabled = true;
+            }
+        }
+
+        // Refresh progress meter
+        function updateProgress() {
+            const quiz = examData.find(q => q.id === currentQuizId);
+            const totalQCount = quiz.questions.length;
+            const solvedCount = getSolvedCountForQuiz(currentQuizId);
+            const progressPercent = (solvedCount / totalQCount) * 100;
+            
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+
+            progressBar.style.width = `${progressPercent}%`;
+            progressText.innerText = `${solvedCount}/${totalQCount} પૂર્ણ`;
+
+            // If all questions are solved successfully
+            if (solvedCount === totalQCount) {
+                setTimeout(() => {
+                    playTone('complete');
+                    triggerGlobalConfetti();
+                    
+                    const scoreSummary = document.getElementById('score-summary');
+                    scoreSummary.classList.remove('hidden');
+                    
+                    document.getElementById('total-q-badge').innerText = totalQCount;
+                    document.getElementById('attempt-counter').innerText = currentQuizAttempts;
+                    
+                    if (currentQuizAttempts === totalQCount) {
+                        document.getElementById('score-heading').innerText = "🎉 સુપર પરફેક્ટ! ધમાકેદાર વિજય! 🏆";
+                    } else {
+                        document.getElementById('score-heading').innerText = "🎉 ખૂબ સરસ પ્રગતિ! શાબાશ! 🌟";
+                    }
+                    scoreSummary.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 800);
+            }
+        }
+
+        // Pleasant synthesized child-friendly game sounds using Web Audio API
+        function playTone(type) {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                    oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                    oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.35);
+                } else if (type === 'incorrect') {
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
+                    oscillator.frequency.setValueAtTime(147, audioCtx.currentTime + 0.12); // D3
+                    gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.25);
+                } else if (type === 'complete') {
+                    const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gNode = audioCtx.createGain();
+                        osc.connect(gNode);
+                        gNode.connect(audioCtx.destination);
+                        osc.frequency.value = freq;
+                        gNode.gain.setValueAtTime(0.08, audioCtx.currentTime + (i * 0.08));
+                        osc.start(audioCtx.currentTime + (i * 0.08));
+                        osc.stop(audioCtx.currentTime + (i * 0.08) + 0.2);
+                    });
+                }
+            } catch (e) {
+                console.log('Synthesizer audio not supported or blocked.');
+            }
+        }
+
+        // Click Confetti Particle Burst
+        function createConfetti(target) {
+            const container = document.getElementById('confetti-container');
+            const rect = target.getBoundingClientRect();
+            const parentRect = container.getBoundingClientRect();
+            
+            const x = rect.left + rect.width / 2 - parentRect.left;
+            const y = rect.top + rect.height / 2 - parentRect.top;
+
+            for (let i = 0; i < 20; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti rounded-full';
+                conf.style.left = `${x}px`;
+                conf.style.top = `${y}px`;
+                conf.style.backgroundColor = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#ec4899'][Math.floor(Math.random() * 5)];
+                container.appendChild(conf);
+
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 2 + Math.random() * 6;
+                let cx = x;
+                let cy = y;
+                let opacity = 1;
+
+                const anim = setInterval(() => {
+                    cx += Math.cos(angle) * velocity;
+                    cy += Math.sin(angle) * velocity + 0.5;
+                    opacity -= 0.04;
+                    
+                    conf.style.left = `${cx}px`;
+                    conf.style.top = `${cy}px`;
+                    conf.style.opacity = opacity;
+
+                    if (opacity <= 0) {
+                        clearInterval(anim);
+                        conf.remove();
+                    }
+                }, 20);
+            }
+        }
+
+        // Global Celebrate Burst
+        function triggerGlobalConfetti() {
+            for (let j = 0; j < 5; j++) {
+                setTimeout(() => {
+                    const x = Math.random() * window.innerWidth;
+                    const y = window.scrollY + Math.random() * 300 + 100;
+                    
+                    for (let i = 0; i < 15; i++) {
+                        const conf = document.createElement('div');
+                        conf.className = 'confetti';
+                        conf.style.left = `${x}px`;
+                        conf.style.top = `${y}px`;
+                        conf.style.backgroundColor = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#ec4899', '#8b5cf6'][Math.floor(Math.random() * 6)];
+                        document.body.appendChild(conf);
+
+                        const angle = Math.random() * Math.PI * 2;
+                        const velocity = 3 + Math.random() * 8;
+                        let cx = x;
+                        let cy = y;
+                        let opacity = 1;
+
+                        const anim = setInterval(() => {
+                            cx += Math.cos(angle) * velocity;
+                            cy += Math.sin(angle) * velocity + 0.3;
+                            opacity -= 0.02;
+                            conf.style.left = `${cx}px`;
+                            conf.style.top = `${cy}px`;
+                            conf.style.opacity = opacity;
+
+                            if (opacity <= 0) {
+                                clearInterval(anim);
+                                conf.remove();
+                            }
+                        }, 20);
+                    }
+                }, j * 200);
+            }
+        }
+
+        // Reset Quiz Stack
+        function restartQuiz() {
+            const quiz = examData.find(q => q.id === currentQuizId);
+            quiz.questions.forEach(qObj => {
+                delete answeredQuestions[`${currentQuizId}-${qObj.id}`];
+            });
+            loadQuiz(currentQuizId);
+        }
+
+        // Native Text-to-Speech Aloud Assist with Authentic Voice Search
+        function readAloud() {
+            if (!speechSynth) {
+                showVoiceHelpModal();
+                return;
+            }
+
+            if (speechSynth.speaking) {
+                speechSynth.cancel();
+                updateSpeechButton(false);
+                return;
+            }
+
+            const textToRead = document.getElementById('comprehension-passage').innerText;
+            speechUtterance = new SpeechSynthesisUtterance(textToRead);
+            
+            // fetch available voices
+            const voices = speechSynth.getVoices();
+            
+            // Search specifically for Gujarati gu-IN voice, giving high preference to Google system voices
+            let guVoice = voices.find(voice => voice.lang === 'gu-IN' && voice.name.includes('Google'));
+            if (!guVoice) {
+                guVoice = voices.find(voice => voice.lang === 'gu-IN' || voice.lang === 'gu_IN');
+            }
+            if (!guVoice) {
+                guVoice = voices.find(voice => voice.lang.toLowerCase().includes('gu'));
+            }
+
+            if (guVoice) {
+                speechUtterance.voice = guVoice;
+                console.log("Authentic Gujarati voice loaded:", guVoice.name);
+            } else {
+                console.warn("Native Gujarati system voice pack not found on this device.");
+            }
+            
+            speechUtterance.rate = 0.8; // Calibrated speed for Gujarati syllables (perfect for primary kids)
+            speechUtterance.pitch = 1.0;
+            
+            speechUtterance.onend = () => {
+                updateSpeechButton(false);
+            };
+
+            speechUtterance.onerror = () => {
+                updateSpeechButton(false);
+            };
+
+            updateSpeechButton(true);
+            speechSynth.speak(speechUtterance);
+        }
+
+        function updateSpeechButton(isPlaying) {
+            const icon = document.getElementById('speaker-icon');
+            const text = document.getElementById('speaker-text');
+            if (isPlaying) {
+                icon.innerText = "⏹️";
+                text.innerText = "બંધ કરો";
+            } else {
+                icon.innerText = "🔊";
+                text.innerText = "સાંભળો";
+            }
+        }
+
+        // Voice help modal functions
+        function showVoiceHelpModal() {
+            document.getElementById('voice-help-modal').classList.remove('hidden');
+        }
+
+        function closeVoiceHelpModal() {
+            document.getElementById('voice-help-modal').classList.add('hidden');
+        }
+
+        // Preload speech synthesis voices (Fixes Chrome delay)
+        if (speechSynth && speechSynth.onvoiceschanged !== undefined) {
+            speechSynth.onvoiceschanged = () => {
+                speechSynth.getVoices();
+            };
+        }
+    </script>
+</body>
+</html>
